@@ -1,0 +1,83 @@
+<!-- loading -->
+<div id="g-load" class="gate"><div class="card" style="text-align:center"><div class="logo">CC</div><div class="spinner"></div><p class="sub" id="loadmsg" style="margin-top:16px">Connecting to CampusCord…</p></div></div>
+
+<!-- first-time server setup -->
+<div id="g-setup" class="gate hidden"><div class="card">
+  <div class="logo">CC</div>
+  <h1>Set up CampusCord</h1>
+  <p class="sub">You're the first one here, so you're the admin. Pick an invite code. Friends will need it to get in.</p>
+  <label class="f">Invite code</label>
+  <input id="su-code" class="inp" maxlength="24" autocomplete="off">
+  <label class="f">Starting rooms (comma separated)</label>
+  <input id="su-rooms" class="inp" value="general, memes, homework-help, gaming">
+  <button class="btn" id="su-go">Create server</button>
+  <div class="err" id="su-err"></div>
+</div></div>
+
+<!-- join -->
+<div id="g-join" class="gate hidden"><div class="card">
+  <div class="logo">CC</div>
+  <h1 id="j-title">You're invited!</h1>
+  <p class="sub" id="j-sub">Pick a name and enter the invite code to join CampusCord.</p>
+  <label class="f">Display name</label>
+  <input id="j-nick" class="inp" maxlength="24" autocomplete="off" placeholder="e.g. Maya">
+  <div id="j-codewrap"><label class="f">Invite code</label>
+  <input id="j-code" class="inp" maxlength="24" autocomplete="off" placeholder="Ask the admin"></div>
+  <label class="f">Color</label>
+  <div class="colors" id="j-colors"></div>
+  <button class="btn" id="j-go">Join CampusCord</button>
+  <div class="err" id="j-err"></div>
+  <div class="myid" id="j-id" title="Click to copy"></div>
+</div></div>
+
+<!-- message gate -->
+<div id="g-msg" class="gate hidden"><div class="card" style="text-align:center"><div class="logo">CC</div><h1 id="gm-t"></h1><p class="sub" id="gm-s" style="margin-bottom:0"></p><div class="myid" id="gm-id"></div></div></div>
+
+<!-- app -->
+<div id="app" class="hidden">
+  <nav class="rail" id="rail"></nav>
+  <aside class="side">
+    <div class="hdr" id="sideHdr"></div>
+    <div class="chlist" id="chList"></div>
+    <div class="mebar">
+      <div class="who" id="meWho" title="Your profile"></div>
+      <button class="ib" id="meSettings" title="Settings">⚙️</button>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="top">
+      <button class="ib burger" id="burger" title="Menu">☰</button>
+      <span class="hash" id="topIcon">#</span><span class="ttl" id="topTitle"></span><span class="desc" id="topDesc"></span>
+      <span class="status" id="connStatus"></span>
+      <button class="ib" id="btnPins" title="Pinned messages">📌</button>
+      <button class="ib" id="btnMembers" title="Member list">👥</button>
+      <input class="search" id="search" placeholder="Search" autocomplete="off">
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <button class="jump hidden" id="jump">New messages ↓</button>
+    <div class="typing" id="typing"></div>
+    <div class="composer" id="composer">
+      <div id="cbars"></div>
+      <div class="cbox" id="cbox">
+        <button class="cb" id="attBtn" title="Upload an image">＋</button>
+        <textarea id="input" rows="1" placeholder="Message"></textarea>
+        <button class="cb gif" id="gifBtn" title="GIFs">GIF</button>
+        <button class="cb" id="emoBtn" title="Emoji">😊</button>
+      </div>
+      <div class="locked hidden" id="locked">🔒 Only admins can post in this room.</div>
+      <div class="hintline" id="hintline"></div>
+      <input type="file" id="file" accept="image/*" class="hidden">
+      <input type="file" id="gifFile" accept="image/gif,image/webp,image/*" class="hidden">
+      <div class="pop hidden" id="emoPop"><div class="emojis" id="emoGrid"></div></div>
+      <div class="pop gifs hidden" id="gifPop">
+        <div style="display:flex;justify-content:space-between;align-items:center"><b>Group GIF library</b><button class="btn small" id="gifUp">Upload GIF</button></div>
+        <div class="grid" id="gifGrid"></div>
+      </div>
+      <div class="pop ac hidden" id="acPop"></div>
+    </div>
+  </main>
+  <aside class="rpanel" id="rpanel"></aside>
+</div>
+<div class="scrim" id="scrim"></div>
+<div id="updbar" class="updbar hidden"></div>
+<div id="layer"></div>

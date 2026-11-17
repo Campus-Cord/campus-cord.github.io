@@ -1,5 +1,5 @@
 rules_version = '2';
-// CampusCord security rules (v2: co-developers + DMs).
+// CampusCord security rules (v3: profiles, perks shop, edits, pins, announcement rooms).
 // Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -13,27 +13,31 @@ service cloud.firestore {
       return signedIn() && exists(cfgPath()) && notBanned()
         && exists(/databases/$(database)/documents/members/$(request.auth.uid));
     }
-    // Owner, or a member the owner made a co-developer.
+    // Owner, or a member the owner made a developer.
     function isAdmin() { return isOwner() || (isMember() && request.auth.uid in cfg().get('admins', [])); }
     function ownsNew() { return request.resource.data.uid == request.auth.uid; }
     function ownsOld() { return resource.data.uid == request.auth.uid; }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
 
-    // Server settings. The first person to open the app becomes the owner.
+    // ---------------- server settings
     match /config/main {
       allow read: if signedIn();
       allow create: if signedIn() && !exists(cfgPath())
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.banned is list;
-      // Owner can change anything except who the owner is.
       allow update: if isOwner() && request.resource.data.ownerUid == resource.data.ownerUid;
-      // Co-developers can only kick/unban, and can never kick the owner or another co-developer.
+      // Developers can only kick/unban, never the owner or another developer.
       allow update: if isAdmin() && !isOwner()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned', 'bannedNames'])
+        && changed().hasOnly(['banned', 'bannedNames'])
         && !(resource.data.ownerUid in request.resource.data.banned)
         && !request.resource.data.banned.hasAny(resource.data.get('admins', []));
     }
+    // Shop prices + Stripe payment links: everyone reads, only the owner edits.
+    match /config/shop {
+      allow read: if signedIn();
+      allow write: if isOwner();
+    }
 
-    // Invite code: only the owner and co-developers can see or change it.
     match /secret/invite {
       allow read, update: if isAdmin();
       allow create: if signedIn()
@@ -41,26 +45,55 @@ service cloud.firestore {
         && (!exists(/databases/$(database)/documents/secret/invite) || isOwner());
     }
 
-    // People. To join you need the right invite code (the owner doesn't).
+    // ---------------- people
     match /members/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && uid == request.auth.uid && notBanned()
         && request.resource.data.nick is string && request.resource.data.nick.size() <= 24
         && (isOwner() || request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code);
       allow update: if signedIn() && uid == request.auth.uid && notBanned()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nick', 'color', 'lastSeen']);
+        && changed().hasOnly(['nick', 'color', 'lastSeen'])
+        && request.resource.data.nick.size() <= 24;
       allow delete: if isOwner()
         || (isAdmin() && uid != cfg().ownerUid && !(uid in cfg().get('admins', [])));
     }
+    // Bio, status, name effect, banner. Each person edits only their own.
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isMember() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['bio', 'status', 'customStatus', 'nameFx', 'banner'])
+        && request.resource.data.get('bio', '').size() <= 190
+        && request.resource.data.get('customStatus', '').size() <= 60;
+      allow delete: if isOwner();
+    }
+    // Purchased perks. Only the owner can grant or remove them.
+    match /perks/{uid} {
+      allow read: if signedIn();
+      allow write: if isOwner();
+    }
+    // Shop orders. Buyers create their own pending order; only the owner approves.
+    match /orders/{orderId} {
+      allow read: if isOwner() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isMember() && ownsNew() && request.resource.data.status == 'pending';
+      allow update: if isOwner();
+      allow delete: if isOwner() || (signedIn() && ownsOld() && resource.data.status == 'pending');
+    }
 
-    // Rooms: owner and co-developers manage them.
+    // ---------------- rooms
     match /rooms/{roomId} {
+      function roomOpen() { return !get(/databases/$(database)/documents/rooms/$(roomId)).data.get('readonly', false); }
       allow read: if isMember();
       allow write: if isAdmin();
 
       match /msgs/{msgId} {
         allow read: if isMember();
-        allow create: if isMember() && ownsNew() && request.resource.data.text.size() <= 4000;
+        allow create: if isMember() && ownsNew() && request.resource.data.text.size() <= 4000
+          && (roomOpen() || isAdmin());
+        // Authors edit their own text; admins pin.
+        allow update: if isMember() && ownsOld()
+          && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])
+          && request.resource.data.text.size() <= 4000;
+        allow update: if isAdmin() && changed().hasOnly(['pinned', 'pinnedBy']);
         allow delete: if isAdmin() || (isMember() && ownsOld());
       }
       match /reacts/{reactId} {
@@ -74,8 +107,7 @@ service cloud.firestore {
       }
     }
 
-    // Direct messages: only the two people in a DM can read or write it.
-    // A DM's id is the two user ids, sorted, joined with "_".
+    // ---------------- direct messages (only the two people in it)
     match /dms/{dmId} {
       function inDm() { return isMember() && request.auth.uid in dmId.split('_'); }
       allow get: if inDm();
@@ -85,6 +117,10 @@ service cloud.firestore {
       match /msgs/{msgId} {
         allow read: if inDm();
         allow create: if inDm() && ownsNew() && request.resource.data.text.size() <= 4000;
+        allow update: if inDm() && ownsOld()
+          && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])
+          && request.resource.data.text.size() <= 4000;
+        allow update: if inDm() && changed().hasOnly(['pinned', 'pinnedBy']);
         allow delete: if inDm() && ownsOld();
       }
       match /reacts/{reactId} {
@@ -98,7 +134,7 @@ service cloud.firestore {
       }
     }
 
-    // Unread markers per room.
+    // Unread / mention markers per room.
     match /meta/{roomId} {
       allow read: if isMember();
       allow write: if isMember();
