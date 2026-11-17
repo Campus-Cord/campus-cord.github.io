@@ -2,7 +2,7 @@
 
 A Discord-style group chat for friends, running on Firebase.
 
-**Live app:** https://massimotestaiuti112-a11y.github.io/campuscord/
+**Live app:** https://campus-cord.github.io/
 
 - `index.html` is the whole app (rooms, DMs, images, GIFs, reactions, typing, online status, admin and developer roles).
 - `firestore.rules` holds the Firestore security rules. Paste them into Firebase console → Firestore → Rules → Publish whenever they change.
