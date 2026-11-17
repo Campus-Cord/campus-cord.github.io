@@ -8,7 +8,7 @@ service cloud.firestore {
     function cfgPath() { return /databases/$(database)/documents/config/main; }
     function cfg() { return get(cfgPath()).data; }
     function isOwner() { return signedIn() && exists(cfgPath()) && cfg().ownerUid == request.auth.uid; }
-    function notBanned() { return !(request.auth.uid in cfg().banned); }
+    function notBanned() { return !(request.auth.uid in cfg().get('banned', [])); }
     function isMember() {
       return signedIn() && exists(cfgPath()) && notBanned()
         && exists(/databases/$(database)/documents/members/$(request.auth.uid));
@@ -24,13 +24,13 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn() && !exists(cfgPath())
         && request.resource.data.ownerUid == request.auth.uid
-        && request.resource.data.banned is list;
+        && request.resource.data.get('banned', []) is list;
       allow update: if isOwner() && request.resource.data.ownerUid == resource.data.ownerUid;
       // Developers can only kick/unban, never the owner or another developer.
       allow update: if isAdmin() && !isOwner()
         && changed().hasOnly(['banned', 'bannedNames'])
-        && !(resource.data.ownerUid in request.resource.data.banned)
-        && !request.resource.data.banned.hasAny(resource.data.get('admins', []));
+        && !(resource.data.ownerUid in request.resource.data.get('banned', []))
+        && !request.resource.data.get('banned', []).hasAny(resource.data.get('admins', []));
     }
     // Shop prices + Stripe payment links: everyone reads, only the owner edits.
     match /config/shop {
