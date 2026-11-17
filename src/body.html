@@ -39,36 +39,38 @@
   <aside class="side">
     <div class="hdr" id="sideHdr"></div>
     <div class="chlist" id="chList"></div>
+    <div id="promo"></div>
     <div class="mebar">
       <div class="who" id="meWho" title="Your profile"></div>
-      <button class="ib" id="meSettings" title="Settings">⚙️</button>
+      <button class="ib" id="meSettings" title="User settings" data-ic="settings"></button>
     </div>
   </aside>
   <main class="main">
     <div class="top">
-      <button class="ib burger" id="burger" title="Menu">☰</button>
+      <button class="ib burger" id="burger" title="Menu" data-ic="menu"></button>
       <span class="hash" id="topIcon">#</span><span class="ttl" id="topTitle"></span><span class="desc" id="topDesc"></span>
       <span class="status" id="connStatus"></span>
-      <button class="ib" id="btnPins" title="Pinned messages">📌</button>
-      <button class="ib" id="btnMembers" title="Member list">👥</button>
-      <input class="search" id="search" placeholder="Search" autocomplete="off">
+      <button class="shopbtn" id="btnShop" title="Campus+ Shop" data-ic="sparkles"><span>Shop</span></button>
+      <button class="ib" id="btnPins" title="Pinned messages" data-ic="pin"></button>
+      <button class="ib" id="btnMembers" title="Member list" data-ic="users"></button>
+      <label class="searchwrap" data-ic="search"><input class="search" id="search" placeholder="Search" autocomplete="off"></label>
     </div>
     <div class="msgs" id="msgs"></div>
-    <button class="jump hidden" id="jump">New messages ↓</button>
+    <button class="jump hidden" id="jump" data-ic="arrowdown">New messages</button>
     <div class="typing" id="typing"></div>
     <div class="composer" id="composer">
       <div id="cbars"></div>
       <div class="cbox" id="cbox">
-        <button class="cb" id="attBtn" title="Upload an image">＋</button>
+        <button class="cb" id="attBtn" title="Upload an image" data-ic="pluscircle"></button>
         <textarea id="input" rows="1" placeholder="Message"></textarea>
         <button class="cb gif" id="gifBtn" title="GIFs">GIF</button>
-        <button class="cb" id="emoBtn" title="Emoji">😊</button>
+        <button class="cb" id="emoBtn" title="Emoji" data-ic="smile"></button>
       </div>
-      <div class="locked hidden" id="locked">🔒 Only admins can post in this room.</div>
+      <div class="locked hidden" id="locked" data-ic="lock">Only admins can post in this announcement room.</div>
       <div class="hintline" id="hintline"></div>
       <input type="file" id="file" accept="image/*" class="hidden">
       <input type="file" id="gifFile" accept="image/gif,image/webp,image/*" class="hidden">
-      <div class="pop hidden" id="emoPop"><div class="emojis" id="emoGrid"></div></div>
+      <div class="pop hidden" id="emoPop"><div class="emotabs" id="emoTabs"></div><div class="emojis" id="emoGrid"></div></div>
       <div class="pop gifs hidden" id="gifPop">
         <div style="display:flex;justify-content:space-between;align-items:center"><b>Group GIF library</b><button class="btn small" id="gifUp">Upload GIF</button></div>
         <div class="grid" id="gifGrid"></div>

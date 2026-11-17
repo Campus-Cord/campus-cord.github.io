@@ -28,19 +28,69 @@ const THEMES = [
   {id:"sakura", name:"Sakura", c:["#f7dce6","#fdeef3","#fff7fa"], premium:true},
 ];
 const ACCENTS = ["#7c5cff","#5865f2","#3fb8ff","#22d3c5","#3ecf7a","#f5b83d","#ff9447","#f0565c","#ff7ac6"];
-const NAME_FX = [{id:"rainbow",name:"Rainbow"},{id:"gold",name:"Gold"},{id:"fire",name:"Fire"},{id:"ocean",name:"Ocean"},{id:"neon",name:"Neon"}];
+const NAME_FX = [{id:"rainbow",name:"Rainbow"},{id:"gold",name:"Gold"},{id:"fire",name:"Fire"},{id:"ocean",name:"Ocean"},{id:"neon",name:"Neon"},{id:"prism",name:"Prism",ex:true},{id:"aurora",name:"Aurora",ex:true}];
 const STATUSES = [{id:"online",name:"Online",d:""},{id:"idle",name:"Idle",d:"Shows a moon"},{id:"dnd",name:"Do Not Disturb",d:"Mutes your notifications"},{id:"invisible",name:"Invisible",d:"Look offline to others"}];
+
+// ---------------------------------------------------------------- icons (Lucide, MIT)
+const ICONS = {
+  message:'<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  hash:'<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>',
+  megaphone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  sparkles:'<path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/><path d="M5 3v4M3 5h4M19 17v4M17 19h4"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  pin:'<path d="M12 17v5"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  user:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  search:'<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  plus:'<path d="M5 12h14M12 5v14"/>',
+  pluscircle:'<circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/>',
+  smile:'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>',
+  smileplus:'<path d="M22 11v1a10 10 0 1 1-9-10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01M16 5h6M19 2v6"/>',
+  reply:'<path d="M9 14 4 9l5-5"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>',
+  pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
+  copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  trash:'<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  crown:'<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zM5 20h14"/>',
+  code:'<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
+  gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6M2 9h20"/>',
+  chevron:'<path d="m6 9 6 6 6-6"/>',
+  chevronup:'<path d="m18 15-6-6-6 6"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  bag:'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>',
+  lock:'<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  image:'<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.83-.44-1.12-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/>',
+  wand:'<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72ZM14 7l3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>',
+  zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  arrowdown:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  receipt:'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 17.5v-11"/>',
+  grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  keyboard:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>',
+  alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/>',
+  camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  star:'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
+  hourglass:'<path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/>',
+};
+function ic(name, cls){ const s = document.createElement("span"); s.className = "i" + (cls ? " " + cls : ""); s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[name] || "") + "</svg>"; return s; }
 
 // Perk shop. Prices/links are set by the owner in Admin → Shop (stored in config/shop).
 const CATALOG = [
-  {id:"plus", icon:"✦", name:"Campus+", price:"$2.99 / month", months:1, hero:true,
-   desc:"Every perk below, plus the Campus+ badge.", list:["Animated name effects","All premium themes","Custom profile banner","✦ Campus+ badge","Bigger uploads (GIFs up to 900 KB)"]},
-  {id:"name_fx", icon:"🌈", name:"Animated Name", price:"$1.99", desc:"Make your name shimmer in Rainbow, Gold, Fire, Ocean or Neon everywhere."},
-  {id:"themes", icon:"🎨", name:"Theme Pack", price:"$0.99", desc:"Unlock Midnight, Ocean, Sunset, Forest and Sakura themes."},
-  {id:"banner", icon:"🖼️", name:"Profile Banner", price:"$0.99", desc:"Pick a custom banner color for your profile card."},
-  {id:"supporter", icon:"💎", name:"Supporter Badge", price:"$0.99", desc:"A 💎 next to your name to show you back CampusCord."},
+  {id:"plus", icon:"sparkles", name:"Campus+", price:"$2.99 / month", months:1, tier:1,
+   desc:"The essentials, all in one.", list:["PLUS rank badge next to your name","5 animated name effects","All 5 premium themes","Custom profile banner","Bigger uploads (GIFs up to 900 KB)"]},
+  {id:"plusplus", icon:"zap", name:"Campus++", price:"$5.99 / month", months:1, tier:2,
+   desc:"Everything in Campus+, turned all the way up.", list:["Everything in Campus+","Holographic PLUS+ rank badge","Exclusive Prism & Aurora name effects","Animated glowing avatar ring","Gradient profile banner","Listed in its own Campus++ section"]},
+  {id:"name_fx", icon:"wand", name:"Animated Name", price:"$1.99", desc:"Rainbow, Gold, Fire, Ocean or Neon — your name shimmers everywhere."},
+  {id:"themes", icon:"palette", name:"Theme Pack", price:"$0.99", desc:"Unlock Midnight, Ocean, Sunset, Forest and Sakura."},
+  {id:"banner", icon:"image", name:"Profile Banner", price:"$0.99", desc:"Pick a custom banner color for your profile card."},
+  {id:"supporter", icon:"gem", name:"Supporter Badge", price:"$0.99", desc:"A gem badge next to your name to show you back CampusCord."},
 ];
 const PLUS_INCLUDES = ["name_fx","themes","banner","big_uploads","supporter"];
+const PLUSPLUS_INCLUDES = [...PLUS_INCLUDES, "plus", "fx_exclusive", "ring", "banner_gradient"];
 
 const SLASH = [
   {c:"shrug", a:"[message]", d:"Appends ¯\\_(ツ)_/¯"},
@@ -128,10 +178,14 @@ function hasPerk(uid, key){
   if (isOwnerUid(uid)) return true;
   const items = (S.perks[uid] && S.perks[uid].items) || {};
   if (perkActive(items[key])) return true;
-  if (key !== "plus" && PLUS_INCLUDES.includes(key) && perkActive(items.plus)) return true;
+  if (PLUS_INCLUDES.includes(key) && perkActive(items.plus)) return true;
+  if (PLUSPLUS_INCLUDES.includes(key) && perkActive(items.plusplus)) return true;
   return false;
 }
-function hasPlus(uid){ return isOwnerUid(uid) || perkActive(((S.perks[uid]||{}).items||{}).plus); }
+function hasPlus(uid){ return hasPerk(uid, "plus"); }
+// rank for display: "plusplus" | "plus" | "supporter" | null (the owner shows ADMIN instead)
+function rankOf(uid){ const items = ((S.perks[uid]||{}).items)||{};
+  if (perkActive(items.plusplus)) return "plusplus"; if (perkActive(items.plus)) return "plus"; if (perkActive(items.supporter)) return "supporter"; return null; }
 function statusOf(uid){
   const p = profile(uid), m = member(uid);
   if (uid === S.uid) return p.status === "invisible" ? "offline" : (p.status || "online");
@@ -139,23 +193,33 @@ function statusOf(uid){
   return p.status === "idle" || p.status === "dnd" ? p.status : "online";
 }
 const isOn = uid => statusOf(uid) !== "offline";
-function fxOf(uid){ if (!hasPerk(uid, "name_fx")) return null; const f = profile(uid).nameFx; if (f === "none") return null; return NAME_FX.find(x => x.id === f) ? f : (isOwnerUid(uid) ? "rainbow" : null); }
+function fxOf(uid){ if (!hasPerk(uid, "name_fx")) return null; const f = profile(uid).nameFx; if (f === "none") return null;
+  const fx = NAME_FX.find(x => x.id === f); if (fx && (!fx.ex || hasPerk(uid, "fx_exclusive"))) return f; return isOwnerUid(uid) ? "rainbow" : null; }
 function paintName(node, uid){ const fx = fxOf(uid); if (fx){ node.classList.add("fx","fx-"+fx); } else node.style.color = colorOf(uid); return node; }
 function avatar(uid, size, withDot){
-  const a = h("div",{class:"av" + (size ? " "+size : "")}, initials(nickOf(uid)));
+  const pic = profile(uid).avatar;
+  const a = h("div",{class:"av" + (size ? " "+size : "")}, pic ? null : initials(nickOf(uid)));
   a.style.background = colorOf(uid);
-  if (fxOf(uid)) a.classList.add("fxav");
-  if (withDot) a.appendChild(h("span",{class:"dot " + statusOf(uid)}));
+  if (pic){ a.style.backgroundImage = "url(" + JSON.stringify(pic) + ")"; a.classList.add("pic"); }
+  else a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))";
+  if (hasPerk(uid, "ring")) a.classList.add("ring");
+  if (withDot) a.appendChild(h("span",{class:"dot " + statusOf(uid), title:{online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(uid)]}));
   return a;
 }
+let CHIP_MINI = false;
+function chip(cls, iconName, text, title){ return h("span",{class:"tag " + cls + (CHIP_MINI ? " mini" : ""), title: title || null}, iconName ? ic(iconName) : null, text && !CHIP_MINI ? h("b",{text}) : null); }
+function miniTags(uid){ CHIP_MINI = true; try{ return roleTags(uid, true); } finally { CHIP_MINI = false; } }
 function roleTags(uid, compact){
   const out = [];
-  if (isOwnerUid(uid)) out.push(h("span",{class:"tag admin",text:"👑 ADMIN"}));
-  else if (isDev(uid)) out.push(h("span",{class:"tag dev",text:"💻 DEV"}));
-  if (!compact && hasPlus(uid) && !isOwnerUid(uid)) out.push(h("span",{class:"tag plus",text:"✦ PLUS"}));
+  if (isOwnerUid(uid)) out.push(chip("admin","crown","ADMIN","Server admin"));
+  else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
+  const r = rankOf(uid);
+  if (r === "plusplus") out.push(chip("pp","zap","PLUS+","Campus++"));
+  else if (r === "plus") out.push(chip("plus","sparkles","PLUS","Campus+"));
+  else if (r === "supporter") out.push(chip("sup","gem", compact ? "" : "SUPPORTER","Supporter"));
   return out;
 }
-function gem(uid){ if (isOwnerUid(uid)) return null; if (hasPlus(uid)) return h("span",{class:"gem",title:"Campus+",text:"✦"}); if (hasPerk(uid,"supporter")) return h("span",{class:"gem",title:"Supporter",text:"💎"}); return null; }
+function gem(){ return null; }
 
 // render scheduler
 const dirty = new Set(); let raf = 0;
@@ -166,6 +230,7 @@ function flush(){ raf = 0; if (S.routed !== "app"){ dirty.clear(); return; } con
 // ---------------------------------------------------------------- boot
 function boot(){
   applyPrefs();
+  document.querySelectorAll("[data-ic]").forEach(b => b.prepend(ic(b.dataset.ic)));
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "PASTE_HERE"){ gateMsg("Not configured", "Paste your Firebase config at the top of the script."); return; }
   try{ const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
   catch(e){ gateMsg("Firebase config problem", "Double-check the Firebase config in this file. (" + errMsg(e) + ")"); return; }
@@ -314,7 +379,7 @@ function roomUnread(r){ const m = S.meta[r.id]; return !(S.kind === "room" && S.
 function renderRail(){
   const r = $("rail"); r.innerHTML = "";
   const dmU = unreadDMs().length;
-  const home = h("button",{class:"ri" + (S.mode === "dms" ? " on" : ""), title:"Direct messages", onclick:() => { S.mode = "dms"; need("rail","side"); }}, "💬");
+  const home = h("button",{class:"ri" + (S.mode === "dms" ? " on" : ""), title:"Direct messages", onclick:() => { S.mode = "dms"; need("rail","side"); }}, ic("message"));
   if (dmU) home.appendChild(h("span",{class:"bdg",text:String(dmU)}));
   r.appendChild(home);
   r.appendChild(h("div",{class:"sep"}));
@@ -323,22 +388,22 @@ function renderRail(){
   const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0); if (mc) srv.appendChild(h("span",{class:"bdg",text:String(mc)}));
   r.appendChild(srv);
   r.appendChild(h("div",{class:"sp"}));
-  r.appendChild(h("button",{class:"ri green", title:"Campus+ shop", onclick:() => openSettings("shop")}, "✦"));
-  if (isAdmin()){ const ab = h("button",{class:"ri", title:"Server settings", onclick:() => openAdmin()}, "🛠️");
+  r.appendChild(h("button",{class:"ri shopri", title:"Campus+ Shop", onclick:() => openShop()}, ic("bag")));
+  if (isAdmin()){ const ab = h("button",{class:"ri", title:"Server settings", onclick:() => openAdmin()}, ic("shield"));
     const pend = isOwner() ? S.orders.filter(o => o.status === "pending").length : 0; if (pend) ab.appendChild(h("span",{class:"bdg",text:String(pend)})); r.appendChild(ab); }
 }
 function renderSide(){
   const hdr = $("sideHdr"), list = $("chList"); hdr.innerHTML = ""; list.innerHTML = "";
   if (S.mode === "dms"){
     hdr.onclick = null; hdr.style.cursor = "default";
-    hdr.append(h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, "＋"));
+    hdr.append(h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
     const f = h("input",{class:"dmsearch", placeholder:"Find a conversation", value:S.dmFilter||"", oninput:e => { S.dmFilter = e.target.value; renderDMList(box); }});
     list.appendChild(f); const box = h("div"); list.appendChild(box); renderDMList(box);
     return;
   }
   hdr.style.cursor = isAdmin() ? "pointer" : "default";
   hdr.onclick = () => { if (isAdmin()) openAdmin(); };
-  hdr.append(h("span",{class:"t",text:(S.config && S.config.serverName) || "CampusCord"}), ...roleTags(S.uid, true), isAdmin() ? h("span",{style:{color:"var(--muted)",fontSize:"12px"},text:"⚙"}) : null);
+  hdr.append(h("span",{class:"t",text:(S.config && S.config.serverName) || "CampusCord"}), ...roleTags(S.uid, true), isAdmin() ? h("span",{class:"hdrchev"}, ic("chevron")) : null);
   // group by category
   const cats = []; const byCat = {};
   S.rooms.forEach(r => { const c = r.category || "Text rooms"; if (!byCat[c]){ byCat[c] = []; cats.push(c); } byCat[c].push(r); });
@@ -346,15 +411,15 @@ function renderSide(){
   cats.forEach(c => {
     const closed = !!prefs.collapsed[c];
     const head = h("div",{class:"cat" + (closed ? " closed" : ""), onclick:() => { prefs.collapsed[c] = !closed; savePrefs(); need("side"); }},
-      h("span",{class:"ar",text:"▼"}), h("span",{class:"t",text:c}),
-      isAdmin() ? h("button",{title:"Create room", onclick:e => { e.stopPropagation(); roomModal(null, c); }}, "+") : null);
+      h("span",{class:"ar"}, ic("chevron")), h("span",{class:"t",text:c}),
+      isAdmin() ? h("button",{title:"Create room", onclick:e => { e.stopPropagation(); roomModal(null, c); }}, ic("plus")) : null);
     list.appendChild(head);
     byCat[c].forEach(r => {
       const on = S.kind === "room" && S.cur === r.id; const un = roomUnread(r); const mc = S.mentions[r.id] || 0;
       if (closed && !on && !un && !mc) return;
       const typ = !on && typersIn("room", r.id).length;
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : ""), onclick:() => openChat("room", r.id)},
-        h("span",{class:"ic",text: r.readonly ? "📣" : "#"}), h("span",{class:"nm",text:r.name}),
+        h("span",{class:"ic"}, ic(r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
         typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : null));
     });
   });
@@ -376,12 +441,24 @@ function renderDMList(box){
 }
 function renderMe(){
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
+  renderPromo();
   const st = STATUSES.find(s => s.id === (profile(S.uid).status || "online"));
   w.append(avatar(S.uid, "sm", true), h("div",{style:{minWidth:0}}, paintName(h("div",{class:"nick",text:nickOf(S.uid)}), S.uid),
     h("div",{class:"st",text: profile(S.uid).customStatus || (st ? st.name : "Online")})));
   w.onclick = e => openProfile(S.uid, w, true);
 }
 $("meSettings").onclick = () => openSettings("account");
+$("btnShop").onclick = () => openShop();
+function renderPromo(){
+  const p = $("promo"); p.innerHTML = "";
+  if (rankOf(S.uid) === "plusplus" || isOwner() || (prefs.promoHiddenAt && Date.now() - prefs.promoHiddenAt < 7*864e5)) return;
+  const has = hasPlus(S.uid);
+  p.appendChild(h("div",{class:"promo", onclick:() => openShop()},
+    h("button",{class:"px", title:"Hide for a week", onclick:e => { e.stopPropagation(); prefs.promoHiddenAt = Date.now(); savePrefs(); renderPromo(); }}, ic("x")),
+    h("div",{class:"pt"}, ic(has ? "zap" : "sparkles"), h("b",{text: has ? "Go Campus++" : "Get Campus+"})),
+    h("div",{class:"pd",text: has ? "Holographic PLUS+ badge, exclusive name effects and a glowing avatar ring." : "Rank badge, animated name, premium themes and more."}),
+    h("div",{class:"pb"}, "Open shop ", ic("chevron","rot"))));
+}
 
 // ---------------------------------------------------------------- chats
 const base = () => [S.kind === "dm" ? "dms" : "rooms", S.cur];
@@ -443,10 +520,11 @@ function subscribeMsgs(first){
 
 function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
+  icon.innerHTML = "";
   if (S.kind === "dm" && S.cur){
-    const o = dmOther({id:S.cur}); icon.textContent = "@"; t.textContent = nickOf(o);
+    const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
     const st = statusOf(o); d.textContent = profile(o).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st]);
-  } else { const r = curRoom(); icon.textContent = r && r.readonly ? "📣" : "#"; t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
+  } else { const r = curRoom(); icon.appendChild(ic(r && r.readonly ? "megaphone" : "hash")); t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
   $("btnMembers").classList.toggle("on", S.rpanel === "members");
   $("btnPins").classList.toggle("on", S.rpanel === "pins");
   updateTitle();
@@ -516,7 +594,7 @@ function welcomeBlock(){
   const w = h("div",{class:"welcome"});
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); const big = avatar(o, "xl"); big.style.marginBottom = "12px"; w.append(big, h("h2",null, nickOf(o)),
       h("p",null, S.roomLoaded ? "This is the start of your private messages with " + nickOf(o) + ". Only the two of you can see them." : "Loading messages…")); }
-  else { const r = curRoom(); w.append(h("div",{class:"big",text: r && r.readonly ? "📣" : "#"}), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
+  else { const r = curRoom(); w.append(h("div",{class:"big"}, ic(r && r.readonly ? "megaphone" : "hash")), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
       h("p",null, !S.roomLoaded ? "Loading messages…" : (r && r.topic) ? r.topic : "This is the start of the #" + (r ? r.name : "") + " room.")); }
   return w;
 }
@@ -544,19 +622,20 @@ function messageEl(m, first, reacts){
   if (reacts){ const wrap = h("div",{class:"reacts"});
     Object.keys(reacts).forEach(e => { const arr = reacts[e]; const mine = arr.some(x => x.uid === S.uid);
       wrap.appendChild(h("button",{class:"rc" + (mine ? " mine" : ""), title:arr.map(x => nickOf(x.uid)).join(", "), onclick:() => toggleReact(m, e)}, e + " ", h("b",{text:String(arr.length)}))); });
-    wrap.appendChild(h("button",{class:"rc", title:"Add reaction", onclick:ev => quickReact(ev, m)}, "＋"));
+    wrap.appendChild(h("button",{class:"rc add", title:"Add reaction", onclick:ev => quickReact(ev, m)}, ic("smileplus")));
     body.appendChild(wrap); }
   row.appendChild(body);
-  if (m.pinned) row.appendChild(h("span",{class:"pinmark",text:"📌"}));
+  if (m.pinned) row.appendChild(h("span",{class:"pinmark",title:"Pinned"}, ic("pin")));
   const mine = m.uid === S.uid;
   const tools = h("div",{class:"tools"},
     QUICK.slice(0,3).map(e => h("button",{title:"React " + e, onclick:() => toggleReact(m, e)}, e)),
-    h("button",{title:"Add reaction", onclick:ev => quickReact(ev, m)}, "😀"),
-    canPost() ? h("button",{title:"Reply", onclick:() => startReply(m)}, "↩️") : null,
-    mine && m.text != null && !m.me ? h("button",{title:"Edit", onclick:() => { S.editing = m.id; S.editDraft = null; S.editCaret = null; need("msgs"); }}, "✏️") : null,
-    canPin() ? h("button",{title: m.pinned ? "Unpin" : "Pin", onclick:() => togglePin(m)}, m.pinned ? "📍" : "📌") : null,
-    m.text ? h("button",{title:"Copy text", onclick:() => copy(m.text)}, "📋") : null,
-    (mine || (isAdmin() && S.kind === "room")) ? h("button",{title:"Delete", onclick:e => { if (e.shiftKey) deleteMsg(m); else confirmBox("Delete message?", "This can't be undone. (Tip: hold Shift to skip this.)", "Delete", () => deleteMsg(m)); }}, "🗑️") : null);
+    h("i",{class:"tsep"}),
+    h("button",{title:"Add reaction", onclick:ev => quickReact(ev, m)}, ic("smileplus")),
+    canPost() ? h("button",{title:"Reply", onclick:() => startReply(m)}, ic("reply")) : null,
+    mine && m.text != null && !m.me ? h("button",{title:"Edit", onclick:() => { S.editing = m.id; S.editDraft = null; S.editCaret = null; need("msgs"); }}, ic("pencil")) : null,
+    canPin() ? h("button",{title: m.pinned ? "Unpin" : "Pin", class: m.pinned ? "on" : null, onclick:() => togglePin(m)}, ic("pin")) : null,
+    m.text ? h("button",{title:"Copy text", onclick:() => copy(m.text)}, ic("copy")) : null,
+    (mine || (isAdmin() && S.kind === "room")) ? h("button",{title:"Delete", onclick:e => { if (e.shiftKey) deleteMsg(m); else confirmBox("Delete message?", "This can't be undone. (Tip: hold Shift to skip this.)", "Delete", () => deleteMsg(m)); }, class:"danger"}, ic("trash")) : null);
   row.appendChild(tools);
   return row;
 }
@@ -579,6 +658,7 @@ function editBox(m){
 function lightbox(src){ const d = h("div",{class:"lightbox", onclick:() => d.remove()}, h("img",{src})); document.body.appendChild(d); }
 
 async function toggleReact(m, e){
+  pushRecent(e);
   const id = m.id + "__" + S.uid + "__" + eKey(e);
   const ref = doc(db, ...base(), "reacts", id);
   try{ if (S.reacts.some(x => x.id === id)) await deleteDoc(ref); else await setDoc(ref, {mid:m.id, uid:S.uid, e, ts:Date.now()}); }
@@ -587,7 +667,7 @@ async function toggleReact(m, e){
 function quickReact(ev, m){
   document.querySelectorAll(".quick").forEach(x => x.remove());
   const q = h("div",{class:"quick"}, QUICK.map(e => h("button",{onclick:() => { q.remove(); toggleReact(m, e); }}, e)),
-    h("button",{title:"More", onclick:() => { q.remove(); openEmoji(e2 => toggleReact(m, e2)); }}, "➕"));
+    h("button",{title:"More", onclick:() => { q.remove(); openEmoji(e2 => toggleReact(m, e2)); }}, ic("plus")));
   document.body.appendChild(q);
   const r = ev.currentTarget.getBoundingClientRect(); q.style.top = Math.max(8, r.top - 52) + "px"; q.style.left = Math.max(8, Math.min(window.innerWidth - q.offsetWidth - 8, r.right - q.offsetWidth)) + "px";
   setTimeout(() => document.addEventListener("click", function hh(e){ if (!q.contains(e.target)){ q.remove(); document.removeEventListener("click", hh); } }), 0);
@@ -620,10 +700,10 @@ function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
   if (S.rpanel === null && prefs.showMembers === false || !S.rpanel){ p.classList.add("hidden"); return; }
   p.classList.remove("hidden");
-  const close = h("button",{class:"ib",title:"Close",onclick:() => { if (S.rpanel === "search"){ $("search").value = ""; S.searchQ = ""; } S.rpanel = S.rpanel === "members" ? null : (prefs.showMembers ? "members" : null); if (S.rpanel === null){ prefs.showMembers = false; savePrefs(); } need("rpanel","header"); }}, "✕");
+  const close = h("button",{class:"ib",title:"Close",onclick:() => { if (S.rpanel === "search"){ $("search").value = ""; S.searchQ = ""; } S.rpanel = S.rpanel === "members" ? null : (prefs.showMembers ? "members" : null); if (S.rpanel === null){ prefs.showMembers = false; savePrefs(); } need("rpanel","header"); }}, ic("x"));
   if (S.rpanel === "pins"){
     p.classList.add("wide");
-    p.append(h("div",{class:"rh"}, h("span",{class:"t",text:"📌 Pinned messages"}), close));
+    p.append(h("div",{class:"rh"}, h("span",{class:"t"}, ic("pin"), " Pinned messages"), close));
     const b = h("div",{class:"rb"}); p.appendChild(b);
     if (S.pins === null){ b.appendChild(h("div",{class:"empty-note",text:"Loading…"})); return; }
     if (!S.pins.length){ b.appendChild(h("div",{class:"empty-note",text: canPin() ? "Nothing pinned yet. Hover a message and click 📌 to pin it." : "Nothing pinned yet."})); return; }
@@ -646,8 +726,10 @@ function renderRPanel(){
   let uids = Object.keys(S.members).filter(u => !isBanned(u));
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); uids = [S.uid, o].filter(u => member(u)); }
   const sortN = (a,b) => nickOf(a).localeCompare(nickOf(b));
+  const special = u => isOwnerUid(u) || (isDev(u) && isOn(u)) || (rankOf(u) === "plusplus" && isOn(u));
   const groups = [["Admin", uids.filter(isOwnerUid)], ["Developers", uids.filter(u => !isOwnerUid(u) && isDev(u) && isOn(u))],
-    ["Online", uids.filter(u => !isOwnerUid(u) && !(isDev(u)) && isOn(u))], ["Offline", uids.filter(u => !isOwnerUid(u) && !isOn(u) && !(isDev(u) && isOn(u)))]];
+    ["Campus++", uids.filter(u => !isOwnerUid(u) && !isDev(u) && rankOf(u) === "plusplus" && isOn(u))],
+    ["Online", uids.filter(u => !special(u) && isOn(u))], ["Offline", uids.filter(u => !isOwnerUid(u) && !isOn(u))]];
   groups.forEach(([label, arr]) => {
     if (!arr.length) return;
     b.appendChild(h("div",{class:"cat",text: label + " — " + arr.length}));
@@ -655,8 +737,8 @@ function renderRPanel(){
       const cs = profile(u).customStatus; const typing = typersIn(S.kind, S.cur).includes(u);
       const row = h("div",{class:"mrow" + (isOn(u) ? "" : " off"), onclick:e => openProfile(u, row)},
         avatar(u, "sm", true),
-        h("div",{class:"info"}, h("div",{class:"nm"}, paintName(h("span",{text:nickOf(u)}), u), " ", gem(u)),
-          typing ? h("div",{class:"sub",text:"typing…"}) : cs ? h("div",{class:"sub",text:cs}) : isOwnerUid(u) ? h("div",{class:"sub",text:"👑 Admin"}) : isDev(u) ? h("div",{class:"sub",text:"💻 Developer"}) : null));
+        h("div",{class:"info"}, h("div",{class:"nm"}, paintName(h("span",{text:nickOf(u)}), u), ...miniTags(u)),
+          typing ? h("div",{class:"sub",text:"typing…"}) : cs ? h("div",{class:"sub",text:cs}) : null));
       b.appendChild(row);
     });
   });
@@ -675,7 +757,7 @@ function openProfile(uid, anchor, self){
   const bannerColor = hasPerk(uid, "banner") && p.banner ? p.banner : colorOf(uid);
   const big = avatar(uid, "xl", true);
   const card = h("div",{class:"profile", "data-layer":"profile"},
-    h("div",{class:"banner", style:{background: fxOf(uid) && !p.banner ? "linear-gradient(135deg,#ffd166,#ff7ac6,#a78bfa,#3fb8ff)" : bannerColor}}),
+    h("div",{class:"banner", style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
     h("div",{class:"pav"}, big),
     h("div",{class:"pb"},
       h("div",{class:"pname"}, paintName(h("span",{text:nickOf(uid)}), uid), gem(uid)),
@@ -684,9 +766,9 @@ function openProfile(uid, anchor, self){
       p.bio ? h("div",{class:"sect"}, h("h4",{text:"About me"}), h("div",{text:p.bio})) : null,
       h("div",{class:"sect"}, h("h4",{text:"Member since"}), h("div",{text: member(uid).joinedAt ? new Date(member(uid).joinedAt).toLocaleDateString([], {month:"long", day:"numeric", year:"numeric"}) : "—"})),
       h("div",{class:"acts"},
-        uid === S.uid ? h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openSettings("profile"); }}, "Edit profile") : h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openDM(uid); }}, "💬 Message"),
+        uid === S.uid ? h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openSettings("profile"); }}, "Edit profile") : h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openDM(uid); }}, ic("message"), " Message"),
         uid === S.uid ? statusPicker() : null,
-        isOwner() && uid !== S.uid ? h("button",{class:"btn small ghost", onclick:() => { closeLayer("profile"); isDev(uid) ? confirmBox("Remove " + nickOf(uid) + " as developer?", "They'll go back to being a regular member.", "Remove", () => setDev(uid, false)) : confirmBox("Make " + nickOf(uid) + " a developer?", "Developers can manage rooms, delete messages, pin, kick regular members, and see the invite code. Only you can add or remove developers.", "Make developer", () => setDev(uid, true), true); }}, isDev(uid) ? "Remove dev" : "💻 Make dev") : null,
+        isOwner() && uid !== S.uid ? h("button",{class:"btn small ghost", onclick:() => { closeLayer("profile"); isDev(uid) ? confirmBox("Remove " + nickOf(uid) + " as developer?", "They'll go back to being a regular member.", "Remove", () => setDev(uid, false)) : confirmBox("Make " + nickOf(uid) + " a developer?", "Developers can manage rooms, delete messages, pin, kick regular members, and see the invite code. Only you can add or remove developers.", "Make developer", () => setDev(uid, true), true); }}, isDev(uid) ? "Remove dev" : "Make developer") : null,
         isAdmin() && uid !== S.uid && !isOwnerUid(uid) && !(isDev(uid) && !isOwner()) ? h("button",{class:"btn small danger", onclick:() => { closeLayer("profile"); confirmBox("Kick " + nickOf(uid) + "?", "They'll be locked out right away and can't rejoin unless unbanned.", "Kick", () => kick(uid)); }}, "Kick") : null)));
   document.body.appendChild(card);
   const r = anchor.getBoundingClientRect();
@@ -731,8 +813,8 @@ function renderComposer(){
   const bars = $("cbars"); bars.innerHTML = "";
   const ok = canPost();
   $("cbox").classList.toggle("hidden", !ok); $("locked").classList.toggle("hidden", ok);
-  if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, "✕")));
-  if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"btn ghost", onclick:() => setPending(null)}, "✕")));
+  if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
+  if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"ib", title:"Remove", onclick:() => setPending(null)}, ic("x"))));
   const r = curRoom();
   input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : "Message #" + (r ? r.name : "");
   $("hintline").textContent = "";
@@ -801,6 +883,12 @@ function compress(file, maxDim, q){
     c.width = Math.round(img.width*s); c.height = Math.round(img.height*s); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
     res(c.toDataURL("image/jpeg", q)); }; img.onerror = rej; img.src = URL.createObjectURL(file); });
 }
+function squareAvatar(file){
+  return new Promise((res, rej) => { const img = new Image(); img.onload = () => {
+    const size = 192, c = document.createElement("canvas"); c.width = c.height = size; const s = Math.min(img.width, img.height);
+    c.getContext("2d").drawImage(img, (img.width - s)/2, (img.height - s)/2, s, s, 0, 0, size, size);
+    res(c.toDataURL("image/jpeg", 0.82)); }; img.onerror = () => rej(new Error("not an image")); img.src = URL.createObjectURL(file); });
+}
 function readDataURL(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
 async function imageToData(file){
   const max = hasPerk(S.uid, "big_uploads") ? 900 : 700;
@@ -860,10 +948,31 @@ async function send(extra){
 }
 
 // ---------------------------------------------------------------- emoji + gifs
-let emoCb = null;
-function buildEmojiGrid(){ const g = $("emoGrid"); if (g.children.length) return; EMOJIS.forEach(e => g.appendChild(h("button",{onclick:() => { const cb = emoCb; closePops(); if (cb) cb(e); else insertAt(e); }}, e))); }
+let emoCb = null, emoCat = null;
+const EMOJI_CATS = [
+  {id:"recent", tab:"🕘", name:"Recently used"},
+  {id:"smileys", tab:"😀", name:"Smileys", list:"😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 🤩 😘 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🫡 🤐 🤨 😐 😑 😶 🫠 😏 😒 🙄 😬 😮‍💨 🤥 😌 😔 😪 🤤 😴 😷 🤒 🤕 🤢 🤮 🥵 🥶 🥴 😵 🤯 🤠 🥳 🥸 😎 🤓 🧐 😕 😟 🙁 😮 😯 😲 😳 🥺 🥹 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 👿 💀 ☠️ 💩 🤡 👻 👽 🤖 😺 😸 😹 😻 🙈 🙉 🙊"},
+  {id:"people", tab:"👋", name:"People", list:"👋 🤚 ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🫰 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 🤛 🤜 👏 🙌 🫶 👐 🤲 🤝 🙏 💪 🦾 🧠 👀 👁️ 👅 👄 🫦 🤷 🤦 🙋 💁 🙆 🙅 🙇 🧍 🏃 💃 🕺 👯 🧑‍💻 🧑‍🎓 🧑‍🍳 🥷 🦸 🧙"},
+  {id:"hearts", tab:"❤️", name:"Hearts & fx", list:"❤️ 🧡 💛 💚 💙 🩵 💜 🖤 🩶 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝 💯 💢 💥 💫 💦 💨 🕳️ 💬 💭 🗯️ 💤 🔥 ✨ ⭐ 🌟 ⚡ 🌈 ☄️ 🎆 🎇"},
+  {id:"nature", tab:"🐸", name:"Animals & nature", list:"🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🦆 🦅 🦉 🦇 🐺 🐴 🦄 🐝 🦋 🐌 🐞 🐢 🐍 🦖 🦕 🐙 🦑 🦀 🐠 🐬 🐳 🦈 🐊 🌸 🌹 🌻 🌷 🌵 🌴 🍀 🍁 🍄 🌍 🌙 ☀️ ⛅ 🌧️ ❄️ ☃️ 🌊"},
+  {id:"food", tab:"🍕", name:"Food & drink", list:"🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🫐 🍒 🍑 🥭 🍍 🥥 🥑 🌶️ 🌽 🥕 🥐 🥯 🍞 🧀 🥚 🍳 🥞 🧇 🥓 🍗 🍖 🌭 🍔 🍟 🍕 🥪 🌮 🌯 🥗 🍝 🍜 🍣 🍱 🥟 🍤 🍙 🍚 🍦 🍩 🍪 🎂 🍰 🧁 🍫 🍬 🍭 🍿 ☕ 🧋 🧃 🥤 🍵"},
+  {id:"activity", tab:"🎮", name:"Activities & objects", list:"⚽ 🏀 🏈 ⚾ 🎾 🏐 🏉 🎱 🏓 🏸 🏒 ⛳ 🏹 🛹 ⛸️ 🎿 🏆 🥇 🥈 🥉 🏅 🎖️ 🎮 🕹️ 🎲 ♟️ 🧩 🎯 🎳 🎨 🎬 🎤 🎧 🎵 🎶 🎹 🥁 🎸 🎺 🎻 🎉 🎊 🎈 🎁 📚 📖 📝 ✏️ 🖊️ 📌 📎 📐 💻 🖥️ 📱 ⌚ 📷 💡 🔦 💰 💸 💳 🧾 🚀 ✈️ 🚗 🚕 🚲 🛴 🏠 🏫 🗿"},
+  {id:"symbols", tab:"✅", name:"Symbols", list:"✅ ☑️ ✔️ ❌ ❎ ➕ ➖ ✖️ ➗ ♾️ ‼️ ⁉️ ❓ ❗ 〰️ ⚠️ 🚫 ⛔ 🔞 📵 🔇 🔈 🔊 🔔 🔕 🔒 🔓 🔑 💯 🆗 🆒 🆕 🆓 🔝 🔜 🔙 ▶️ ⏸️ ⏹️ ⏺️ ⏭️ 🔁 🔀 ℹ️ 🔴 🟠 🟡 🟢 🔵 🟣 ⚫ ⚪ 🟥 🟧 🟨 🟩 🟦 🟪 ⬛ ⬜"},
+];
+function recentEmoji(){ return prefs.recentEmoji || ["👍","❤️","😂","🔥","💀","🎉","😭","🙏"]; }
+function pushRecent(e){ prefs.recentEmoji = [e, ...recentEmoji().filter(x => x !== e)].slice(0, 27); savePrefs(); }
+function buildEmojiGrid(cat){
+  emoCat = cat || emoCat || "recent";
+  const tabs = $("emoTabs"); tabs.innerHTML = "";
+  EMOJI_CATS.forEach(c => tabs.appendChild(h("button",{class: c.id === emoCat ? "on" : "", title:c.name, onclick:e => { e.stopPropagation(); buildEmojiGrid(c.id); }}, c.tab)));
+  const g = $("emoGrid"); g.innerHTML = "";
+  const c = EMOJI_CATS.find(x => x.id === emoCat);
+  g.appendChild(h("div",{class:"emohead",text:c.name}));
+  const list = c.id === "recent" ? recentEmoji() : c.list.split(" ");
+  list.forEach(e => g.appendChild(h("button",{onclick:() => { const cb = emoCb; pushRecent(e); closePops(); if (cb) cb(e); else insertAt(e); }}, e)));
+}
 function insertAt(t){ const s = input.selectionStart ?? input.value.length; input.value = input.value.slice(0,s) + t + input.value.slice(input.selectionEnd ?? s); input.selectionStart = input.selectionEnd = s + t.length; input.focus(); autoGrow(); }
-function openEmoji(cb){ closePops(); emoCb = cb || null; $("emoPop").classList.remove("hidden"); }
+function openEmoji(cb){ closePops(); emoCb = cb || null; buildEmojiGrid(); $("emoPop").classList.remove("hidden"); }
 function closePops(){ $("emoPop").classList.add("hidden"); $("gifPop").classList.add("hidden"); emoCb = null; }
 $("emoBtn").onclick = e => { e.stopPropagation(); const open = !$("emoPop").classList.contains("hidden"); closePops(); if (!open) openEmoji(); };
 $("gifBtn").onclick = e => { e.stopPropagation(); const open = !$("gifPop").classList.contains("hidden"); closePops(); if (!open) $("gifPop").classList.remove("hidden"); };
@@ -966,15 +1075,16 @@ function bigModal(sections, start, title){
     const draw = () => {
       nav.innerHTML = "";
       sections.forEach(s => { if (s.header){ nav.appendChild(h("div",{class:"h",text:s.header})); return; } if (s.hidden) return;
-        nav.appendChild(h("button",{class: s.id === cur ? "on" : "", onclick:() => { cur = s.id; draw(); }}, s.label)); });
+        nav.appendChild(h("button",{class: (s.id === cur ? "on" : "") + (s.action ? " navshop" : ""), onclick:() => { if (s.action) return s.action(close); cur = s.id; draw(); }}, s.icon ? ic(s.icon) : null, s.label)); });
       pane.innerHTML = ""; const sec = sections.find(s => s.id === cur);
-      pane.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close},"✕"), h("h2",{text:sec.label}));
+      pane.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")), sec.noTitle ? null : h("h2",{text:sec.label}));
       sec.render(pane);
     };
     S.paneRefresh = {bg, draw};
     draw();
   }, "big-modal");
 }
+function closeTopModal(){ const t = $("layer").lastElementChild; if (t && t._close) t._close(); }
 function refreshOpenPane(){ if (S.paneRefresh && document.body.contains(S.paneRefresh.bg)){ const a = document.activeElement; if (a && a.tagName === "INPUT" && S.paneRefresh.bg.contains(a)) return; S.paneRefresh.draw(); } }
 function toggleRow(title, desc, on, onChange){ const sw = h("button",{class:"sw" + (on ? " on" : "")}); sw.onclick = () => { on = !on; sw.classList.toggle("on", on); onChange(on); };
   return h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:title}), desc ? h("span",{text:desc}) : null), sw); }
@@ -982,22 +1092,27 @@ function toggleRow(title, desc, on, onChange){ const sw = h("button",{class:"sw"
 function openSettings(start){
   bigModal([
     {header:"User settings"},
-    {id:"account", label:"My Account", render:paneAccount},
-    {id:"profile", label:"Profile", render:paneProfile},
+    {id:"account", label:"My Account", icon:"user", render:paneAccount},
+    {id:"profile", label:"Profile", icon:"smile", render:paneProfile},
     {header:"App settings"},
-    {id:"appearance", label:"Appearance", render:paneAppearance},
-    {id:"notifications", label:"Notifications", render:paneNotifications},
-    {id:"shortcuts", label:"Shortcuts & commands", render:paneShortcuts},
+    {id:"appearance", label:"Appearance", icon:"palette", render:paneAppearance},
+    {id:"notifications", label:"Notifications", icon:"bell", render:paneNotifications},
+    {id:"shortcuts", label:"Shortcuts & commands", icon:"keyboard", render:paneShortcuts},
     {header:"Campus+"},
-    {id:"shop", label:"✦ Shop & perks", render:paneShop},
-    {id:"about", label:"About", render:paneAbout},
-  ], start || "account");
+    {id:"shop", label:"Shop & ranks", icon:"bag", action:close => { close(); openShop(); }},
+    {id:"about", label:"About", icon:"info", render:paneAbout},
+  ], start === "shop" ? "account" : (start || "account"));
+  if (start === "shop"){ closeTopModal(); openShop(); }
 }
 function paneAccount(p){
   const me = member(S.uid); let color = me.color;
   const n = h("input",{class:"inp", value:me.nick, maxlength:"24"});
   const cs = h("div",{class:"colors"}, COLORS.map(c => { const b = h("button",{class: c === color ? "on" : "", style:{background:c}, onclick:() => { color = c; [...cs.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); return b; }));
-  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, avatar(S.uid, "xl", true), h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "👑 Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+  const picIn = h("input",{type:"file", accept:"image/*", class:"hidden", onchange:async e => { const f = e.target.files[0]; if (!f) return;
+    try{ const d = await squareAvatar(f); await setMyProfile({avatar:d}); toast("Profile picture updated"); refreshOpenPane(); }catch(err){ toast("Couldn't use that image: " + errMsg(err)); } }});
+  const av = avatar(S.uid, "xl", true); av.classList.add("editav"); av.title = "Change profile picture"; av.onclick = () => picIn.click(); av.appendChild(h("span",{class:"avedit"}, ic("camera")));
+  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, picIn, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "👑 Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+    h("div",{class:"row",style:{marginTop:"10px"}}, h("button",{class:"btn small", onclick:() => picIn.click()}, ic("camera"), " Upload picture"), profile(S.uid).avatar ? h("button",{class:"btn small ghost", onclick:() => setMyProfile({avatar:deleteField()}).then(refreshOpenPane).catch(()=>{})}, "Remove") : null),
     h("label",{class:"f",text:"Display name"}), n, h("label",{class:"f",text:"Name & avatar color"}), cs,
     h("button",{class:"btn small", style:{marginTop:"16px"}, onclick:async () => { const v = n.value.trim(); if (v.length < 2){ toast("Name needs at least 2 characters"); return; }
       try{ await updateDoc(doc(db, "members", S.uid), {nick:v, color}); toast("Saved"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save changes"),
@@ -1013,22 +1128,23 @@ function paneProfile(p){
     h("button",{class:"btn small", style:{marginTop:"14px"}, onclick:async () => { try{ await setMyProfile({bio:bio.value.trim().slice(0,190), customStatus:cst.value.trim().slice(0,60)}); toast("Profile saved"); }catch(e){} }}, "Save profile"));
   // name effect
   const fxOk = hasPerk(S.uid, "name_fx");
-  p.append(h("label",{class:"f",text:"Name effect " + (fxOk ? "" : "🔒")}));
+  p.append(h("label",{class:"f"}, "Name effect ", fxOk ? null : ic("lock","sm")));
   const cur = pr.nameFx || (isOwner() ? "rainbow" : "none");
-  p.append(h("div",{class:"seg"}, [{id:"none",name:"None"}, ...NAME_FX].map(fx => h("button",{class: cur === fx.id ? "on" : "", disabled: !fxOk, onclick:async () => { if (!fxOk) return; await setMyProfile({nameFx:fx.id}).catch(()=>{}); refreshOpenPane(); }},
-    fx.id === "none" ? h("span",{text:"None"}) : h("span",{class:"fx fx-" + fx.id, text:fx.name})))));
-  if (!fxOk) p.append(h("p",{class:"note"}, "Unlock animated names with ", h("a",{href:"#", onclick:e => { e.preventDefault(); openSettings("shop"); }}, "Animated Name or Campus+"), "."));
+  p.append(h("div",{class:"seg wrap"}, [{id:"none",name:"None"}, ...NAME_FX].map(fx => { const ok = fx.ex ? hasPerk(S.uid, "fx_exclusive") : fxOk;
+    return h("button",{class: cur === fx.id ? "on" : "", disabled: !ok, title: ok ? "" : (fx.ex ? "Campus++ exclusive" : "Locked"), onclick:async () => { if (!ok) return; await setMyProfile({nameFx:fx.id}).catch(()=>{}); refreshOpenPane(); }},
+    fx.id === "none" ? h("span",{text:"None"}) : h("span",{class:"fx fx-" + fx.id, text:fx.name}), !ok ? ic("lock","sm") : null); })));
+  if (!fxOk) p.append(h("p",{class:"note"}, "Unlock animated names with ", h("a",{href:"#", onclick:e => { e.preventDefault(); openShop(); }}, "Animated Name or Campus+"), "."));
   const bnOk = hasPerk(S.uid, "banner");
-  p.append(h("label",{class:"f",text:"Profile banner " + (bnOk ? "" : "🔒")}));
+  p.append(h("label",{class:"f"}, "Profile banner ", bnOk ? null : ic("lock","sm")));
   const bc = h("input",{type:"color", value: pr.banner || colorOf(S.uid), disabled: !bnOk, style:{width:"60px",height:"36px",border:"0",background:"none",cursor: bnOk ? "pointer" : "not-allowed"}, onchange:e => setMyProfile({banner:e.target.value}).then(() => toast("Banner saved")).catch(()=>{})});
   p.append(h("div",{class:"row"}, bc, bnOk ? h("button",{class:"btn small ghost", onclick:() => setMyProfile({banner:deleteField()}).then(refreshOpenPane).catch(()=>{})}, "Reset") : h("span",{class:"note",style:{margin:0},text:"Unlock with Profile Banner or Campus+."})));
 }
 function paneAppearance(p){
   const premiumOk = hasPerk(S.uid, "themes");
   const grid = h("div",{class:"themes"}, THEMES.map(t => h("button",{class:"theme" + (prefs.theme === t.id ? " on" : ""), onclick:() => {
-      if (t.premium && !premiumOk){ toast("🔒 " + t.name + " is a premium theme — get the Theme Pack or Campus+"); return; }
+      if (t.premium && !premiumOk){ toast(t.name + " is a premium theme — unlock it in the Shop"); openShop(); return; }
       prefs.theme = t.id; savePrefs(); applyPrefs(); refreshOpenPane(); }},
-    h("div",{class:"pv"}, t.c.map(c => h("i",{style:{background:c}}))), h("div",{class:"lb",text:t.name}), t.premium && !premiumOk ? h("span",{class:"lock",text:"🔒 Premium"}) : null)));
+    h("div",{class:"pv"}, t.c.map(c => h("i",{style:{background:c}}))), h("div",{class:"lb",text:t.name}), t.premium && !premiumOk ? h("span",{class:"lock"}, ic("lock"), " Premium") : null)));
   p.append(h("label",{class:"f",text:"Theme"}), grid);
   const acc = h("div",{class:"colors"}, ACCENTS.map(c => h("button",{class: (prefs.accent || "#7c5cff") === c ? "on" : "", style:{background:c}, onclick:() => { prefs.accent = c; savePrefs(); applyPrefs(); refreshOpenPane(); }})),
     h("input",{type:"color", value:prefs.accent || "#7c5cff", title:"Custom color", style:{width:"28px",height:"28px",border:"0",padding:"0",background:"none",cursor:"pointer"}, onchange:e => { prefs.accent = e.target.value; savePrefs(); applyPrefs(); }}));
@@ -1045,7 +1161,7 @@ function paneAppearance(p){
 function paneNotifications(p){
   const perm = "Notification" in window ? Notification.permission : "unsupported";
   p.append(h("label",{class:"f",text:"Desktop notifications"}),
-    perm === "granted" ? h("p",{class:"note",style:{marginTop:0},text:"✅ Allowed in this browser."}) :
+    perm === "granted" ? h("p",{class:"note",style:{marginTop:0},text:"Allowed in this browser ✓"}) :
     perm === "unsupported" ? h("p",{class:"note",style:{marginTop:0},text:"This browser doesn't support notifications."}) :
     h("button",{class:"btn small", onclick:() => Notification.requestPermission().then(refreshOpenPane)}, "Allow notifications"),
     h("label",{class:"f",text:"Notify me about"}),
@@ -1065,29 +1181,59 @@ function paneAbout(p){
 
 // ---------------------------------------------------------------- shop
 function shopItem(id){ const base = CATALOG.find(c => c.id === id); const o = ((S.shop||{}).items||{})[id] || {}; return Object.assign({}, base, {price:o.price || base.price, link:o.link || "", enabled:o.enabled !== false}); }
-function paneShop(p){
-  p.append(h("p",{class:"note",style:{marginTop:"-8px",marginBottom:"16px"},text:"Perks are cosmetic and support whoever runs this server. Payments are handled securely by Stripe."}));
-  const grid = h("div",{class:"shop"}); p.appendChild(grid);
-  CATALOG.forEach(c => {
-    const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
-    const owned = c.id === "plus" ? hasPlus(S.uid) : hasPerk(S.uid, c.id);
-    const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
-    const plusUntil = c.id === "plus" && ((S.perks[S.uid]||{}).items||{}).plus && S.perks[S.uid].items.plus.until;
-    const card = h("div",{class:"item" + (c.hero ? " hero" : "")},
-      h("div",{class:"ii",text:c.icon}), h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}),
-      c.list ? h("ul",null, c.list.map(x => h("li",{text:x}))) : null,
-      h("div",{class:"ip",text:it.price}),
-      owned ? h("div",{class:"owned",text: isOwner() ? "✓ Included (you're the admin)" : "✓ Owned" + (plusUntil ? " · renews/ends " + new Date(plusUntil).toLocaleDateString() : "")}) :
-      pend ? h("div",{class:"note",style:{margin:0}}, "⏳ Payment pending — an admin will activate it soon. ", h("a",{href:"#",onclick:e => { e.preventDefault(); cancelOrder(pend); }},"Cancel")) :
-      !it.link ? h("button",{class:"btn",disabled:true},"Coming soon") :
-      h("button",{class:"btn", onclick:() => buy(c.id)}, "Buy with Stripe"));
-    grid.appendChild(card);
-  });
-  if (S.myOrders.length){
-    p.append(h("label",{class:"f",text:"My purchases"}), h("div",{class:"list"}, [...S.myOrders].sort((a,b) => b.ts - a.ts).map(o => h("div",{class:"li"},
-      h("span",{class:"nm",text:(CATALOG.find(c => c.id === o.item)||{name:o.item}).name}), h("span",{class:"s",text:new Date(o.ts).toLocaleDateString()}),
-      h("span",{class:"s",text: o.status === "approved" ? "✅ Active" : o.status === "rejected" ? "❌ Not approved" : "⏳ Pending"})))));
-  }
+function shopButton(c){
+  const it = shopItem(c.id);
+  const owned = hasPerk(S.uid, c.id);
+  const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
+  const until = (((S.perks[S.uid]||{}).items||{})[c.id]||{}).until;
+  if (owned) return h("div",{class:"owned"}, ic("check"), isOwner() ? " Included — you're the admin" : " Active" + (until ? " until " + new Date(until).toLocaleDateString() : ""));
+  if (pend) return h("div",{class:"pending"}, ic("hourglass"), " Payment pending — an admin will activate it soon. ", h("a",{href:"#",onclick:e => { e.preventDefault(); cancelOrder(pend); }},"Cancel"));
+  if (!it.link) return h("button",{class:"btn buy",disabled:true},"Coming soon");
+  return h("button",{class:"btn buy", onclick:() => buy(c.id)}, c.tier ? "Get " + c.name : "Buy");
+}
+function openShop(){
+  modal((m, close, bg) => {
+    const draw = () => {
+      m.innerHTML = "";
+      const r = rankOf(S.uid);
+      m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
+        h("div",{class:"shophero"},
+          h("div",{class:"shg"}, ic("sparkles")),
+          h("div",null, h("h2",{text:"Campus+ Shop"}), h("p",{text:"Ranks, animated names and themes. Every purchase supports the server."})),
+          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin","crown","ADMIN") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
+      const tiers = h("div",{class:"tiers"});
+      CATALOG.filter(c => c.tier).forEach(c => {
+        const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
+        tiers.appendChild(h("div",{class:"tier t" + c.tier},
+          c.tier === 2 ? h("div",{class:"ribbon",text:"BEST VALUE"}) : null,
+          h("div",{class:"th"}, c.tier === 2 ? chip("pp","zap","PLUS+") : chip("plus","sparkles","PLUS")),
+          h("div",{class:"tn",text:c.name}), h("div",{class:"td",text:c.desc}),
+          h("div",{class:"tp"}, h("b",{text:it.price.split("/")[0].trim()}), it.price.includes("/") ? h("span",{text:" / " + it.price.split("/")[1].trim()}) : null),
+          h("ul",{class:"feat"}, c.list.map(x => h("li",null, ic("check"), h("span",{text:x})))),
+          shopButton(c)));
+      });
+      m.appendChild(tiers);
+      // name effect preview
+      const prev = h("div",{class:"fxrow"});
+      NAME_FX.forEach(fx => { const ok = hasPerk(S.uid, fx.ex ? "fx_exclusive" : "name_fx");
+        prev.appendChild(h("button",{class:"fxpv" + ((profile(S.uid).nameFx || (isOwner() ? "rainbow" : "")) === fx.id ? " on" : ""), title: ok ? "Use " + fx.name : (fx.ex ? "Campus++ only" : "Unlock with Animated Name or Campus+"),
+          onclick:() => { if (!ok){ toast(fx.ex ? fx.name + " is a Campus++ exclusive" : "Unlock animated names first"); return; } setMyProfile({nameFx:fx.id}).then(() => { toast(fx.name + " equipped"); draw(); }).catch(()=>{}); }},
+          h("span",{class:"fx fx-" + fx.id, text:nickOf(S.uid)}), h("small",null, ok ? null : ic("lock","sm"), " " + fx.name + (fx.ex ? " ++" : "")))); });
+      m.append(h("h3",{class:"sh3",text:"Preview your name"}), prev);
+      const grid = h("div",{class:"shop"});
+      CATALOG.filter(c => !c.tier).forEach(c => { const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
+        grid.appendChild(h("div",{class:"item"}, h("div",{class:"ii"}, ic(c.icon)), h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}), shopButton(c))); });
+      m.append(h("h3",{class:"sh3",text:"Individual perks"}), grid);
+      if (S.myOrders.length){
+        m.append(h("h3",{class:"sh3",text:"My purchases"}), h("div",{class:"list"}, [...S.myOrders].sort((a,b) => b.ts - a.ts).map(o => h("div",{class:"li"},
+          ic((CATALOG.find(c => c.id === o.item)||{icon:"receipt"}).icon), h("span",{class:"nm",text:(CATALOG.find(c => c.id === o.item)||{name:o.item}).name}), h("span",{class:"s",text:new Date(o.ts).toLocaleDateString()}),
+          h("span",{class:"s st-" + o.status,text: o.status === "approved" ? "Active" : o.status === "rejected" ? "Not approved" : "Pending"})))));
+      }
+      m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. Perks are cosmetic. After you pay, the server admin activates your perk — usually within a few hours."));
+    };
+    S.paneRefresh = {bg, draw};
+    draw();
+  }, "shopmodal");
 }
 async function buy(itemId){
   const it = shopItem(itemId); if (!it.link) return;
@@ -1105,12 +1251,12 @@ function handleReturnFromCheckout(){ if (location.hash === "#thanks"){ history.r
 function openAdmin(start){
   bigModal([
     {header:(S.config && S.config.serverName) || "CampusCord"},
-    {id:"overview", label:"Overview", render:adminOverview},
-    {id:"rooms", label:"Rooms", render:adminRooms},
-    {id:"members", label:"Members & roles", render:adminMembers},
+    {id:"overview", label:"Overview", icon:"grid", render:adminOverview},
+    {id:"rooms", label:"Rooms", icon:"hash", render:adminRooms},
+    {id:"members", label:"Members & roles", icon:"users", render:adminMembers},
     {header:"Monetization", hidden:!isOwner()},
-    {id:"shop", label:"Shop & Stripe", render:adminShop, hidden:!isOwner()},
-    {id:"orders", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isOwner()},
+    {id:"shop", label:"Shop & Stripe", icon:"bag", render:adminShop, hidden:!isOwner()},
+    {id:"orders", icon:"receipt", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isOwner()},
   ], start || "overview");
 }
 function adminOverview(p){
@@ -1126,6 +1272,15 @@ function adminOverview(p){
       h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {serverName:nm.value.trim().slice(0,32) || "CampusCord", serverIcon:ic.value.trim().slice(0,4) || "CC"}); toast("Saved"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")),
       h("p",{class:"note",text:"The icon can be 1–4 letters or an emoji."}));
   }
+  if (isOwner()){
+    let gifsToo = false;
+    const gsw = h("button",{class:"sw", onclick:() => { gifsToo = !gifsToo; gsw.classList.toggle("on", gifsToo); }});
+    p.append(h("div",{class:"danger-zone"},
+      h("div",{class:"dzh"}, ic("alert"), h("b",{text:"Danger zone"})),
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Delete all messages"}), h("span",{text:"Wipes every message, reaction and pin in every room, plus your own DM messages. Rooms, members and settings stay. Other people's DMs are private, so only they can delete those."})),
+        h("button",{class:"btn small danger", onclick:() => wipeConfirm(() => gifsToo)}, ic("trash"), " Delete all")),
+      h("div",{class:"toggle",style:{borderBottom:0}}, h("div",{class:"tl"}, h("b",{text:"Also clear the GIF library"}), h("span",{text:"Removes every saved GIF."})), gsw)));
+  }
   const n = Object.keys(S.members).length, on = Object.keys(S.members).filter(isOn).length;
   p.append(h("label",{class:"f",text:"Stats"}), h("div",{class:"list"},
     h("div",{class:"li"}, h("span",{class:"nm",text:"Members"}), h("b",{text:String(n)})),
@@ -1136,13 +1291,41 @@ function adminRooms(p){
   p.append(h("button",{class:"btn small", onclick:() => roomModal()}, "+ New room"));
   const list = h("div",{class:"list", style:{marginTop:"12px"}});
   S.rooms.forEach((r, i) => list.appendChild(h("div",{class:"li"},
-    h("span",{text: r.readonly ? "📣" : "#"}), h("span",{class:"nm"}, h("b",{text:r.name}), h("span",{class:"s",text:"  · " + (r.category || "Text rooms")})),
-    h("button",{class:"btn small ghost", title:"Move up", disabled: i === 0, onclick:() => moveRoom(i, -1)}, "↑"),
-    h("button",{class:"btn small ghost", title:"Move down", disabled: i === S.rooms.length - 1, onclick:() => moveRoom(i, 1)}, "↓"),
+    ic(r.readonly ? "megaphone" : "hash"), h("span",{class:"nm"}, h("b",{text:r.name}), h("span",{class:"s",text:"  · " + (r.category || "Text rooms")})),
+    h("button",{class:"ib", title:"Move up", disabled: i === 0, onclick:() => moveRoom(i, -1)}, ic("chevronup")),
+    h("button",{class:"ib", title:"Move down", disabled: i === S.rooms.length - 1, onclick:() => moveRoom(i, 1)}, ic("chevron")),
     h("button",{class:"btn small ghost", onclick:() => roomModal(r)}, "Edit"),
     h("button",{class:"btn small ghost", onclick:() => confirmBox("Clear #" + r.name + "?", "Deletes the most recent messages in this room for everyone.", "Clear", () => clearRoom(r.id))}, "Clear"),
     h("button",{class:"btn small danger", onclick:() => confirmBox("Delete #" + r.name + "?", "The room disappears for everyone.", "Delete", async () => { await clearRoom(r.id); deleteDoc(doc(db, "rooms", r.id)).catch(()=>{}); deleteDoc(doc(db, "meta", r.id)).catch(()=>{}); })}, "Delete"))));
   p.appendChild(list);
+}
+function wipeConfirm(gifsToo){
+  modal((m, close) => {
+    const inp = h("input",{class:"inp", placeholder:"Type DELETE to confirm"});
+    const go = h("button",{class:"btn small danger", disabled:true, onclick:async () => { close(); await wipeAll(gifsToo()); }}, "Delete everything");
+    inp.oninput = () => { go.disabled = inp.value.trim() !== "DELETE"; };
+    m.append(h("h3",{text:"Delete all messages?"}), h("p",{class:"note",text:"This permanently removes every message in every room for everyone. It can't be undone."}), inp,
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), go));
+  });
+}
+async function wipeAll(gifsToo){
+  let n = 0;
+  const t = h("div",{class:"toast",text:"Deleting messages…"}); document.body.appendChild(t);
+  const drain = async (q) => { for (let guard = 0; guard < 200; guard++){ const snap = await getDocs(q); if (snap.empty) break;
+      const b = writeBatch(db); snap.docs.forEach(d => b.delete(d.ref)); await b.commit(); n += snap.size; t.textContent = "Deleted " + n + " items…"; if (snap.size < 400) break; } };
+  try{
+    for (const r of S.rooms){
+      for (const sub of ["msgs","reacts"]) await drain(query(collection(db, "rooms", r.id, sub), limit(400)));
+      await deleteDoc(doc(db, "meta", r.id)).catch(()=>{});
+    }
+    for (const d of S.dms){
+      await drain(query(collection(db, "dms", d.id, "msgs"), where("uid","==",S.uid), limit(400))).catch(()=>{});
+      await drain(query(collection(db, "dms", d.id, "reacts"), where("uid","==",S.uid), limit(400))).catch(()=>{});
+    }
+    if (gifsToo) await drain(query(collection(db, "gifs"), limit(400)));
+    S.mentions = {}; store("mentions", {});
+    t.remove(); toast("Done — deleted " + n + " items.");
+  }catch(e){ t.remove(); toast("Stopped after " + n + " items: " + errMsg(e)); }
 }
 async function moveRoom(i, d){ const a = S.rooms[i], b = S.rooms[i + d]; if (!a || !b) return;
   try{ await updateDoc(doc(db, "rooms", a.id), {order:i + d}); await updateDoc(doc(db, "rooms", b.id), {order:i});
@@ -1161,7 +1344,7 @@ function adminMembers(p){
   Object.keys(S.members).filter(u => !isBanned(u)).sort((a,b) => nickOf(a).localeCompare(nickOf(b))).forEach(u => {
     const perks = Object.keys(((S.perks[u]||{}).items)||{}).filter(k => perkActive(S.perks[u].items[k]));
     list.appendChild(h("div",{class:"li"}, avatar(u, "sm", true), h("span",{class:"nm"}, paintName(h("b",{text:nickOf(u)}), u), " ", ...roleTags(u, true), perks.length ? h("span",{class:"s",text:"  ✦ " + perks.join(", ")}) : null),
-      isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "Remove dev" : "💻 Make dev") : null,
+      isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "Remove dev" : "Make developer") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
       u !== S.uid && !isOwnerUid(u) && (isOwner() || !isDev(u)) ? h("button",{class:"btn small danger", onclick:() => confirmBox("Kick " + nickOf(u) + "?", "They'll be locked out and can't rejoin unless unbanned.", "Kick", () => kick(u))}, "Kick") : null));
   });
@@ -1177,7 +1360,7 @@ function grantModal(uid){
     m.append(h("h3",{text:"Perks for " + nickOf(uid)}), h("p",{class:"note",text:"Grant or remove perks by hand (gifts, giveaways, refunds)."}));
     const list = h("div",{class:"list"});
     CATALOG.forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
-      list.appendChild(h("div",{class:"li"}, h("span",{text:c.icon}), h("span",{class:"nm",text:c.name + (on && items[c.id].until ? " (until " + new Date(items[c.id].until).toLocaleDateString() + ")" : "")}),
+      list.appendChild(h("div",{class:"li"}, ic(c.icon), h("span",{class:"nm",text:c.name + (on && items[c.id].until ? " (until " + new Date(items[c.id].until).toLocaleDateString() + ")" : "")}),
         on ? h("button",{class:"btn small danger", onclick:async () => { await revokePerk(uid, c.id); close(); }}, "Remove") : h("button",{class:"btn small", onclick:async () => { await grantPerk(uid, c.id); close(); }}, "Grant"))); });
     m.append(list, h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
   });
@@ -1202,7 +1385,7 @@ function adminShop(p){
   const rows = CATALOG.map(c => { const it = shopItem(c.id);
     const price = h("input",{class:"inp", value:it.price, style:{width:"140px"}}); const link = h("input",{class:"inp", value:it.link, placeholder:"https://buy.stripe.com/…"});
     let en = it.enabled; const sw = h("button",{class:"sw" + (en ? " on" : ""), title:"Show in shop", onclick:() => { en = !en; sw.classList.toggle("on", en); }});
-    p.append(h("label",{class:"f",text:c.icon + " " + c.name}), h("div",{class:"row"}, price, link, sw));
+    p.append(h("label",{class:"f"}, c.name), h("div",{class:"row"}, price, link, sw));
     return {id:c.id, price, link, get en(){ return en; }}; });
   p.append(h("button",{class:"btn small", style:{marginTop:"18px"}, onclick:async () => {
     const items = {}; for (const r of rows){ const l = r.link.value.trim(); if (l && !/^https:\/\/(buy\.stripe\.com|checkout\.stripe\.com|donate\.stripe\.com)\//.test(l)){ toast("That doesn't look like a Stripe payment link: " + l.slice(0,40)); return; } items[r.id] = {price:r.price.value.trim().slice(0,30), link:l, enabled:r.en}; }
@@ -1211,13 +1394,13 @@ function adminShop(p){
 function adminOrders(p){
   if (!S.orders.length){ p.append(h("p",{class:"note",text:"No orders yet."})); return; }
   const list = h("div",{class:"list"});
-  S.orders.forEach(o => { const c = CATALOG.find(x => x.id === o.item) || {name:o.item, icon:"•"};
+  S.orders.forEach(o => { const c = CATALOG.find(x => x.id === o.item) || {name:o.item, icon:"receipt"};
     list.appendChild(h("div",{class:"li", style:{flexWrap:"wrap"}},
-      h("span",{text:c.icon}), h("span",{class:"nm"}, h("b",{text:(member(o.uid) ? nickOf(o.uid) : o.nick || "Someone") + " — " + c.name}), h("div",{class:"s",text:new Date(o.ts).toLocaleString() + " · " + (o.price||"")})),
+      ic(c.icon), h("span",{class:"nm"}, h("b",{text:(member(o.uid) ? nickOf(o.uid) : o.nick || "Someone") + " — " + c.name}), h("div",{class:"s",text:new Date(o.ts).toLocaleString() + " · " + (o.price||"")})),
       h("button",{class:"btn small ghost", title:"Copy order ID to search in Stripe", onclick:() => copy(o.id, "Order ID copied — search it in Stripe")}, o.id.slice(0, 14) + "…"),
       o.status === "pending" ? [h("button",{class:"btn small ok", onclick:async () => { try{ await grantPerk(o.uid, o.item); await updateDoc(doc(db, "orders", o.id), {status:"approved", decidedAt:Date.now()}); }catch(e){} }}, "Approve"),
         h("button",{class:"btn small danger", onclick:async () => { try{ await updateDoc(doc(db, "orders", o.id), {status:"rejected", decidedAt:Date.now()}); }catch(e){ toast(errMsg(e)); } }}, "Reject")]
-      : h("span",{class:"s",text: o.status === "approved" ? "✅ Approved" : "❌ Rejected"})));
+      : h("span",{class:"s",text: o.status === "approved" ? "Approved ✓" : "Rejected"})));
   });
   p.append(h("p",{class:"note",style:{marginTop:0,marginBottom:"10px"},text:"Only approve an order after you see its payment in Stripe (search the order ID)."}), list);
 }
@@ -1234,7 +1417,7 @@ async function kick(uid){
 }
 
 // ---------------------------------------------------------------- updates
-function updBar(nodes){ const b = $("updbar"); b.innerHTML = ""; b.append(...nodes, h("button",{class:"x",onclick:() => b.classList.add("hidden")},"✕")); b.classList.remove("hidden"); }
+function updBar(nodes){ const b = $("updbar"); b.innerHTML = ""; b.append(...nodes, h("button",{class:"x",onclick:() => b.classList.add("hidden")}, ic("x"))); b.classList.remove("hidden"); }
 if (location.protocol === "file:"){
   setTimeout(() => updBar([h("span",{text:"CampusCord now lives online and updates itself."}), h("a",{href:LIVE_URL,target:"_blank",rel:"noopener"},"Open the live link")]), 1500);
 } else {
