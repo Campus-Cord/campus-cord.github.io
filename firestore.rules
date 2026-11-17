@@ -1,5 +1,5 @@
 rules_version = '2';
-// CampusCord security rules (v3.2: profiles + avatar maker, Campus+/Campus++ shop, edits, pins, announcement rooms).
+// CampusCord security rules (v3.1: profiles + avatar, Campus+/Campus++ shop, edits, pins, announcement rooms).
 // Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -59,12 +59,12 @@ service cloud.firestore {
       allow delete: if isOwner()
         || (isAdmin() && uid != cfg().ownerUid && !(uid in cfg().get('admins', [])));
     }
-    // Bio, status, name effect, banner, avatar look. Each person edits only their own.
+    // Bio, status, name effect, banner, picture. Each person edits only their own.
     match /profiles/{uid} {
       allow read: if signedIn();
       allow create, update: if isMember() && uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['bio', 'status', 'customStatus', 'nameFx', 'banner', 'look'])
-        && request.resource.data.get('look', {}).keys().hasOnly(['bg', 'face'])
+        && request.resource.data.keys().hasOnly(['bio', 'status', 'customStatus', 'nameFx', 'banner', 'avatar'])
+        && request.resource.data.get('avatar', '').size() <= 120000
         && request.resource.data.get('bio', '').size() <= 190
         && request.resource.data.get('customStatus', '').size() <= 60;
       allow delete: if isOwner();

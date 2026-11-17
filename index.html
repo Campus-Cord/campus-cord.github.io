@@ -637,7 +637,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-17.10";
+const APP_VERSION = "2026-11-17.11";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -834,7 +834,8 @@ const AV_BGS = [
   {id:"steel", g:"linear-gradient(135deg,#94a3b8,#475569)"}, {id:"holo", g:"conic-gradient(from 210deg,#ff7ac6,#ffd166,#7ef0e6,#a78bfa,#ff7ac6)"},
 ];
 const AV_FACES = "😎 🤠 🥳 🤓 😈 👻 👽 🤖 💀 🤡 🐸 🐱 🐶 🦊 🐼 🐨 🐯 🦁 🐵 🐧 🦄 🐙 🦖 🐢 🐝 🦋 🍕 🍩 🍉 🌮 ⚡ 🔥 ⭐ 🌙 🌈 ❄️ 🎮 🎧 ⚽ 🏀 🎨 🚀 💎 👑 🍀 🌸".split(" ");
-function lookOf(uid){ const l = profile(uid).look; return (l && typeof l === "object") ? l : {}; }
+// The avatar look is stored in the profile's "avatar" field as "look:<bg>|<face>" so it fits the published rules.
+function lookOf(uid){ const a = profile(uid).avatar; if (typeof a === "string" && a.startsWith("look:")){ const [bg, face] = a.slice(5).split("|"); return {bg:bg || "", face:face || ""}; } return {}; }
 function avatar(uid, size, withDot){
   const look = lookOf(uid);
   const face = look.face && AV_FACES.includes(look.face) ? look.face : null;
@@ -1534,7 +1535,7 @@ function compress(file, maxDim, q){
 }
 function avatarMaker(){
   const look = lookOf(S.uid);
-  const save = patch => setMyProfile({look:Object.assign({}, lookOf(S.uid), patch), avatar:deleteField()}).then(refreshOpenPane).catch(()=>{});
+  const save = patch => { const l = Object.assign({}, lookOf(S.uid), patch); return setMyProfile({avatar:"look:" + (l.bg || "") + "|" + (l.face || "")}).then(refreshOpenPane).catch(()=>{}); };
   const bgs = h("div",{class:"avbgs"},
     h("button",{class:"avsw" + (!look.bg ? " on" : ""), title:"Match my name color", style:{background:colorOf(S.uid)}, onclick:() => save({bg:""})}, h("span",{text:"Aa"})),
     AV_BGS.map(b => h("button",{class:"avsw" + (look.bg === b.id ? " on" : ""), title:b.id, style:{background:b.g}, onclick:() => save({bg:b.id})})));
