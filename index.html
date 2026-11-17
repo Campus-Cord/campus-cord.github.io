@@ -186,6 +186,9 @@ label.f{display:block;font-size:11px;font-weight:700;text-transform:uppercase;le
 .updbar button{background:#fff;color:var(--accent);border:0;border-radius:6px;padding:6px 10px;font-weight:700}
 .updbar .x{background:transparent;color:#fff;padding:4px 6px}
 .myid{margin-top:14px;font-size:11px;color:var(--dim);text-align:center;word-break:break-all;cursor:pointer}
+.ownername{background:linear-gradient(90deg,#ffd166,#ff7ac6,#a78bfa,#3fb8ff,#ffd166);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent;font-weight:700;animation:shine 6s linear infinite}
+@keyframes shine{to{background-position:300% 0}}
+.av.ownerav{background:conic-gradient(from 0deg,#ffd166,#ff7ac6,#a78bfa,#3fb8ff,#ffd166)!important;box-shadow:0 0 10px rgba(255,209,102,.45)}
 </style>
 </head>
 <body>
@@ -430,7 +433,7 @@ const QUICK = ["👍","❤️","😂","😮","😢","🔥","💀","🎉"];
 const EMOJIS = "😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 😘 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 😮‍💨 🤥 😌 😔 😪 😴 😷 🤒 🤕 🤢 🤮 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 💀 ☠️ 💩 🤡 👻 👽 🤖 🙈 🙉 🙊 💯 💥 💫 💦 💨 💬 💭 💤 👋 🤚 ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 👏 🙌 👐 🤲 🤝 🙏 💪 🧠 👀 🫡 🫠 🫶 ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💔 ❣️ 💕 💞 💓 💗 💖 💘 🔥 ✨ ⭐ 🌟 ⚡ 🌈 ☀️ 🌙 ❄️ 🎉 🎊 🎈 🎁 🏆 🥇 🎮 🕹️ 🎧 🎵 🎶 📚 📝 ✏️ 📌 📎 💻 📱 ☕ 🍕 🍔 🍟 🌮 🍿 🍩 🍪 🎂 🍦 🧃 🥤 🐶 🐱 🐸 🐵 🦄 🐢 🐍 🦖 🐙 🦋 🌸 🌵 🍀 🚀 ✈️ 🚗 🏀 ⚽ 🏈 ⚾ 🎾 🏐 ✅ ❌ ⚠️ ❓ ❗ 💡 🔔 🔒 🗿 🤷 🤦 🙋 💁 🙆 🙅".split(" ");
 const ONLINE_MS = 75000, HEARTBEAT_MS = 30000;
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-17.4";
+const APP_VERSION = "2026-11-17.5";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 const S = {
@@ -468,9 +471,11 @@ function nickOf(uid){ const m = member(uid); return (m && m.nick) || "Former mem
 function colorOf(uid){ const m = member(uid); return (m && m.color) || "#6f7480"; }
 function isBanned(uid){ return !!(S.config && Array.isArray(S.config.banned) && S.config.banned.includes(uid)); }
 function isOnline(uid){ if (uid === S.uid) return true; const m = member(uid); return !!(m && m.lastSeen && Date.now() - m.lastSeen < ONLINE_MS); }
+function paintName(node, uid){ if (S.config && S.config.ownerUid === uid){ node.classList.add("ownername"); node.style.color = ""; } else node.style.color = colorOf(uid); return node; }
 function avatar(uid, small, withDot){
   const a = el("div", "av" + (small ? " sm" : ""), initials(nickOf(uid)));
   a.style.background = colorOf(uid);
+  if (S.config && S.config.ownerUid === uid) a.classList.add("ownerav");
   if (withDot) a.appendChild(el("span","dot" + (isOnline(uid) ? " on" : "")));
   return a;
 }
@@ -585,7 +590,8 @@ window.addEventListener("beforeunload", () => { if (member(S.uid)) updateDoc(doc
 function renderMe(){
   if (!member(S.uid)) return;
   const av = $("meAv"); av.textContent = initials(nickOf(S.uid)); av.style.background = colorOf(S.uid); av.appendChild(el("span","dot on"));
-  $("meNick").textContent = nickOf(S.uid);
+  $("meNick").textContent = nickOf(S.uid); $("meNick").classList.toggle("ownername", isOwner());
+  $("meAv").classList.toggle("ownerav", isOwner());
   $("meSt").textContent = isOwner() ? "Admin · Online" : isCoDev(S.uid) ? "Developer · Online" : "Online";
 }
 
@@ -691,7 +697,7 @@ function renderMessages(scroll){
     gut.appendChild(first ? avatar(m.uid) : el("span","tm", fmtTime(m.ts)));
     row.appendChild(gut);
     const body = el("div","body");
-    if (first){ const meta = el("div","meta"); const n = el("span","n", nickOf(m.uid)); n.style.color = colorOf(m.uid); meta.appendChild(n);
+    if (first){ const meta = el("div","meta"); const n = paintName(el("span","n", nickOf(m.uid)), m.uid); meta.appendChild(n);
       if (S.config && S.config.ownerUid === m.uid){ meta.appendChild(el("span","devtag admintag","👑 ADMIN")); }
       else if (isCoDev(m.uid)) meta.appendChild(el("span","devtag","💻 DEV"));
       meta.appendChild(el("span","t", fmtDay(m.ts))); body.appendChild(meta); }
@@ -847,7 +853,7 @@ function renderMembers(){
       const row = el("div","mrow" + (label === "Offline" ? " off" : ""));
       row.appendChild(avatar(m.uid, true, true));
       const info = el("div"); info.style.flex = "1"; info.style.minWidth = "0";
-      const n = el("div","nm", m.nick + (m.uid === S.uid ? " (you)" : "")); n.style.color = m.color; info.appendChild(n);
+      const n = paintName(el("div","nm", m.nick + (m.uid === S.uid ? " (you)" : "")), m.uid); info.appendChild(n);
       if (S.config && S.config.ownerUid === m.uid) info.appendChild(el("div","sub adminsub","👑 Admin"));
       else if (isCoDev(m.uid)) info.appendChild(el("div","sub devsub","💻 Developer"));
       else if (typing.includes(m.uid)) info.appendChild(el("div","sub","typing…"));
@@ -977,7 +983,7 @@ $("newDM").onclick = () => {
     m.appendChild(el("p","note","Pick someone to message privately."));
     const list = el("div","list picker");
     Object.keys(S.members).filter(u => u !== S.uid && !isBanned(u)).sort((a,b) => nickOf(a).localeCompare(nickOf(b))).forEach(u => {
-      const li = el("div","li"); li.appendChild(avatar(u, true, true)); const n = el("span","nm", nickOf(u)); n.style.color = colorOf(u); li.appendChild(n);
+      const li = el("div","li"); li.appendChild(avatar(u, true, true)); const n = paintName(el("span","nm", nickOf(u)), u); li.appendChild(n);
       li.onclick = () => { close(); openDM(u); }; list.appendChild(li); });
     if (!list.children.length) list.appendChild(el("div","note","Nobody else has joined yet."));
     m.appendChild(list);
