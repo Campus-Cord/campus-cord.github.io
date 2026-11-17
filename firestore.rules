@@ -1,5 +1,5 @@
 rules_version = '2';
-// CampusCord security rules (v3.1: profiles + avatar, Campus+/Campus++ shop, edits, pins, announcement rooms).
+// CampusCord security rules (v3.1). Published automatically by GitHub Actions when this file changes.
 // Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
