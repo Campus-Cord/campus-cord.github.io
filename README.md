@@ -16,7 +16,7 @@ A Discord-style group chat for friends, running on Firebase.
 - Appearance: 8 themes, accent color, font size, compact mode, 24h time
 - Roles: 👑 Admin (owner) and 💻 Developers
 - Campus+ and Campus++ ranks with PLUS / PLUS+ badges, plus individual perks, sold through Stripe Payment Links and approved by the owner
-- Profile pictures, categorized emoji picker with recents, SVG icon set
+- Avatar maker (preset backgrounds + emoji or initials, no uploads), categorized emoji picker, SVG icon set
 - Owner Danger Zone: delete all messages
 
 ## Files

@@ -506,3 +506,16 @@ html.compact .msg .gut{width:24px}
   .shophero{padding:22px 18px;flex-wrap:wrap}.shophero .myrank{margin-left:0;align-items:flex-start;padding:0}
   .fxrow,.shopmodal .shop,.shopmodal .list,.shopnote{padding-left:16px;padding-right:16px}.modal h3.sh3{margin-left:16px}
 }
+
+/* avatar maker */
+.av.emo{font-size:calc(1em * 1.25)}
+.av.xl.emo{font-size:44px}.av.sm.emo{font-size:18px}.av.xs.emo{font-size:11px}
+.avbgs{display:flex;flex-wrap:wrap;gap:8px}
+.avsw{width:36px;height:36px;border-radius:50%;border:3px solid transparent;padding:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.avsw.on{border-color:var(--text)}
+.avsw:hover{transform:scale(1.08)}
+.avfaces{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:4px;background:var(--rail);border-radius:10px;padding:8px;max-height:180px;overflow-y:auto}
+.avface{background:none;border:2px solid transparent;border-radius:10px;font-size:22px;height:40px;display:flex;align-items:center;justify-content:center}
+.avface:hover{background:var(--hover)}
+.avface.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent)}
+.avface.ini{font-size:13px;font-weight:800;color:var(--text)}

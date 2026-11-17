@@ -196,12 +196,23 @@ const isOn = uid => statusOf(uid) !== "offline";
 function fxOf(uid){ if (!hasPerk(uid, "name_fx")) return null; const f = profile(uid).nameFx; if (f === "none") return null;
   const fx = NAME_FX.find(x => x.id === f); if (fx && (!fx.ex || hasPerk(uid, "fx_exclusive"))) return f; return isOwnerUid(uid) ? "rainbow" : null; }
 function paintName(node, uid){ const fx = fxOf(uid); if (fx){ node.classList.add("fx","fx-"+fx); } else node.style.color = colorOf(uid); return node; }
+const AV_BGS = [
+  {id:"sunset", g:"linear-gradient(135deg,#ff7ac6,#ffd166)"}, {id:"ocean", g:"linear-gradient(135deg,#22d3c5,#3fb8ff)"},
+  {id:"grape", g:"linear-gradient(135deg,#c084fc,#7c5cff)"}, {id:"lime", g:"linear-gradient(135deg,#3ecf7a,#c6f36b)"},
+  {id:"fire", g:"linear-gradient(135deg,#ff4d4d,#ff9447)"}, {id:"night", g:"linear-gradient(135deg,#2b2d64,#5865f2)"},
+  {id:"candy", g:"linear-gradient(135deg,#ff7ac6,#7ef0e6)"}, {id:"gold", g:"linear-gradient(135deg,#ffe08a,#f5a524)"},
+  {id:"mint", g:"linear-gradient(135deg,#a7f3d0,#22d3c5)"}, {id:"berry", g:"linear-gradient(135deg,#f0565c,#a78bfa)"},
+  {id:"steel", g:"linear-gradient(135deg,#94a3b8,#475569)"}, {id:"holo", g:"conic-gradient(from 210deg,#ff7ac6,#ffd166,#7ef0e6,#a78bfa,#ff7ac6)"},
+];
+const AV_FACES = "😎 🤠 🥳 🤓 😈 👻 👽 🤖 💀 🤡 🐸 🐱 🐶 🦊 🐼 🐨 🐯 🦁 🐵 🐧 🦄 🐙 🦖 🐢 🐝 🦋 🍕 🍩 🍉 🌮 ⚡ 🔥 ⭐ 🌙 🌈 ❄️ 🎮 🎧 ⚽ 🏀 🎨 🚀 💎 👑 🍀 🌸".split(" ");
+function lookOf(uid){ const l = profile(uid).look; return (l && typeof l === "object") ? l : {}; }
 function avatar(uid, size, withDot){
-  const pic = profile(uid).avatar;
-  const a = h("div",{class:"av" + (size ? " "+size : "")}, pic ? null : initials(nickOf(uid)));
-  a.style.background = colorOf(uid);
-  if (pic){ a.style.backgroundImage = "url(" + JSON.stringify(pic) + ")"; a.classList.add("pic"); }
-  else a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))";
+  const look = lookOf(uid);
+  const face = look.face && AV_FACES.includes(look.face) ? look.face : null;
+  const a = h("div",{class:"av" + (size ? " "+size : "") + (face ? " emo" : "")}, face || initials(nickOf(uid)));
+  const bg = AV_BGS.find(b => b.id === look.bg);
+  if (bg) a.style.background = bg.g;
+  else { a.style.background = (look.bg && /^#[0-9a-f]{6}$/i.test(look.bg)) ? look.bg : colorOf(uid); a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))"; }
   if (hasPerk(uid, "ring")) a.classList.add("ring");
   if (withDot) a.appendChild(h("span",{class:"dot " + statusOf(uid), title:{online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(uid)]}));
   return a;
@@ -892,6 +903,17 @@ function compress(file, maxDim, q){
     c.width = Math.round(img.width*s); c.height = Math.round(img.height*s); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
     res(c.toDataURL("image/jpeg", q)); }; img.onerror = rej; img.src = URL.createObjectURL(file); });
 }
+function avatarMaker(){
+  const look = lookOf(S.uid);
+  const save = patch => setMyProfile({look:Object.assign({}, lookOf(S.uid), patch), avatar:deleteField()}).then(refreshOpenPane).catch(()=>{});
+  const bgs = h("div",{class:"avbgs"},
+    h("button",{class:"avsw" + (!look.bg ? " on" : ""), title:"Match my name color", style:{background:colorOf(S.uid)}, onclick:() => save({bg:""})}, h("span",{text:"Aa"})),
+    AV_BGS.map(b => h("button",{class:"avsw" + (look.bg === b.id ? " on" : ""), title:b.id, style:{background:b.g}, onclick:() => save({bg:b.id})})));
+  const faces = h("div",{class:"avfaces"},
+    h("button",{class:"avface ini" + (!look.face ? " on" : ""), title:"Use my initials", onclick:() => save({face:""})}, initials(nickOf(S.uid))),
+    AV_FACES.map(f => h("button",{class:"avface" + (look.face === f ? " on" : ""), onclick:() => save({face:f})}, f)));
+  return h("div",null, h("label",{class:"f",text:"Avatar background"}), bgs, h("label",{class:"f",text:"Avatar face"}), faces);
+}
 function squareAvatar(file){
   return new Promise((res, rej) => { const img = new Image(); img.onload = () => {
     const size = 192, c = document.createElement("canvas"); c.width = c.height = size; const s = Math.min(img.width, img.height);
@@ -1117,12 +1139,10 @@ function paneAccount(p){
   const me = member(S.uid); let color = me.color;
   const n = h("input",{class:"inp", value:me.nick, maxlength:"24"});
   const cs = h("div",{class:"colors"}, COLORS.map(c => { const b = h("button",{class: c === color ? "on" : "", style:{background:c}, onclick:() => { color = c; [...cs.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); return b; }));
-  const picIn = h("input",{type:"file", accept:"image/*", class:"hidden", onchange:async e => { const f = e.target.files[0]; if (!f) return;
-    try{ const d = await squareAvatar(f); await setMyProfile({avatar:d}); toast("Profile picture updated"); refreshOpenPane(); }catch(err){ toast("Couldn't use that image: " + errMsg(err)); } }});
-  const av = avatar(S.uid, "xl", true); av.classList.add("editav"); av.title = "Change profile picture"; av.onclick = () => picIn.click(); av.appendChild(h("span",{class:"avedit"}, ic("camera")));
-  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, picIn, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "👑 Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
-    h("div",{class:"row",style:{marginTop:"10px"}}, h("button",{class:"btn small", onclick:() => picIn.click()}, ic("camera"), " Upload picture"), profile(S.uid).avatar ? h("button",{class:"btn small ghost", onclick:() => setMyProfile({avatar:deleteField()}).then(refreshOpenPane).catch(()=>{})}, "Remove") : null),
-    h("label",{class:"f",text:"Display name"}), n, h("label",{class:"f",text:"Name & avatar color"}), cs,
+  const av = avatar(S.uid, "xl", true);
+  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "👑 Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+    avatarMaker(),
+    h("label",{class:"f",text:"Display name"}), n, h("label",{class:"f",text:"Name color"}), cs,
     h("button",{class:"btn small", style:{marginTop:"16px"}, onclick:async () => { const v = n.value.trim(); if (v.length < 2){ toast("Name needs at least 2 characters"); return; }
       try{ await updateDoc(doc(db, "members", S.uid), {nick:v, color}); toast("Saved"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save changes"),
     h("label",{class:"f",text:"Your user ID"}), h("div",{class:"li"}, h("span",{class:"nm",style:{fontFamily:"monospace",fontSize:"12px"},text:S.uid}), h("button",{class:"btn small ghost",onclick:() => copy(S.uid,"ID copied")},"Copy")),
