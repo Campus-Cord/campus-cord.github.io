@@ -151,7 +151,7 @@ function rid(){ return Date.now().toString(36) + Math.random().toString(36).slic
 function eKey(e){ return [...e].map(c => c.codePointAt(0).toString(16)).join("-"); }
 function initials(n){ n = (n||"?").trim(); const p = n.split(/\s+/); return ((p[0]||"?")[0] + (p[1] ? p[1][0] : "")).toUpperCase(); }
 function show(id){ ["g-load","g-setup","g-join","g-msg","app"].forEach(x => $(x).classList.toggle("hidden", x !== id)); }
-function gateMsg(t, s, showId){ $("gm-t").textContent = t; $("gm-s").textContent = s; $("gm-id").textContent = showId && S.uid ? "Your ID: " + S.uid : ""; show("g-msg"); }
+function gateMsg(t, s, showId){ $("gm-t").textContent = t; $("gm-s").textContent = s; $("gm-id").textContent = showId && S.uid ? "Your ID: " + S.uid + "  (click to copy)" : ""; $("gm-id").onclick = () => copy(S.uid, "ID copied"); show("g-msg"); }
 function fmtTime(ts){ return new Date(ts).toLocaleTimeString([], {hour:"numeric", minute:"2-digit", hour12:!prefs.time24}); }
 function dayLabel(ts){ const d = new Date(ts), n = new Date(), y = new Date(); y.setDate(n.getDate()-1);
   if (d.toDateString() === n.toDateString()) return "Today"; if (d.toDateString() === y.toDateString()) return "Yesterday";
@@ -268,13 +268,13 @@ function route(){
   if (S.joining) return; // wait for Firebase to confirm the join before switching screens
   if (isBanned(S.uid) && !isOwner()){ kickedOut(); return; }
   if (!member(S.uid)){
-    if (S.routed === "app"){ kickedOut(); return; }
+    if (S.routed === "app"){ stopAppSubs(); S.routed = null; }
     if (S.routed !== "join"){ S.routed = "join"; setupJoin(); show("g-join"); }
     return;
   }
   if (S.routed !== "app"){ S.routed = "app"; show("app"); initApp(); }
 }
-function kickedOut(){ S.routed = "banned"; stopAppSubs(); gateMsg("You've been removed", "An admin removed you from CampusCord.", true); }
+function kickedOut(){ S.routed = "banned"; stopAppSubs(); gateMsg("You've been removed", "An admin kicked this account from CampusCord. If that's a mistake, ask the admin to unban you.", true); }
 
 // ---------------------------------------------------------------- setup + join
 $("su-go").onclick = async () => {
@@ -297,7 +297,7 @@ function setupJoin(){
   S.joinColor = COLORS[Math.floor(Math.random()*COLORS.length)];
   COLORS.forEach(c => { const b = h("button",{class: c === S.joinColor ? "on" : "", style:{background:c}, onclick: () => { S.joinColor = c; [...wrap.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); wrap.appendChild(b); });
   if (isOwner()){ $("j-codewrap").classList.add("hidden"); $("j-title").textContent = "Welcome back, admin"; $("j-sub").textContent = "Choose the name your friends will see."; }
-  $("j-id").textContent = "Your ID: " + S.uid;
+  $("j-id").textContent = "Your ID: " + S.uid + "  (click to copy)";
   $("j-id").onclick = () => copy(S.uid, "ID copied");
   setTimeout(()=> $("j-nick").focus(), 50);
 }
