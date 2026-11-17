@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CampusCord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --rail:#17181c; --side:#22242a; --chat:#2b2d34; --input:#363842; --hover:#32343c; --line:#1b1c20;
+  --text:#e3e5ea; --muted:#9aa0ab; --dim:#6f7480; --accent:#7c5cff; --accent2:#9b84ff;
+  --green:#3ecf7a; --red:#f0565c; --yellow:#f5b83d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--chat);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:15px}
+button{font-family:inherit;cursor:pointer}
+input,textarea{font-family:inherit}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#1a1b1f;border-radius:6px;border:2px solid transparent;background-clip:content-box}
+
+/* ---------- gate screens ---------- */
+.gate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 600px at 20% 0%,#3a2d7a 0%,transparent 60%),radial-gradient(900px 500px at 100% 100%,#1f4b6e 0%,transparent 55%),var(--rail);padding:20px}
+.card{width:100%;max-width:420px;background:var(--side);border-radius:14px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.card h1{margin:0 0 6px;font-size:24px;font-weight:800;text-align:center}
+.card p.sub{margin:0 0 22px;color:var(--muted);text-align:center;line-height:1.45}
+.logo{width:64px;height:64px;margin:0 auto 16px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#3fb8ff);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;color:#fff;letter-spacing:-1px}
+label.f{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 0 6px}
+.inp{width:100%;background:var(--rail);border:1px solid transparent;color:var(--text);border-radius:8px;padding:11px 12px;font-size:15px;outline:none}
+.inp:focus{border-color:var(--accent)}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:15px;font-weight:600;width:100%;margin-top:20px}
+.btn:hover{background:#6a49f5}
+.btn.ghost{background:transparent;color:var(--muted);width:auto;margin:0;padding:8px 12px}
+.btn.ghost:hover{color:var(--text);background:var(--hover)}
+.btn.danger{background:var(--red)}
+.btn.small{width:auto;padding:7px 12px;font-size:13px;margin:0}
+.err{color:var(--red);font-size:13px;margin-top:10px;min-height:16px}
+.colors{display:flex;gap:8px;flex-wrap:wrap}
+.colors button{width:28px;height:28px;border-radius:50%;border:3px solid transparent}
+.colors button.on{border-color:#fff}
+
+/* ---------- app layout ---------- */
+#app{display:grid;grid-template-columns:72px 240px 1fr 240px;height:100vh}
+.rail{background:var(--rail);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:8px}
+.rail .srv{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,var(--accent),#3fb8ff);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+.rail .sep{width:32px;height:2px;background:var(--side);border-radius:2px}
+.rail .ico{width:48px;height:48px;border-radius:24px;background:var(--side);border:0;color:var(--green);font-size:22px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.rail .ico:hover{border-radius:16px;background:var(--green);color:#fff}
+
+.side{background:var(--side);display:flex;flex-direction:column;min-width:0}
+.side .hdr{height:52px;display:flex;align-items:center;padding:0 16px;font-weight:700;border-bottom:1px solid var(--line);gap:8px}
+.side .hdr .badge{font-size:10px;background:var(--accent);padding:2px 6px;border-radius:4px;font-weight:700}
+.rooms{flex:1;overflow-y:auto;padding:14px 8px}
+.rooms .cat{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:0 8px 6px}
+.rooms .cat button{background:none;border:0;color:var(--muted);font-size:18px;line-height:1;padding:0 2px}
+.rooms .cat button:hover{color:var(--text)}
+.room{display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:6px;color:var(--dim);cursor:pointer;font-weight:500;position:relative}
+.room:hover{background:var(--hover);color:var(--text)}
+.room.on{background:#3a3d47;color:#fff}
+.room.unread{color:#fff;font-weight:700}
+.room.unread::before{content:"";position:absolute;left:-8px;width:4px;height:8px;background:#fff;border-radius:0 4px 4px 0}
+.room .hash{font-size:20px;color:var(--dim);width:18px;text-align:center}
+.room .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.room .typingdot{font-size:11px;color:var(--accent2)}
+.mebar{height:56px;background:#1c1d22;display:flex;align-items:center;gap:10px;padding:0 10px}
+.mebar .who{flex:1;min-width:0;cursor:pointer;border-radius:6px;padding:4px}
+.mebar .who:hover{background:var(--hover)}
+.mebar .nick{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mebar .st{font-size:12px;color:var(--muted)}
+
+.av{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;position:relative;font-size:15px}
+.av.sm{width:32px;height:32px;font-size:13px}
+.av .dot{position:absolute;right:-2px;bottom:-2px;width:14px;height:14px;border-radius:50%;border:3px solid var(--side);background:var(--dim)}
+.av .dot.on{background:var(--green)}
+
+.main{display:flex;flex-direction:column;min-width:0;background:var(--chat)}
+.main .top{height:52px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);flex:none}
+.main .top .hash{font-size:24px;color:var(--dim)}
+.main .top .ttl{font-weight:700}
+.main .top .desc{color:var(--muted);font-size:13px;border-left:1px solid #444;padding-left:10px;margin-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.main .top .sp{flex:1}
+.status{font-size:12px;color:var(--yellow)}
+.msgs{flex:1;overflow-y:auto;padding:16px 0 8px}
+.welcome{padding:16px 16px 20px;border-bottom:1px solid #3a3c44;margin-bottom:8px}
+.welcome .big{width:68px;height:68px;border-radius:50%;background:var(--input);display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff;margin-bottom:10px}
+.welcome h2{margin:0 0 4px;font-size:28px}
+.welcome p{margin:0;color:var(--muted)}
+.msg{display:flex;gap:14px;padding:2px 16px 2px 16px;position:relative}
+.msg:hover{background:#2f3139}
+.msg.first{margin-top:14px}
+.msg .gut{width:40px;flex:none;display:flex;justify-content:center}
+.msg .gut .tm{font-size:10px;color:var(--dim);visibility:hidden;padding-top:5px}
+.msg:hover .gut .tm{visibility:visible}
+.msg .body{min-width:0;flex:1}
+.msg .meta{display:flex;align-items:baseline;gap:8px}
+.msg .meta .n{font-weight:600}
+.msg .meta .crown{font-size:12px}
+.msg .meta .t{font-size:12px;color:var(--dim)}
+.msg .tx{line-height:1.45;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+.msg .tx.jumbo{font-size:40px;line-height:1.2}
+.msg .tx a{color:#58b4ff}
+.msg img.att{max-width:min(420px,100%);max-height:320px;border-radius:8px;margin-top:6px;display:block;cursor:zoom-in;background:#222}
+.msg .tools{position:absolute;right:16px;top:-14px;background:var(--side);border:1px solid var(--line);border-radius:6px;display:none;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.msg:hover .tools{display:flex}
+.msg .tools button{background:none;border:0;color:var(--muted);padding:5px 8px;font-size:16px}
+.msg .tools button:hover{color:var(--text);background:var(--hover)}
+.reacts{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.rc{display:flex;align-items:center;gap:4px;background:#2f3139;border:1px solid #3a3c44;border-radius:8px;padding:2px 7px;font-size:14px;color:var(--muted);cursor:pointer}
+.rc:hover{border-color:#555}
+.rc.mine{background:rgba(124,92,255,.18);border-color:var(--accent);color:#fff}
+.rc b{font-size:12px;font-weight:600}
+.typing{height:22px;padding:0 16px;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.typing .bub span{display:inline-block;width:5px;height:5px;margin-right:2px;border-radius:50%;background:var(--muted);animation:b 1.2s infinite}
+.typing .bub span:nth-child(2){animation-delay:.15s}.typing .bub span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-3px);opacity:1}}
+.composer{padding:0 16px 8px;flex:none;position:relative}
+.cbox{background:var(--input);border-radius:10px;display:flex;align-items:flex-end;gap:4px;padding:6px 8px}
+.cbox textarea{flex:1;background:none;border:0;color:var(--text);font-size:15px;resize:none;outline:none;padding:7px 4px;max-height:180px;line-height:1.4}
+.cbox .cb{background:none;border:0;color:var(--muted);font-size:20px;width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex:none}
+.cbox .cb:hover{color:var(--text)}
+.cbox .cb.gif{font-size:11px;font-weight:800;border:2px solid currentColor;width:auto;height:22px;padding:0 4px;margin:7px 4px;border-radius:4px}
+.preview{display:flex;align-items:center;gap:10px;background:var(--input);border-radius:10px 10px 0 0;padding:10px;border-bottom:1px solid #2a2c33}
+.preview img{max-height:90px;border-radius:6px}
+.preview + .cbox{border-radius:0 0 10px 10px}
+
+.pop{position:absolute;bottom:62px;right:16px;background:var(--side);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:20}
+.emojis{width:340px;max-height:300px;overflow-y:auto;padding:10px;display:grid;grid-template-columns:repeat(9,1fr);gap:2px}
+.emojis button{background:none;border:0;font-size:22px;padding:4px;border-radius:6px}
+.emojis button:hover{background:var(--hover)}
+.gifs{width:380px;padding:10px}
+.gifs .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-height:300px;overflow-y:auto;margin-top:8px}
+.gifs .grid img{width:100%;height:90px;object-fit:cover;border-radius:6px;cursor:pointer;background:#1a1b1f}
+.gifs .grid img:hover{outline:2px solid var(--accent)}
+.gifs .empty{color:var(--muted);font-size:13px;padding:20px 6px;text-align:center;grid-column:1/-1}
+.quick{position:fixed;background:var(--side);border:1px solid var(--line);border-radius:8px;padding:6px;display:flex;gap:2px;z-index:30;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.quick button{background:none;border:0;font-size:22px;padding:4px 6px;border-radius:6px}
+.quick button:hover{background:var(--hover)}
+
+.mem{background:var(--side);overflow-y:auto;padding:16px 8px}
+.mem .cat{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:12px 8px 6px}
+.mem .cat:first-child{padding-top:0}
+.mrow{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:6px;position:relative}
+.mrow:hover{background:var(--hover)}
+.mrow.off{opacity:.42}
+.mrow .nm{flex:1;min-width:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .sub{font-size:11px;color:var(--muted)}
+.mrow .kick{display:none;background:none;border:0;color:var(--red);font-size:12px;font-weight:600}
+.mrow:hover .kick{display:block}
+
+.modalbg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{background:var(--side);border-radius:12px;width:100%;max-width:480px;max-height:86vh;overflow-y:auto;padding:24px}
+.modal h3{margin:0 0 4px;font-size:20px}
+.modal .row{display:flex;gap:8px;align-items:center}
+.modal .list{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.modal .li{display:flex;align-items:center;gap:8px;background:var(--rail);border-radius:8px;padding:8px 10px}
+.modal .li .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.modal .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+.modal .note{font-size:12px;color:var(--muted);line-height:1.45;margin-top:8px}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:60;cursor:zoom-out}
+.lightbox img{max-width:92vw;max-height:92vh;border-radius:6px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;z-index:70;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.spinner{width:34px;height:34px;border:4px solid #333;border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;margin:0 auto}
+@keyframes s{to{transform:rotate(360deg)}}
+
+@media (max-width:1000px){#app{grid-template-columns:72px 220px 1fr}.mem{display:none}}
+@media (max-width:700px){#app{grid-template-columns:1fr}.rail,.side{display:none}}
+.steps{color:var(--text);line-height:1.55;padding-left:20px;margin:0 0 8px}.steps li{margin-bottom:8px}.steps code{background:var(--rail);padding:1px 5px;border-radius:4px}
+.room.dm{gap:10px;padding:5px 8px}
+.room.dm .av .dot{border-color:var(--side)}
+.room.dm.on .av .dot{border-color:#3a3d47}
+.dmempty{font-size:12px;color:var(--dim);padding:2px 8px;line-height:1.4}
+.welcome .av.big{width:68px;height:68px;font-size:26px;margin-bottom:10px}
+.mrow.click{cursor:pointer}
+.mrow .acts{display:none;gap:2px}
+.mrow:hover .acts{display:flex}
+.mrow .act{background:var(--rail);border:0;border-radius:6px;font-size:13px;padding:4px 6px;color:var(--text)}
+.mrow .act:hover{background:var(--accent)}
+.mrow .act.kickb:hover{background:var(--red)}
+.picker .li{cursor:pointer}.picker .li:hover{background:var(--hover)}
+.devtag{font-size:10px;font-weight:800;letter-spacing:.04em;background:linear-gradient(135deg,#22d3c5,#3fb8ff);color:#0d1b24;padding:2px 6px;border-radius:4px;align-self:center}
+.devtag.admintag{background:linear-gradient(135deg,#ffd166,#f5a524);color:#2a1a00;}
+.mrow .sub.adminsub{color:#f5b83d;font-weight:600}
+.mrow .sub.devsub{color:#22d3c5;font-weight:600}
+.updbar{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;z-index:80;box-shadow:0 10px 30px rgba(0,0,0,.45);display:flex;gap:12px;align-items:center;font-size:14px;font-weight:600}
+.updbar a{color:#fff}
+.updbar button{background:#fff;color:var(--accent);border:0;border-radius:6px;padding:6px 10px;font-weight:700}
+.updbar .x{background:transparent;color:#fff;padding:4px 6px}
+.myid{margin-top:14px;font-size:11px;color:var(--dim);text-align:center;word-break:break-all;cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- loading -->
+<div id="g-load" class="gate"><div class="card" style="text-align:center"><div class="logo">CC</div><div class="spinner"></div><p class="sub" id="loadmsg" style="margin-top:16px">Connecting to CampusCord…</p></div></div>
+
+<!-- not configured yet -->
+<div id="g-cfg" class="gate hidden"><div class="card" style="max-width:620px">
+  <div class="logo">CC</div>
+  <h1>Connect CampusCord to Firebase</h1>
+  <p class="sub">One-time setup, about 5 minutes, free. You only do this once, and your friends never see this screen.</p>
+  <ol class="steps">
+    <li>Go to <b>console.firebase.google.com</b> and click <b>Create a project</b>. Any name works, and you can turn Google Analytics off.</li>
+    <li>In the left menu, open <b>Build → Authentication</b> and click <b>Get started</b>. Under <b>Sign-in method</b>, turn on <b>Anonymous</b>.</li>
+    <li>Open <b>Build → Firestore Database</b>, click <b>Create database</b>, pick a location near you and choose <b>production mode</b>.</li>
+    <li>In Firestore, open the <b>Rules</b> tab, delete what's there, paste the rules below and click <b>Publish</b>.</li>
+    <li>Go to <b>Project settings</b> (the gear icon) → <b>Your apps</b> → the <b>&lt;/&gt;</b> web icon. Register an app, copy the <code>firebaseConfig</code> values and paste them at the top of the script in this file, where it says <b>PASTE_HERE</b>.</li>
+    <li>Upload this file anywhere, such as Netlify Drop, GitHub Pages or Firebase Hosting, and open it. The first person to open it becomes the admin, so make sure that's you!</li>
+  </ol>
+  <label class="f">Security rules (step 4)</label>
+  <textarea id="rulesTxt" class="inp" readonly style="height:150px;font-family:ui-monospace,monospace;font-size:12px;resize:vertical">rules_version = &#x27;2&#x27;;
+// CampusCord security rules (v2: co-developers + DMs).
+// Paste all of this into Firebase console -&gt; Firestore Database -&gt; Rules, then click Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function cfgPath() { return /databases/$(database)/documents/config/main; }
+    function cfg() { return get(cfgPath()).data; }
+    function isOwner() { return signedIn() &amp;&amp; exists(cfgPath()) &amp;&amp; cfg().ownerUid == request.auth.uid; }
+    function notBanned() { return !(request.auth.uid in cfg().banned); }
+    function isMember() {
+      return signedIn() &amp;&amp; exists(cfgPath()) &amp;&amp; notBanned()
+        &amp;&amp; exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+    // Owner, or a member the owner made a co-developer.
+    function isAdmin() { return isOwner() || (isMember() &amp;&amp; request.auth.uid in cfg().get(&#x27;admins&#x27;, [])); }
+    function ownsNew() { return request.resource.data.uid == request.auth.uid; }
+    function ownsOld() { return resource.data.uid == request.auth.uid; }
+
+    // Server settings. The first person to open the app becomes the owner.
+    match /config/main {
+      allow read: if signedIn();
+      allow create: if signedIn() &amp;&amp; !exists(cfgPath())
+        &amp;&amp; request.resource.data.ownerUid == request.auth.uid
+        &amp;&amp; request.resource.data.banned is list;
+      // Owner can change anything except who the owner is.
+      allow update: if isOwner() &amp;&amp; request.resource.data.ownerUid == resource.data.ownerUid;
+      // Co-developers can only kick/unban, and can never kick the owner or another co-developer.
+      allow update: if isAdmin() &amp;&amp; !isOwner()
+        &amp;&amp; request.resource.data.diff(resource.data).affectedKeys().hasOnly([&#x27;banned&#x27;, &#x27;bannedNames&#x27;])
+        &amp;&amp; !(resource.data.ownerUid in request.resource.data.banned)
+        &amp;&amp; !request.resource.data.banned.hasAny(resource.data.get(&#x27;admins&#x27;, []));
+    }
+
+    // Invite code: only the owner and co-developers can see or change it.
+    match /secret/invite {
+      allow read, update: if isAdmin();
+      allow create: if signedIn()
+        &amp;&amp; getAfter(cfgPath()).data.ownerUid == request.auth.uid
+        &amp;&amp; (!exists(/databases/$(database)/documents/secret/invite) || isOwner());
+    }
+
+    // People. To join you need the right invite code (the owner doesn&#x27;t).
+    match /members/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() &amp;&amp; uid == request.auth.uid &amp;&amp; notBanned()
+        &amp;&amp; request.resource.data.nick is string &amp;&amp; request.resource.data.nick.size() &lt;= 24
+        &amp;&amp; (isOwner() || request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code);
+      allow update: if signedIn() &amp;&amp; uid == request.auth.uid &amp;&amp; notBanned()
+        &amp;&amp; request.resource.data.diff(resource.data).affectedKeys().hasOnly([&#x27;nick&#x27;, &#x27;color&#x27;, &#x27;lastSeen&#x27;]);
+      allow delete: if isOwner()
+        || (isAdmin() &amp;&amp; uid != cfg().ownerUid &amp;&amp; !(uid in cfg().get(&#x27;admins&#x27;, [])));
+    }
+
+    // Rooms: owner and co-developers manage them.
+    match /rooms/{roomId} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+
+      match /msgs/{msgId} {
+        allow read: if isMember();
+        allow create: if isMember() &amp;&amp; ownsNew() &amp;&amp; request.resource.data.text.size() &lt;= 4000;
+        allow delete: if isAdmin() || (isMember() &amp;&amp; ownsOld());
+      }
+      match /reacts/{reactId} {
+        allow read: if isMember();
+        allow create: if isMember() &amp;&amp; ownsNew();
+        allow delete: if isAdmin() || (isMember() &amp;&amp; ownsOld());
+      }
+      match /typing/{uid} {
+        allow read: if isMember();
+        allow write: if isMember() &amp;&amp; uid == request.auth.uid;
+      }
+    }
+
+    // Direct messages: only the two people in a DM can read or write it.
+    // A DM&#x27;s id is the two user ids, sorted, joined with &quot;_&quot;.
+    match /dms/{dmId} {
+      function inDm() { return isMember() &amp;&amp; request.auth.uid in dmId.split(&#x27;_&#x27;); }
+      allow get: if inDm();
+      allow list: if isMember() &amp;&amp; request.auth.uid in resource.data.users;
+      allow create, update: if inDm() &amp;&amp; request.resource.data.users == dmId.split(&#x27;_&#x27;);
+
+      match /msgs/{msgId} {
+        allow read: if inDm();
+        allow create: if inDm() &amp;&amp; ownsNew() &amp;&amp; request.resource.data.text.size() &lt;= 4000;
+        allow delete: if inDm() &amp;&amp; ownsOld();
+      }
+      match /reacts/{reactId} {
+        allow read: if inDm();
+        allow create: if inDm() &amp;&amp; ownsNew();
+        allow delete: if inDm() &amp;&amp; ownsOld();
+      }
+      match /typing/{uid} {
+        allow read: if inDm();
+        allow write: if inDm() &amp;&amp; uid == request.auth.uid;
+      }
+    }
+
+    // Unread markers per room.
+    match /meta/{roomId} {
+      allow read: if isMember();
+      allow write: if isMember();
+    }
+
+    // Shared GIF library.
+    match /gifs/{gifId} {
+      allow read: if isMember();
+      allow create: if isMember() &amp;&amp; ownsNew();
+      allow delete: if isAdmin();
+    }
+  }
+}
+</textarea>
+  <button class="btn" id="copyRules">Copy rules</button>
+</div></div>
+
+<!-- owner first-time setup -->
+<div id="g-setup" class="gate hidden"><div class="card">
+  <div class="logo">CC</div>
+  <h1>Set up CampusCord</h1>
+  <p class="sub">You're the first one here, so you're the admin. Pick an invite code. Friends will need it to get in.</p>
+  <label class="f">Invite code</label>
+  <input id="su-code" class="inp" maxlength="24" autocomplete="off">
+  <label class="f">Starting rooms (comma separated)</label>
+  <input id="su-rooms" class="inp" value="general, memes, homework-help, gaming">
+  <button class="btn" id="su-go">Create server</button>
+  <div class="err" id="su-err"></div>
+</div></div>
+
+<!-- join -->
+<div id="g-join" class="gate hidden"><div class="card">
+  <div class="logo">CC</div>
+  <h1 id="j-title">You're invited!</h1>
+  <p class="sub" id="j-sub">Pick a name and enter the invite code to join CampusCord.</p>
+  <label class="f">Display name</label>
+  <input id="j-nick" class="inp" maxlength="24" autocomplete="off" placeholder="e.g. Maya">
+  <div id="j-codewrap"><label class="f">Invite code</label>
+  <input id="j-code" class="inp" maxlength="24" autocomplete="off" placeholder="Ask the admin"></div>
+  <label class="f">Color</label>
+  <div class="colors" id="j-colors"></div>
+  <button class="btn" id="j-go">Join CampusCord</button>
+  <div class="err" id="j-err"></div>
+  <div class="myid" id="j-id" title="Click to copy"></div>
+</div></div>
+
+<!-- message gates -->
+<div id="g-msg" class="gate hidden"><div class="card" style="text-align:center"><div class="logo">CC</div><h1 id="gm-t"></h1><p class="sub" id="gm-s" style="margin-bottom:0"></p></div></div>
+
+<!-- app -->
+<div id="app" class="hidden">
+  <nav class="rail">
+    <div class="srv" title="CampusCord">CC</div>
+    <div class="sep"></div>
+    <button class="ico hidden" id="adminBtn" title="Admin settings">⚙</button>
+  </nav>
+  <aside class="side">
+    <div class="hdr">CampusCord <span class="badge hidden" id="adminBadge">ADMIN</span></div>
+    <div class="rooms">
+      <div class="cat"><span>Text rooms</span><button id="addRoom" class="hidden" title="Create room">+</button></div>
+      <div id="roomList"></div>
+      <div class="cat" style="margin-top:18px"><span>Direct messages</span><button id="newDM" title="New DM">+</button></div>
+      <div id="dmList"></div>
+    </div>
+    <div class="mebar">
+      <div class="av sm" id="meAv"></div>
+      <div class="who" id="meWho" title="Edit profile"><div class="nick" id="meNick"></div><div class="st" id="meSt">Online</div></div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="top"><span class="hash" id="roomHash">#</span><span class="ttl" id="roomTitle"></span><span class="desc" id="roomDesc"></span><span class="sp"></span><span class="status" id="connStatus"></span></div>
+    <div class="msgs" id="msgs"></div>
+    <div class="typing" id="typing"></div>
+    <div class="composer">
+      <div class="preview hidden" id="preview"><img id="prevImg" alt=""><span style="flex:1;color:var(--muted);font-size:13px" id="prevName"></span><button class="btn ghost" id="prevX">✕</button></div>
+      <div class="cbox">
+        <button class="cb" id="attBtn" title="Upload image">＋</button>
+        <textarea id="input" rows="1" placeholder="Message #general"></textarea>
+        <button class="cb gif" id="gifBtn" title="GIFs">GIF</button>
+        <button class="cb" id="emoBtn" title="Emoji">😊</button>
+      </div>
+      <input type="file" id="file" accept="image/*" class="hidden">
+      <input type="file" id="gifFile" accept="image/gif,image/webp,image/*" class="hidden">
+      <div class="pop hidden" id="emoPop"><div class="emojis" id="emoGrid"></div></div>
+      <div class="pop gifs hidden" id="gifPop">
+        <div class="row" style="display:flex;justify-content:space-between;align-items:center"><b>Group GIF library</b><button class="btn small" id="gifUp">Upload GIF</button></div>
+        <div class="grid" id="gifGrid"></div>
+      </div>
+    </div>
+  </main>
+  <aside class="mem" id="memList"></aside>
+</div>
+
+<div id="updbar" class="updbar hidden"></div>
+<div id="modalRoot"></div>
+
+<script type="module">
+// =====================================================================
+//  1) PASTE YOUR FIREBASE CONFIG HERE  (Firebase console → Project
+//     settings → General → Your apps → Web app → "SDK setup and config")
+// =====================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDYZriywAYLoNC2a3R9hSqdHeXxSX8atCI",
+  authDomain: "campuscord-83dd3.firebaseapp.com",
+  projectId: "campuscord-83dd3",
+  storageBucket: "campuscord-83dd3.firebasestorage.app",
+  messagingSenderId: "913934886426",
+  appId: "1:913934886426:web:d26d0bfd7b528ffc78d3a3"
+};
+// =====================================================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const COLORS = ["#7c5cff","#3fb8ff","#3ecf7a","#f5b83d","#f0565c","#ff7ac6","#22d3c5","#ff9447"];
+const QUICK = ["👍","❤️","😂","😮","😢","🔥","💀","🎉"];
+const EMOJIS = "😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 😘 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 😮‍💨 🤥 😌 😔 😪 😴 😷 🤒 🤕 🤢 🤮 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 💀 ☠️ 💩 🤡 👻 👽 🤖 🙈 🙉 🙊 💯 💥 💫 💦 💨 💬 💭 💤 👋 🤚 ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 👏 🙌 👐 🤲 🤝 🙏 💪 🧠 👀 🫡 🫠 🫶 ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💔 ❣️ 💕 💞 💓 💗 💖 💘 🔥 ✨ ⭐ 🌟 ⚡ 🌈 ☀️ 🌙 ❄️ 🎉 🎊 🎈 🎁 🏆 🥇 🎮 🕹️ 🎧 🎵 🎶 📚 📝 ✏️ 📌 📎 💻 📱 ☕ 🍕 🍔 🍟 🌮 🍿 🍩 🍪 🎂 🍦 🧃 🥤 🐶 🐱 🐸 🐵 🦄 🐢 🐍 🦖 🐙 🦋 🌸 🌵 🍀 🚀 ✈️ 🚗 🏀 ⚽ 🏈 ⚾ 🎾 🏐 ✅ ❌ ⚠️ ❓ ❗ 💡 🔔 🔒 🗿 🤷 🤦 🙋 💁 🙆 🙅".split(" ");
+const ONLINE_MS = 75000, HEARTBEAT_MS = 30000;
+// Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
+const APP_VERSION = "2026-11-17.3";
+const LIVE_URL = "https://massimotestaiuti112-a11y.github.io/campuscord/";
+
+const S = {
+  uid:null, config:null, configLoaded:false, invite:null,
+  rooms:[], members:{}, membersLoaded:false, cur:null, kind:"room", dms:[],
+  msgs:[], reacts:[], typing:[], gifs:[], meta:{},
+  unsubRoom:[], unsubMember:[], pending:null, joinColor:COLORS[0],
+  hiddenCount:0, loadedAt:Date.now(), lastRead:{}, routed:null
+};
+let db, auth;
+
+// ---------- helpers ----------
+function store(k, v){ try{ if (v === undefined) return JSON.parse(localStorage.getItem("cc_"+k)); localStorage.setItem("cc_"+k, JSON.stringify(v)); }catch(e){ return null; } }
+function toast(t){ const d = el("div","toast",t); document.body.appendChild(d); setTimeout(()=>d.remove(), 3200); }
+function rid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function eKey(e){ return [...e].map(c => c.codePointAt(0).toString(16)).join("-"); }
+function initials(n){ n = (n||"?").trim(); const p = n.split(/\s+/); return ((p[0]||"?")[0] + (p[1] ? p[1][0] : "")).toUpperCase(); }
+function show(id){ ["g-load","g-cfg","g-setup","g-join","g-msg","app"].forEach(x => $(x).classList.toggle("hidden", x !== id)); }
+function gateMsg(t, s){ $("gm-t").textContent = t; $("gm-s").textContent = s; show("g-msg"); }
+function fmtTime(ts){ return new Date(ts).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); }
+function fmtDay(ts){ const d = new Date(ts), n = new Date(), y = new Date(); y.setDate(n.getDate()-1);
+  if (d.toDateString() === n.toDateString()) return "Today at " + fmtTime(ts);
+  if (d.toDateString() === y.toDateString()) return "Yesterday at " + fmtTime(ts);
+  return d.toLocaleDateString() + " " + fmtTime(ts); }
+function slug(s){ return s.toLowerCase().trim().replace(/\s+/g,"-").replace(/[^a-z0-9\-_]/g,"").slice(0,32); }
+const isOwner = () => !!(S.config && S.config.ownerUid === S.uid);
+const isCoDev = uid => !!(S.config && (S.config.admins||[]).includes(uid));
+const isAdmin = () => isOwner() || (isCoDev(S.uid) && !!member(S.uid));
+const base = () => [S.kind === "dm" ? "dms" : "rooms", S.cur];
+const readKey = (kind, id) => (kind === "dm" ? "dm:" : "") + id;
+const dmIdWith = uid => [S.uid, uid].sort().join("_");
+const dmOther = d => (d.users || []).find(u => u !== S.uid) || S.uid;
+function member(uid){ return S.members[uid] || null; }
+function nickOf(uid){ const m = member(uid); return (m && m.nick) || "Former member"; }
+function colorOf(uid){ const m = member(uid); return (m && m.color) || "#6f7480"; }
+function isBanned(uid){ return !!(S.config && Array.isArray(S.config.banned) && S.config.banned.includes(uid)); }
+function isOnline(uid){ if (uid === S.uid) return true; const m = member(uid); return !!(m && m.lastSeen && Date.now() - m.lastSeen < ONLINE_MS); }
+function avatar(uid, small, withDot){
+  const a = el("div", "av" + (small ? " sm" : ""), initials(nickOf(uid)));
+  a.style.background = colorOf(uid);
+  if (withDot) a.appendChild(el("span","dot" + (isOnline(uid) ? " on" : "")));
+  return a;
+}
+function errMsg(e){ return e && e.code === "permission-denied" ? "permission denied" : (e && (e.message || e.code)) || String(e); }
+
+// ---------- boot ----------
+function boot(){
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "PASTE_HERE"){ show("g-cfg"); return; }
+  try{ const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
+  catch(e){ gateMsg("Firebase config problem", "Double-check the config you pasted into this file. (" + errMsg(e) + ")"); return; }
+  S.lastRead = store("lastRead") || {};
+  const t = setTimeout(() => { $("loadmsg").textContent = "Still connecting… check your internet, or that Anonymous sign-in is turned on in Firebase."; }, 10000);
+  onAuthStateChanged(auth, user => {
+    if (!user){ signInAnonymously(auth).catch(e => { clearTimeout(t); gateMsg("Couldn't sign in", "Turn on Anonymous sign-in in Firebase → Authentication → Sign-in method. (" + errMsg(e) + ")"); }); return; }
+    clearTimeout(t);
+    if (S.uid === user.uid) return;
+    S.uid = user.uid; start();
+  });
+}
+
+function start(){
+  onSnapshot(doc(db, "config/main"), snap => {
+    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true;
+    if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
+    route(); renderMembers(); if (S.routed === "app"){ renderAdminUI(); renderRooms(); renderMessages(); }
+  }, e => gateMsg("Couldn't load CampusCord", "Make sure you published the security rules in Firestore. (" + errMsg(e) + ")"));
+  onSnapshot(collection(db, "members"), snap => {
+    const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.members = m; S.membersLoaded = true;
+    route(); renderMembers(); renderMessages(); renderMe(); renderTyping();
+  }, e => gateMsg("Couldn't load CampusCord", "Make sure you published the security rules in Firestore. (" + errMsg(e) + ")"));
+}
+
+function route(){
+  if (!S.configLoaded) return;
+  if (!S.config){
+    if (S.routed !== "setup"){ S.routed = "setup"; $("su-code").value = Math.random().toString(36).slice(2,8).toUpperCase(); show("g-setup"); }
+    return;
+  }
+  if (!S.membersLoaded) return;
+  if (isBanned(S.uid) && !isOwner()){ S.routed = "banned"; stopMemberSubs(); gateMsg("You've been removed", "An admin removed you from CampusCord."); return; }
+  if (!member(S.uid)){
+    if (S.routed === "app"){ S.routed = "banned"; stopMemberSubs(); gateMsg("You've been removed", "An admin removed you from CampusCord."); return; }
+    if (S.routed !== "join"){ S.routed = "join"; setupJoin(); show("g-join"); }
+    return;
+  }
+  if (S.routed !== "app"){ S.routed = "app"; show("app"); initApp(); }
+}
+
+// ---------- setup (first visitor becomes admin) ----------
+$("su-go").onclick = async () => {
+  const code = $("su-code").value.trim();
+  const names = [...new Set($("su-rooms").value.split(",").map(slug).filter(Boolean))];
+  if (code.length < 3){ $("su-err").textContent = "Invite code needs at least 3 characters."; return; }
+  if (!names.length) names.push("general");
+  $("su-go").disabled = true; $("su-err").textContent = "";
+  try{
+    const b = writeBatch(db);
+    b.set(doc(db, "config/main"), {ownerUid:S.uid, banned:[], admins:[], createdAt:Date.now()});
+    b.set(doc(db, "secret/invite"), {code});
+    await b.commit();
+    let i = 0;
+    for (const n of names) await setDoc(doc(db, "rooms", n + "-" + rid().slice(-4)), {name:n, topic:"", order:i++, createdAt:Date.now()});
+  }catch(e){ $("su-err").textContent = "Couldn't save: " + errMsg(e); $("su-go").disabled = false; }
+};
+
+// ---------- join ----------
+function setupJoin(){
+  const wrap = $("j-colors"); wrap.innerHTML = "";
+  S.joinColor = COLORS[Math.floor(Math.random()*COLORS.length)];
+  COLORS.forEach(c => { const b = el("button", c === S.joinColor ? "on" : ""); b.style.background = c; b.onclick = () => { S.joinColor = c; [...wrap.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }; wrap.appendChild(b); });
+  if (isOwner()){ $("j-codewrap").classList.add("hidden"); $("j-title").textContent = "Choose your name"; $("j-sub").textContent = "You're the admin. This is how your friends will see you."; }
+  $("j-id").textContent = "Your ID: " + S.uid;
+  $("j-id").onclick = () => navigator.clipboard && navigator.clipboard.writeText(S.uid).then(() => toast("ID copied"), ()=>{});
+  setTimeout(()=> $("j-nick").focus(), 50);
+}
+async function doJoin(){
+  const nick = $("j-nick").value.trim(); const code = $("j-code").value.trim();
+  if (nick.length < 2){ $("j-err").textContent = "Pick a name with at least 2 characters."; return; }
+  $("j-go").disabled = true; $("j-err").textContent = "";
+  try{ await setDoc(doc(db, "members", S.uid), {nick, color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); }
+  catch(e){ $("j-err").textContent = e.code === "permission-denied" ? "That invite code isn't right." : "Couldn't join: " + errMsg(e); $("j-go").disabled = false; }
+}
+$("j-go").onclick = doJoin;
+$("j-nick").onkeydown = $("j-code").onkeydown = e => { if (e.key === "Enter") doJoin(); };
+
+// ---------- app ----------
+function stopMemberSubs(){ S.unsubMember.forEach(u => u()); S.unsubMember = []; S.unsubRoom.forEach(u => u()); S.unsubRoom = []; clearInterval(S.hb); }
+function initApp(){
+  renderAdminUI();
+  S.unsubMember.push(onSnapshot(query(collection(db, "dms"), where("users","array-contains",S.uid)), snap => {
+    S.dms = snap.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => (b.lastTs||0) - (a.lastTs||0));
+    snap.docChanges().forEach(c => { if (c.type !== "removed"){ const d = c.doc.data(); if (document.hidden && d.lastUid && d.lastUid !== S.uid && d.lastTs > S.loadedAt && !(S.kind === "dm" && S.cur === c.doc.id)){ S.hiddenCount++; updateTitle(); } } });
+    renderRooms();
+  }, e => console.warn("DMs unavailable", e)));
+  S.unsubMember.push(onSnapshot(collection(db, "rooms"), snap => {
+    S.rooms = snap.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
+    if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
+    if (!S.cur && S.rooms.length){ const saved = store("room"); openRoom(S.rooms.find(r => r.id === saved) ? saved : S.rooms[0].id); }
+    renderHeader();
+    renderRooms();
+  }, ()=>{}));
+  S.unsubMember.push(onSnapshot(collection(db, "meta"), snap => { const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.meta = m; renderRooms(); }, ()=>{}));
+  S.unsubMember.push(onSnapshot(query(collection(db, "gifs"), orderBy("ts","desc"), limit(60)), snap => { S.gifs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); renderGifs(); }, ()=>{}));
+  heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS);
+  setInterval(() => { renderMembers(); renderTyping(); renderDMs(); if (S.kind === "dm") renderHeader(); }, 10000);
+  renderRooms(); renderMembers(); renderMe(); buildEmojiGrid();
+  $("input").focus();
+}
+function heartbeat(){ if (member(S.uid)) updateDoc(doc(db, "members", S.uid), {lastSeen:Date.now()}).catch(()=>{}); }
+window.addEventListener("beforeunload", () => { if (member(S.uid)) updateDoc(doc(db, "members", S.uid), {lastSeen:0}).catch(()=>{}); });
+
+function renderMe(){
+  if (!member(S.uid)) return;
+  const av = $("meAv"); av.textContent = initials(nickOf(S.uid)); av.style.background = colorOf(S.uid); av.appendChild(el("span","dot on"));
+  $("meNick").textContent = nickOf(S.uid);
+  $("meSt").textContent = isOwner() ? "Admin · Online" : isCoDev(S.uid) ? "Developer · Online" : "Online";
+}
+
+function renderAdminUI(){
+  ["adminBtn","adminBadge","addRoom"].forEach(x => $(x).classList.toggle("hidden", !isAdmin()));
+  $("adminBadge").textContent = isOwner() ? "ADMIN" : "DEV";
+  renderMe();
+}
+function renderHeader(){
+  if (S.kind === "dm"){ const d = S.dms.find(x => x.id === S.cur); const o = d ? dmOther(d) : S.cur.split("_").find(u => u !== S.uid);
+    $("roomHash").textContent = "@"; $("roomTitle").textContent = nickOf(o); $("roomDesc").textContent = isOnline(o) ? "Online" : "Offline";
+    $("input").placeholder = "Message @" + nickOf(o); return; }
+  const r = S.rooms.find(x => x.id === S.cur);
+  $("roomHash").textContent = "#"; $("roomTitle").textContent = r ? r.name : ""; $("roomDesc").textContent = r && r.topic ? r.topic : "";
+  $("input").placeholder = "Message #" + (r ? r.name : "");
+}
+function renderDMs(){
+  const list = $("dmList"); if (!list) return; list.innerHTML = "";
+  if (!S.dms.length){ list.appendChild(el("div","dmempty","No DMs yet. Click + or a person's name to start one.")); return; }
+  S.dms.forEach(d => {
+    const o = dmOther(d); if (!member(o) && !d.lastTs) return;
+    const row = el("div","room dm"); const on = S.kind === "dm" && S.cur === d.id; if (on) row.classList.add("on");
+    if (!on && d.lastTs > (S.lastRead[readKey("dm", d.id)]||0) && d.lastUid && d.lastUid !== S.uid) row.classList.add("unread");
+    row.appendChild(avatar(o, true, true)); row.appendChild(el("span","nm", nickOf(o)));
+    row.onclick = () => openChat("dm", d.id);
+    list.appendChild(row);
+  });
+}
+function renderRooms(){
+  renderDMs();
+  const list = $("roomList"); list.innerHTML = "";
+  S.rooms.forEach(r => {
+    const d = el("div","room"); const on = S.kind === "room" && r.id === S.cur; if (on) d.classList.add("on");
+    const meta = S.meta[r.id];
+    if (!on && meta && meta.lastTs > (S.lastRead[r.id]||0) && meta.lastUid !== S.uid) d.classList.add("unread");
+    d.appendChild(el("span","hash","#")); d.appendChild(el("span","nm", r.name));
+    d.onclick = () => openRoom(r.id);
+    list.appendChild(d);
+  });
+}
+function markRead(){ if (!S.cur) return; S.lastRead[readKey(S.kind, S.cur)] = Date.now(); store("lastRead", S.lastRead); }
+
+function openRoom(id){ openChat("room", id); }
+async function openDM(uid){
+  if (uid === S.uid) return;
+  const id = dmIdWith(uid);
+  if (!S.dms.find(d => d.id === id)){
+    try{ await setDoc(doc(db, "dms", id), {users:id.split("_"), createdAt:Date.now()}, {merge:true}); }
+    catch(e){ toast("Couldn't start DM: " + errMsg(e)); return; }
+  }
+  openChat("dm", id);
+}
+function openChat(kind, id){
+  if (S.cur === id && S.kind === kind && S.unsubRoom.length) return;
+  stopTyping();
+  S.unsubRoom.forEach(u => u()); S.unsubRoom = [];
+  S.kind = kind; S.cur = id; if (kind === "room") store("room", id); S.msgs = []; S.reacts = []; S.typing = []; S.roomLoaded = false;
+  renderHeader();
+  renderMessages(true);
+  const b = base();
+  S.unsubRoom.push(onSnapshot(query(collection(db, ...b, "msgs"), orderBy("ts","desc"), limit(150)), snap => {
+    const wasBottom = nearBottom();
+    S.msgs = snap.docs.map(d => Object.assign({id:d.id}, d.data())).reverse();
+    S.roomLoaded = true;
+    if (document.hidden){ snap.docChanges().forEach(c => { if (c.type === "added"){ const m = c.doc.data(); if (m.uid !== S.uid && m.ts > S.loadedAt) S.hiddenCount++; } }); updateTitle(); }
+    else markRead();
+    renderMessages(wasBottom);
+  }, e => toast("Lost connection to this room: " + errMsg(e))));
+  S.unsubRoom.push(onSnapshot(query(collection(db, ...b, "reacts"), limit(1000)), snap => { S.reacts = snap.docs.map(d => Object.assign({id:d.id}, d.data())); renderMessages(nearBottom()); }, ()=>{}));
+  S.unsubRoom.push(onSnapshot(collection(db, ...b, "typing"), snap => { S.typing = snap.docs.map(d => Object.assign({uid:d.id}, d.data())); renderTyping(); renderMembers(); }, ()=>{}));
+  markRead(); renderRooms(); renderTyping();
+}
+
+function nearBottom(){ const m = $("msgs"); return m.scrollHeight - m.scrollTop - m.clientHeight < 120; }
+function updateTitle(){ document.title = S.hiddenCount ? "(" + S.hiddenCount + ") CampusCord" : "CampusCord"; }
+document.addEventListener("visibilitychange", () => { if (!document.hidden){ S.hiddenCount = 0; updateTitle(); markRead(); renderRooms(); } });
+
+function linkify(parent, text){
+  const re = /(https?:\/\/[^\s<]+)/g; let last = 0, m;
+  while ((m = re.exec(text))){ if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+    const a = el("a", null, m[1]); a.href = m[1]; a.target = "_blank"; a.rel = "noopener noreferrer"; parent.appendChild(a); last = m.index + m[1].length; }
+  if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+}
+function onlyEmoji(t){ if (!t) return false; const s = t.replace(/\s/g,""); return s.length <= 16 && /^(\p{Extended_Pictographic}|\p{Emoji_Component}|‍|️)+$/u.test(s); }
+
+function renderMessages(scroll){
+  const box = $("msgs"); if (S.routed !== "app") return;
+  const prevTop = box.scrollTop;
+  box.innerHTML = "";
+  const w = el("div","welcome");
+  if (S.kind === "dm"){ const o = S.cur.split("_").find(u => u !== S.uid) || S.uid; const big = avatar(o); big.classList.add("big"); w.appendChild(big);
+    w.appendChild(el("h2",null, nickOf(o)));
+    w.appendChild(el("p",null, S.roomLoaded ? "This is the start of your private messages with " + nickOf(o) + ". Only the two of you can see them." : "Loading messages…")); }
+  else { const r = S.rooms.find(x => x.id === S.cur); w.appendChild(el("div","big","#")); w.appendChild(el("h2",null,"Welcome to #" + (r ? r.name : "…")));
+    w.appendChild(el("p",null, S.roomLoaded ? "This is the start of the #" + (r ? r.name : "") + " room." : "Loading messages…")); }
+  box.appendChild(w);
+  const byMsg = {}; S.reacts.forEach(x => { (byMsg[x.mid] = byMsg[x.mid] || {}); (byMsg[x.mid][x.e] = byMsg[x.mid][x.e] || []).push(x); });
+  let prev = null;
+  S.msgs.forEach(m => {
+    const first = !prev || prev.uid !== m.uid || (m.ts - prev.ts) > 5*60*1000;
+    const row = el("div","msg" + (first ? " first" : ""));
+    const gut = el("div","gut");
+    gut.appendChild(first ? avatar(m.uid) : el("span","tm", fmtTime(m.ts)));
+    row.appendChild(gut);
+    const body = el("div","body");
+    if (first){ const meta = el("div","meta"); const n = el("span","n", nickOf(m.uid)); n.style.color = colorOf(m.uid); meta.appendChild(n);
+      if (S.config && S.config.ownerUid === m.uid){ meta.appendChild(el("span","devtag admintag","👑 ADMIN")); }
+      else if (isCoDev(m.uid)) meta.appendChild(el("span","devtag","💻 DEV"));
+      meta.appendChild(el("span","t", fmtDay(m.ts))); body.appendChild(meta); }
+    if (m.text){ const tx = el("div","tx" + (onlyEmoji(m.text) && !m.img ? " jumbo" : "")); linkify(tx, m.text); body.appendChild(tx); }
+    if (m.img){ const im = el("img","att"); im.src = m.img; im.alt = m.gif ? "GIF" : "image"; im.loading = "lazy"; im.onclick = () => lightbox(m.img);
+      im.onload = () => { if (scroll) box.scrollTop = box.scrollHeight; }; body.appendChild(im); }
+    const rs = byMsg[m.id];
+    if (rs){ const wrap = el("div","reacts");
+      Object.keys(rs).forEach(e => { const arr = rs[e]; const mine = arr.some(x => x.uid === S.uid);
+        const b = el("button","rc" + (mine ? " mine" : "")); b.appendChild(document.createTextNode(e + " ")); b.appendChild(el("b",null,String(arr.length)));
+        b.title = arr.map(x => nickOf(x.uid)).join(", "); b.onclick = () => toggleReact(m, e); wrap.appendChild(b); });
+      body.appendChild(wrap); }
+    row.appendChild(body);
+    const tools = el("div","tools");
+    const rb = el("button",null,"😀"); rb.title = "Add reaction"; rb.onclick = ev => quickReact(ev, m); tools.appendChild(rb);
+    QUICK.slice(0,3).forEach(e => { const b = el("button",null,e); b.onclick = () => toggleReact(m, e); tools.appendChild(b); });
+    if (m.uid === S.uid || (isAdmin() && S.kind === "room")){ const db_ = el("button",null,"🗑"); db_.title = "Delete message"; db_.onclick = () => confirmBox("Delete message?", "This can't be undone.", "Delete", () => deleteMsg(m)); tools.appendChild(db_); }
+    row.appendChild(tools);
+    box.appendChild(row);
+    prev = m;
+  });
+  box.scrollTop = scroll ? box.scrollHeight : prevTop;
+}
+function lightbox(src){ const d = el("div","lightbox"); const im = el("img"); im.src = src; d.appendChild(im); d.onclick = () => d.remove(); document.body.appendChild(d); }
+
+async function toggleReact(m, e){
+  const id = m.id + "__" + S.uid + "__" + eKey(e);
+  const ref = doc(db, ...base(), "reacts", id);
+  try{ if (S.reacts.some(x => x.id === id)) await deleteDoc(ref); else await setDoc(ref, {mid:m.id, uid:S.uid, e, ts:Date.now()}); }
+  catch(err){ toast("Couldn't react: " + errMsg(err)); }
+}
+function quickReact(ev, m){
+  document.querySelectorAll(".quick").forEach(x => x.remove());
+  const q = el("div","quick"); QUICK.forEach(e => { const b = el("button",null,e); b.onclick = () => { q.remove(); toggleReact(m, e); }; q.appendChild(b); });
+  const more = el("button",null,"➕"); more.title = "More"; more.onclick = () => { q.remove(); openEmoji(e2 => toggleReact(m, e2)); }; q.appendChild(more);
+  document.body.appendChild(q);
+  const r = ev.target.getBoundingClientRect(); q.style.top = Math.max(8, r.top - 50) + "px"; q.style.left = Math.max(8, Math.min(window.innerWidth - q.offsetWidth - 8, r.right - q.offsetWidth)) + "px";
+  setTimeout(() => document.addEventListener("click", function h(e){ if (!q.contains(e.target)){ q.remove(); document.removeEventListener("click", h); } }), 0);
+}
+async function deleteMsg(m){
+  const b = base();
+  try{ await deleteDoc(doc(db, ...b, "msgs", m.id));
+    for (const r of S.reacts.filter(x => x.mid === m.id)) await deleteDoc(doc(db, ...b, "reacts", r.id)).catch(()=>{});
+  }catch(e){ toast("Couldn't delete: " + errMsg(e)); }
+}
+
+// ---------- typing ----------
+let typingT = null, typingSent = 0, typingRoom = null;
+function iAmTyping(){
+  if (Date.now() - typingSent > 3000){ typingSent = Date.now(); typingRoom = base(); setDoc(doc(db, ...typingRoom, "typing", S.uid), {t:typingSent}).catch(()=>{}); }
+  clearTimeout(typingT); typingT = setTimeout(stopTyping, 4000);
+}
+function stopTyping(){ clearTimeout(typingT); if (typingSent && typingRoom){ deleteDoc(doc(db, ...typingRoom, "typing", S.uid)).catch(()=>{}); } typingSent = 0; typingRoom = null; }
+function typers(){ return S.typing.filter(x => x.uid !== S.uid && Date.now() - x.t < 7000 && member(x.uid)).map(x => x.uid); }
+function renderTyping(){
+  const t = $("typing"); t.innerHTML = "";
+  const who = typers(); if (!who.length) return;
+  const bub = el("span","bub"); bub.append(el("span"), el("span"), el("span")); t.appendChild(bub);
+  const names = who.map(nickOf);
+  t.appendChild(el("span", null, names.length === 1 ? names[0] + " is typing…" : names.length === 2 ? names[0] + " and " + names[1] + " are typing…" : "Several people are typing…"));
+}
+setInterval(renderTyping, 2000);
+
+// ---------- composer ----------
+const input = $("input");
+function autoGrow(){ input.style.height = "auto"; input.style.height = Math.min(180, input.scrollHeight) + "px"; }
+input.addEventListener("input", () => { autoGrow(); if (input.value.trim()) iAmTyping(); else stopTyping(); });
+input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); send(); } });
+input.addEventListener("paste", e => { const f = [...(e.clipboardData && e.clipboardData.files || [])].find(f => f.type.startsWith("image/")); if (f){ e.preventDefault(); setPending(f); } });
+$("msgs").addEventListener("dragover", e => e.preventDefault());
+$("msgs").addEventListener("drop", e => { e.preventDefault(); const f = [...e.dataTransfer.files].find(f => f.type.startsWith("image/")); if (f) setPending(f); });
+$("attBtn").onclick = () => $("file").click();
+$("file").onchange = () => { const f = $("file").files[0]; if (f) setPending(f); $("file").value = ""; };
+$("prevX").onclick = () => setPending(null);
+
+function setPending(f){
+  S.pending = f;
+  if (!f){ $("preview").classList.add("hidden"); return; }
+  $("prevImg").src = URL.createObjectURL(f); $("prevName").textContent = f.name + " · " + Math.round(f.size/1024) + " KB";
+  $("preview").classList.remove("hidden"); input.focus();
+}
+function compress(file, maxDim, q){
+  return new Promise((res, rej) => { const img = new Image(); img.onload = () => {
+    const s = Math.min(1, maxDim / Math.max(img.width, img.height)); const c = document.createElement("canvas");
+    c.width = Math.round(img.width*s); c.height = Math.round(img.height*s); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    res(c.toDataURL("image/jpeg", q)); }; img.onerror = rej; img.src = URL.createObjectURL(file); });
+}
+function readDataURL(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
+// Images are stored inside the message (Firestore free plan, no Storage needed). GIFs keep their animation if under ~700 KB.
+async function imageToData(file){
+  if (/gif|webp/.test(file.type)){ if (file.size > 700*1024) throw new Error("GIF is too big. Max is about 700 KB."); return readDataURL(file); }
+  let d = await compress(file, 1600, 0.8); if (d.length > 700000) d = await compress(file, 1100, 0.7); if (d.length > 700000) d = await compress(file, 700, 0.6);
+  return d;
+}
+
+let sending = false;
+async function send(extra){
+  if (sending) return;
+  const text = input.value.trim(); const f = S.pending;
+  if (!text && !f && !extra) return;
+  if (!S.cur){ toast("Pick a room or DM first"); return; }
+  sending = true; stopTyping();
+  try{
+    const body = {uid:S.uid, text:text.slice(0,4000), ts:Date.now()};
+    if (f){ $("prevName").textContent = "Uploading…"; body.img = await imageToData(f); if (/gif/.test(f.type)) body.gif = true; }
+    if (extra) Object.assign(body, extra);
+    const id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
+    const b = base(), kind = S.kind, roomId = S.cur;
+    input.value = ""; autoGrow(); setPending(null);
+    await setDoc(doc(db, ...b, "msgs", id), body);
+    if (kind === "dm") setDoc(doc(db, "dms", roomId), {users:roomId.split("_"), lastTs:body.ts, lastUid:S.uid}, {merge:true}).catch(()=>{});
+    else setDoc(doc(db, "meta", roomId), {lastTs:body.ts, lastUid:S.uid}).catch(()=>{});
+  }catch(e){ toast("Couldn't send: " + errMsg(e)); if (f) setPending(f); }
+  finally{ sending = false; input.focus(); }
+}
+
+// ---------- emoji picker ----------
+let emoCb = null;
+function buildEmojiGrid(){ const g = $("emoGrid"); if (g.children.length) return; EMOJIS.forEach(e => { const b = el("button",null,e); b.onclick = () => { const cb = emoCb; closePops(); if (cb) cb(e); else insertAt(e); }; g.appendChild(b); }); }
+function insertAt(t){ const s = input.selectionStart ?? input.value.length; input.value = input.value.slice(0,s) + t + input.value.slice(input.selectionEnd ?? s); input.selectionStart = input.selectionEnd = s + t.length; input.focus(); autoGrow(); }
+function openEmoji(cb){ closePops(); emoCb = cb || null; $("emoPop").classList.remove("hidden"); }
+function closePops(){ $("emoPop").classList.add("hidden"); $("gifPop").classList.add("hidden"); emoCb = null; }
+$("emoBtn").onclick = e => { e.stopPropagation(); const open = !$("emoPop").classList.contains("hidden"); closePops(); if (!open) openEmoji(); };
+$("gifBtn").onclick = e => { e.stopPropagation(); const open = !$("gifPop").classList.contains("hidden"); closePops(); if (!open) $("gifPop").classList.remove("hidden"); };
+document.addEventListener("click", e => { if (!e.target.closest(".pop") && !e.target.closest("#emoBtn") && !e.target.closest("#gifBtn") && !e.target.closest(".quick")) closePops(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape"){ closePops(); document.querySelectorAll(".lightbox,.quick").forEach(x => x.remove()); } });
+
+// ---------- GIF library ----------
+function renderGifs(){
+  const g = $("gifGrid"); g.innerHTML = "";
+  if (!S.gifs.length){ g.appendChild(el("div","empty","No GIFs yet. Upload one and it's saved here for everyone to reuse.")); return; }
+  S.gifs.forEach(x => { const im = el("img"); im.src = x.img; im.loading = "lazy"; im.title = "Added by " + nickOf(x.uid);
+    im.onclick = () => { closePops(); send({gif:true, img:x.img}); }; g.appendChild(im); });
+}
+$("gifUp").onclick = () => $("gifFile").click();
+$("gifFile").onchange = async () => {
+  const f = $("gifFile").files[0]; $("gifFile").value = ""; if (!f) return;
+  toast("Uploading GIF…");
+  try{ const img = await imageToData(f); await setDoc(doc(db, "gifs", rid()), {uid:S.uid, ts:Date.now(), img}); closePops(); send({gif:true, img}); }
+  catch(e){ toast("Couldn't upload: " + errMsg(e)); }
+};
+
+// ---------- members ----------
+function renderMembers(){
+  const box = $("memList"); if (S.routed !== "app") return; box.innerHTML = "";
+  const all = Object.keys(S.members).map(k => Object.assign({uid:k}, S.members[k])).filter(m => !isBanned(m.uid));
+  const sortN = (a,b) => (a.nick||"").localeCompare(b.nick||"");
+  const typing = typers();
+  [["Online", all.filter(m => isOnline(m.uid)).sort(sortN)], ["Offline", all.filter(m => !isOnline(m.uid)).sort(sortN)]].forEach(([label, arr]) => {
+    if (!arr.length) return;
+    box.appendChild(el("div","cat", label + " — " + arr.length));
+    arr.forEach(m => {
+      const row = el("div","mrow" + (label === "Offline" ? " off" : ""));
+      row.appendChild(avatar(m.uid, true, true));
+      const info = el("div"); info.style.flex = "1"; info.style.minWidth = "0";
+      const n = el("div","nm", m.nick + (m.uid === S.uid ? " (you)" : "")); n.style.color = m.color; info.appendChild(n);
+      if (S.config && S.config.ownerUid === m.uid) info.appendChild(el("div","sub adminsub","👑 Admin"));
+      else if (isCoDev(m.uid)) info.appendChild(el("div","sub devsub","💻 Developer"));
+      else if (typing.includes(m.uid)) info.appendChild(el("div","sub","typing…"));
+      row.appendChild(info);
+      if (m.uid !== S.uid){
+        row.classList.add("click"); row.title = "Message " + m.nick; row.onclick = () => openDM(m.uid);
+        const acts = el("div","acts");
+        const dm = el("button","act","💬"); dm.title = "Send a DM"; dm.onclick = ev => { ev.stopPropagation(); openDM(m.uid); }; acts.appendChild(dm);
+        if (isOwner()){ const cd = isCoDev(m.uid);
+          const pb = el("button","act", cd ? "⬇" : "💻"); pb.title = cd ? "Remove as developer" : "Make developer";
+          pb.onclick = ev => { ev.stopPropagation(); cd ? confirmBox("Remove " + m.nick + " as a developer?", "They'll go back to being a regular member.", "Remove", () => setCoDev(m, false))
+            : confirmBox("Make " + m.nick + " a developer?", "Developers can create, rename and delete rooms, delete messages, kick people and see or change the invite code. Only you can add or remove developers.", "Make developer", () => setCoDev(m, true), true); };
+          acts.appendChild(pb); }
+        if (isAdmin() && m.uid !== (S.config && S.config.ownerUid) && !(isCoDev(m.uid) && !isOwner())){
+          const k = el("button","act kickb","⛔"); k.title = "Kick"; k.onclick = ev => { ev.stopPropagation(); confirmBox("Kick " + m.nick + "?", "They'll be locked out right away and can't rejoin, even with the invite code, unless they're unbanned.", "Kick", () => kick(m)); };
+          acts.appendChild(k); }
+        row.appendChild(acts);
+      }
+      box.appendChild(row);
+    });
+  });
+}
+async function setCoDev(m, on){
+  try{ await updateDoc(doc(db, "config/main"), {admins: on ? arrayUnion(m.uid) : arrayRemove(m.uid)}); toast(on ? m.nick + " is now a developer 💻" : m.nick + " is no longer a developer"); }
+  catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+async function kick(m){
+  try{ const upd = {banned:arrayUnion(m.uid), bannedNames:Object.assign({}, S.config.bannedNames||{}, {[m.uid]:m.nick})};
+    if (isOwner() && isCoDev(m.uid)) upd.admins = arrayRemove(m.uid);
+    await updateDoc(doc(db, "config/main"), upd);
+    await deleteDoc(doc(db, "members", m.uid)); toast(m.nick + " was kicked");
+  }catch(e){ toast("Couldn't kick: " + errMsg(e)); }
+}
+
+// ---------- modals ----------
+function modal(build){
+  const bg = el("div","modalbg"); const m = el("div","modal"); bg.appendChild(m);
+  const close = () => bg.remove(); bg.onclick = e => { if (e.target === bg) close(); };
+  build(m, close); $("modalRoot").appendChild(bg); const f = m.querySelector("input"); if (f) f.focus(); return close;
+}
+function confirmBox(title, text, okLabel, onOk, positive){
+  modal((m, close) => { m.appendChild(el("h3",null,title)); m.appendChild(el("p","note",text));
+    const foot = el("div","foot"); const c = el("button","btn ghost","Cancel"); c.onclick = close;
+    const ok = el("button","btn small" + (positive ? "" : " danger"),okLabel); ok.onclick = () => { close(); onOk(); }; foot.append(c, ok); m.appendChild(foot); });
+}
+$("meWho").onclick = () => {
+  const me = member(S.uid); let color = me.color;
+  modal((m, close) => {
+    m.appendChild(el("h3",null,"Your profile"));
+    m.appendChild(el("label","f","Display name")); const n = el("input","inp"); n.value = me.nick; n.maxLength = 24; m.appendChild(n);
+    m.appendChild(el("label","f","Color")); const cs = el("div","colors");
+    COLORS.forEach(c => { const b = el("button", c === color ? "on" : ""); b.style.background = c; b.onclick = () => { color = c; [...cs.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }; cs.appendChild(b); });
+    m.appendChild(cs);
+    const foot = el("div","foot"); const c = el("button","btn ghost","Cancel"); c.onclick = close;
+    const ok = el("button","btn small","Save"); ok.onclick = async () => { const v = n.value.trim(); if (v.length < 2) return;
+      try{ await updateDoc(doc(db, "members", S.uid), {nick:v, color}); close(); }catch(e){ toast("Couldn't save: " + errMsg(e)); } };
+    foot.append(c, ok); m.appendChild(foot);
+  });
+};
+$("addRoom").onclick = () => roomModal();
+function roomModal(){
+  modal((m, close) => {
+    m.appendChild(el("h3",null,"Create a room"));
+    m.appendChild(el("label","f","Room name")); const n = el("input","inp"); n.placeholder = "new-room"; m.appendChild(n);
+    m.appendChild(el("label","f","Topic (optional)")); const t = el("input","inp"); t.placeholder = "What's this room for?"; m.appendChild(t);
+    const foot = el("div","foot"); const c = el("button","btn ghost","Cancel"); c.onclick = close;
+    const ok = el("button","btn small","Create"); ok.onclick = async () => { const s = slug(n.value); if (!s) return;
+      const id = s + "-" + rid().slice(-4);
+      try{ await setDoc(doc(db, "rooms", id), {name:s, topic:t.value.trim().slice(0,120), order:S.rooms.length, createdAt:Date.now()}); close(); openChat("room", id); }catch(e){ toast("Couldn't create: " + errMsg(e)); } };
+    n.onkeydown = e => { if (e.key === "Enter") ok.click(); };
+    foot.append(c, ok); m.appendChild(foot);
+  });
+}
+$("adminBtn").onclick = () => {
+  modal((m, close) => {
+    m.appendChild(el("h3",null,"Admin settings"));
+    m.appendChild(el("label","f","Invite code"));
+    const row = el("div","row"); const code = el("input","inp"); code.value = S.invite || ""; code.maxLength = 24;
+    const sv = el("button","btn small","Save"); sv.onclick = async () => { const v = code.value.trim(); if (v.length < 3){ toast("At least 3 characters"); return; }
+      try{ await setDoc(doc(db, "secret/invite"), {code:v}); toast("Invite code updated"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } };
+    const cp = el("button","btn small ghost","Copy"); cp.onclick = () => navigator.clipboard.writeText(code.value).then(()=>toast("Copied"), ()=>toast("Select the code and copy it"));
+    row.append(code, sv, cp); m.appendChild(row);
+    m.appendChild(el("div","note","Friends type this the first time they join. Only you can see it. Changing it doesn't kick anyone who already joined."));
+
+    m.appendChild(el("label","f","Rooms"));
+    const rl = el("div","list");
+    S.rooms.forEach(r => { const li = el("div","li"); li.appendChild(el("span",null,"#")); const nm = el("input","inp"); nm.value = r.name; nm.style.padding = "6px 8px"; nm.style.flex = "1";
+      nm.onchange = () => { const s = slug(nm.value); if (s) updateDoc(doc(db, "rooms", r.id), {name:s}).catch(e => toast("Couldn't rename: " + errMsg(e))); };
+      const clr = el("button","btn small ghost","Clear"); clr.title = "Delete the latest 150 messages in this room";
+      clr.onclick = () => confirmBox("Clear #" + r.name + "?", "Deletes the most recent messages in this room for everyone.", "Clear", () => clearRoom(r.id));
+      const del = el("button","btn small danger","Delete"); del.onclick = () => confirmBox("Delete #" + r.name + "?", "The room and its recent messages disappear for everyone.", "Delete", async () => { await clearRoom(r.id); deleteDoc(doc(db, "rooms", r.id)).catch(()=>{}); deleteDoc(doc(db, "meta", r.id)).catch(()=>{}); close(); });
+      li.append(nm, clr, del); rl.appendChild(li); });
+    m.appendChild(rl);
+    const ar = el("button","btn small","+ New room"); ar.style.marginTop = "8px"; ar.onclick = () => { close(); roomModal(); }; m.appendChild(ar);
+
+    m.appendChild(el("label","f","Developers"));
+    const cds = (S.config.admins || []).filter(u => member(u));
+    if (!cds.length) m.appendChild(el("div","note", isOwner() ? "None yet. Hover over someone in the member list and click 💻 to make them a developer." : "None."));
+    const cl = el("div","list");
+    cds.forEach(u => { const li = el("div","li"); li.appendChild(el("span","nm", "💻 " + nickOf(u)));
+      if (isOwner()){ const rb = el("button","btn small ghost","Remove"); rb.onclick = () => { close(); setCoDev({uid:u, nick:nickOf(u)}, false); }; li.appendChild(rb); }
+      cl.appendChild(li); });
+    m.appendChild(cl);
+    const banned = S.config.banned || []; const names = S.config.bannedNames || {};
+    m.appendChild(el("label","f","Kicked people (" + banned.length + ")"));
+    if (!banned.length) m.appendChild(el("div","note","Nobody. Hover over someone in the member list and click Kick to remove them."));
+    const bl = el("div","list");
+    banned.forEach(u => { const li = el("div","li"); li.appendChild(el("span","nm", names[u] || "Kicked member"));
+      const ub = el("button","btn small ghost","Unban"); ub.onclick = async () => { try{ await updateDoc(doc(db, "config/main"), {banned:arrayRemove(u)}); close(); toast("Unbanned. They can rejoin with the invite code."); }catch(e){ toast("Couldn't unban: " + errMsg(e)); } };
+      li.appendChild(ub); bl.appendChild(li); });
+    m.appendChild(bl);
+    const foot = el("div","foot"); const c = el("button","btn small","Done"); c.onclick = close; foot.appendChild(c); m.appendChild(foot);
+  });
+};
+async function clearRoom(roomId){
+  try{ const snap = await getDocs(query(collection(db, "rooms", roomId, "msgs"), orderBy("ts","desc"), limit(150)));
+    for (const d of snap.docs) await deleteDoc(d.ref);
+    const rs = await getDocs(query(collection(db, "rooms", roomId, "reacts"), limit(500)));
+    for (const d of rs.docs) await deleteDoc(d.ref);
+    toast("Room cleared");
+  }catch(e){ toast("Couldn't clear: " + errMsg(e)); }
+}
+
+$("newDM").onclick = () => {
+  modal((m, close) => {
+    m.appendChild(el("h3",null,"New direct message"));
+    m.appendChild(el("p","note","Pick someone to message privately."));
+    const list = el("div","list picker");
+    Object.keys(S.members).filter(u => u !== S.uid && !isBanned(u)).sort((a,b) => nickOf(a).localeCompare(nickOf(b))).forEach(u => {
+      const li = el("div","li"); li.appendChild(avatar(u, true, true)); const n = el("span","nm", nickOf(u)); n.style.color = colorOf(u); li.appendChild(n);
+      li.onclick = () => { close(); openDM(u); }; list.appendChild(li); });
+    if (!list.children.length) list.appendChild(el("div","note","Nobody else has joined yet."));
+    m.appendChild(list);
+    const foot = el("div","foot"); const c = el("button","btn ghost","Close"); c.onclick = close; foot.appendChild(c); m.appendChild(foot);
+  });
+};
+// ---------- updates ----------
+function updBar(node){ const b = $("updbar"); b.innerHTML = ""; b.append(...node); const x = el("button","x","✕"); x.onclick = () => b.classList.add("hidden"); b.appendChild(x); b.classList.remove("hidden"); }
+if (location.protocol === "file:"){
+  const a = el("a", null, "Open the live link"); a.href = LIVE_URL; a.target = "_blank"; a.rel = "noopener";
+  setTimeout(() => updBar([el("span", null, "CampusCord now lives online and updates itself."), a]), 1500);
+} else {
+  const check = async () => { try{
+    const r = await fetch("version.json?t=" + Date.now(), {cache:"no-store"}); if (!r.ok) return;
+    const v = (await r.json()).version;
+    if (v && v !== APP_VERSION){ const btn = el("button", null, "Refresh"); btn.onclick = () => location.reload(); updBar([el("span", null, "A new version of CampusCord is available."), btn]); }
+  }catch(e){} };
+  setTimeout(check, 5000); setInterval(check, 5*60*1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) check(); });
+}
+$("copyRules").onclick = () => { const t = $("rulesTxt"); t.select(); (navigator.clipboard ? navigator.clipboard.writeText(t.value) : Promise.reject()).then(() => toast("Rules copied"), () => { document.execCommand("copy"); toast("Rules copied"); }); };
+boot();
+</script>
+</body>
+</html>

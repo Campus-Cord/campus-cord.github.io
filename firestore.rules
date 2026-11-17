@@ -1,0 +1,114 @@
+rules_version = '2';
+// CampusCord security rules (v2: co-developers + DMs).
+// Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function cfgPath() { return /databases/$(database)/documents/config/main; }
+    function cfg() { return get(cfgPath()).data; }
+    function isOwner() { return signedIn() && exists(cfgPath()) && cfg().ownerUid == request.auth.uid; }
+    function notBanned() { return !(request.auth.uid in cfg().banned); }
+    function isMember() {
+      return signedIn() && exists(cfgPath()) && notBanned()
+        && exists(/databases/$(database)/documents/members/$(request.auth.uid));
+    }
+    // Owner, or a member the owner made a co-developer.
+    function isAdmin() { return isOwner() || (isMember() && request.auth.uid in cfg().get('admins', [])); }
+    function ownsNew() { return request.resource.data.uid == request.auth.uid; }
+    function ownsOld() { return resource.data.uid == request.auth.uid; }
+
+    // Server settings. The first person to open the app becomes the owner.
+    match /config/main {
+      allow read: if signedIn();
+      allow create: if signedIn() && !exists(cfgPath())
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.banned is list;
+      // Owner can change anything except who the owner is.
+      allow update: if isOwner() && request.resource.data.ownerUid == resource.data.ownerUid;
+      // Co-developers can only kick/unban, and can never kick the owner or another co-developer.
+      allow update: if isAdmin() && !isOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['banned', 'bannedNames'])
+        && !(resource.data.ownerUid in request.resource.data.banned)
+        && !request.resource.data.banned.hasAny(resource.data.get('admins', []));
+    }
+
+    // Invite code: only the owner and co-developers can see or change it.
+    match /secret/invite {
+      allow read, update: if isAdmin();
+      allow create: if signedIn()
+        && getAfter(cfgPath()).data.ownerUid == request.auth.uid
+        && (!exists(/databases/$(database)/documents/secret/invite) || isOwner());
+    }
+
+    // People. To join you need the right invite code (the owner doesn't).
+    match /members/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && uid == request.auth.uid && notBanned()
+        && request.resource.data.nick is string && request.resource.data.nick.size() <= 24
+        && (isOwner() || request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code);
+      allow update: if signedIn() && uid == request.auth.uid && notBanned()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nick', 'color', 'lastSeen']);
+      allow delete: if isOwner()
+        || (isAdmin() && uid != cfg().ownerUid && !(uid in cfg().get('admins', [])));
+    }
+
+    // Rooms: owner and co-developers manage them.
+    match /rooms/{roomId} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+
+      match /msgs/{msgId} {
+        allow read: if isMember();
+        allow create: if isMember() && ownsNew() && request.resource.data.text.size() <= 4000;
+        allow delete: if isAdmin() || (isMember() && ownsOld());
+      }
+      match /reacts/{reactId} {
+        allow read: if isMember();
+        allow create: if isMember() && ownsNew();
+        allow delete: if isAdmin() || (isMember() && ownsOld());
+      }
+      match /typing/{uid} {
+        allow read: if isMember();
+        allow write: if isMember() && uid == request.auth.uid;
+      }
+    }
+
+    // Direct messages: only the two people in a DM can read or write it.
+    // A DM's id is the two user ids, sorted, joined with "_".
+    match /dms/{dmId} {
+      function inDm() { return isMember() && request.auth.uid in dmId.split('_'); }
+      allow get: if inDm();
+      allow list: if isMember() && request.auth.uid in resource.data.users;
+      allow create, update: if inDm() && request.resource.data.users == dmId.split('_');
+
+      match /msgs/{msgId} {
+        allow read: if inDm();
+        allow create: if inDm() && ownsNew() && request.resource.data.text.size() <= 4000;
+        allow delete: if inDm() && ownsOld();
+      }
+      match /reacts/{reactId} {
+        allow read: if inDm();
+        allow create: if inDm() && ownsNew();
+        allow delete: if inDm() && ownsOld();
+      }
+      match /typing/{uid} {
+        allow read: if inDm();
+        allow write: if inDm() && uid == request.auth.uid;
+      }
+    }
+
+    // Unread markers per room.
+    match /meta/{roomId} {
+      allow read: if isMember();
+      allow write: if isMember();
+    }
+
+    // Shared GIF library.
+    match /gifs/{gifId} {
+      allow read: if isMember();
+      allow create: if isMember() && ownsNew();
+      allow delete: if isAdmin();
+    }
+  }
+}
