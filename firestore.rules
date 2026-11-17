@@ -48,16 +48,18 @@ service cloud.firestore {
     // ---------------- people
     match /members/{uid} {
       allow read: if signedIn();
+      // The owner can always create or fix their own member profile.
+      allow create, update: if isOwner() && uid == request.auth.uid;
       allow create: if signedIn() && uid == request.auth.uid && notBanned()
         && request.resource.data.nick is string && request.resource.data.nick.size() <= 24
-        && (isOwner() || request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code);
+        && request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code;
       allow update: if signedIn() && uid == request.auth.uid && notBanned()
         && changed().hasOnly(['nick', 'color', 'lastSeen'])
         && request.resource.data.nick.size() <= 24;
       allow delete: if isOwner()
         || (isAdmin() && uid != cfg().ownerUid && !(uid in cfg().get('admins', [])));
     }
-    // Bio, status, name effect, banner. Each person edits only their own.
+    // Bio, status, name effect, banner, picture. Each person edits only their own.
     match /profiles/{uid} {
       allow read: if signedIn();
       allow create, update: if isMember() && uid == request.auth.uid
