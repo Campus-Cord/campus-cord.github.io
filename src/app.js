@@ -265,6 +265,7 @@ function route(){
     return;
   }
   if (!S.membersLoaded) return;
+  if (S.joining) return; // wait for Firebase to confirm the join before switching screens
   if (isBanned(S.uid) && !isOwner()){ kickedOut(); return; }
   if (!member(S.uid)){
     if (S.routed === "app"){ kickedOut(); return; }
@@ -303,9 +304,17 @@ function setupJoin(){
 async function doJoin(){
   const nick = $("j-nick").value.trim(); const code = $("j-code").value.trim();
   if (nick.length < 2){ $("j-err").textContent = "Pick a name with at least 2 characters."; return; }
-  $("j-go").disabled = true; $("j-err").textContent = "";
-  try{ await setDoc(doc(db, "members", S.uid), {nick, color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); }
-  catch(e){ $("j-err").textContent = e.code === "permission-denied" ? "That invite code isn't right." : "Couldn't join: " + errMsg(e); $("j-go").disabled = false; }
+  $("j-go").disabled = true; $("j-err").textContent = "Joining…";
+  S.joining = true;
+  try{ await setDoc(doc(db, "members", S.uid), {nick, color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); $("j-err").textContent = ""; }
+  catch(e){
+    $("j-err").textContent = e.code !== "permission-denied" ? "Couldn't join: " + errMsg(e)
+      : isBanned(S.uid) ? "This account was kicked. Ask the admin to unban you."
+      : isOwner() ? "Firebase refused the join. Make sure the latest Firestore rules are published."
+      : "That invite code isn't right. (Admin? Your ID below doesn't match ownerUid in Firebase yet.)";
+    $("j-go").disabled = false;
+  }
+  finally{ S.joining = false; route(); }
 }
 $("j-go").onclick = doJoin;
 $("j-nick").onkeydown = $("j-code").onkeydown = e => { if (e.key === "Enter") doJoin(); };
