@@ -335,13 +335,15 @@ $("j-nick").onkeydown = $("j-code").onkeydown = e => { if (e.key === "Enter") do
 function stopAppSubs(){ S.unsubApp.forEach(u => u()); S.unsubApp = []; S.unsubRoom.forEach(u => u()); S.unsubRoom = []; clearInterval(S.hb); }
 function initApp(){
   S.unsubApp.push(onSnapshot(collection(db, "rooms"), snap => {
-    S.rooms = snap.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
+    S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+    S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
     need("side","header","composer");
   }, ()=>{}));
   S.unsubApp.push(onSnapshot(collection(db, "meta"), snap => {
     snap.docChanges().forEach(c => { if (c.type === "removed") return; const d = c.doc.data(), id = c.doc.id;
+      if (!S.rooms.find(x => x.id === id)) return;
       if (d.lastUid !== S.uid && d.lastTs > S.loadedAt && S.notified["r:"+id] !== d.lastTs){
         S.notified["r:"+id] = d.lastTs;
         const mine = (d.lastMentions||[]).includes(S.uid) || d.lastEveryone;
@@ -441,7 +443,8 @@ function renderSide(){
       if (closed && !on && !un && !mc) return;
       const typ = !on && typersIn("room", r.id).length;
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : ""), onclick:() => openChat("room", r.id)},
-        h("span",{class:"ic"}, ic(r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+        h("span",{class:"ic"}, ic(r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+        isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
         typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : (un ? h("span",{class:"newdot",title:"New messages"}) : null)));
     });
   });
@@ -487,6 +490,10 @@ const base = () => [S.kind === "dm" ? "dms" : "rooms", S.cur];
 const readKey = (kind, id) => (kind === "dm" ? "dm:" : "") + id;
 const dmIdWith = uid => [S.uid, uid].sort().join("_");
 const dmOther = d => (d.users || (d.id||"").split("_")).find(u => u !== S.uid) || S.uid;
+// Private rooms: only the owner and the people on the room's "allowed" list can see them.
+function listNames(a){ return a.length <= 1 ? (a[0] || "you") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
+function roomPeople(r){ const owner = S.config && S.config.ownerUid; return [...new Set([owner, ...(r.allowed || [])])].filter(u => u && member(u) && !isBanned(u)); }
+function canSeeRoom(r){ return !r.private || isOwner() || (r.allowed || []).includes(S.uid); }
 const curRoom = () => S.kind === "room" ? S.rooms.find(r => r.id === S.cur) : null;
 const canPost = () => { const r = curRoom(); return !(r && r.readonly) || isAdmin(); };
 function markRead(){ if (!S.cur) return; S.lastRead[readKey(S.kind, S.cur)] = Date.now(); store("lastRead", S.lastRead);
@@ -546,7 +553,7 @@ function renderHeader(){
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
     const st = statusOf(o); d.textContent = profile(o).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st]);
-  } else { const r = curRoom(); icon.appendChild(ic(r && r.readonly ? "megaphone" : "hash")); t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
+  } else { const r = curRoom(); icon.appendChild(ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")); t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
   $("btnMembers").classList.toggle("on", S.rpanel === "members");
   $("btnPins").classList.toggle("on", S.rpanel === "pins");
   updateTitle();
@@ -616,8 +623,8 @@ function welcomeBlock(){
   const w = h("div",{class:"welcome"});
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); const big = avatar(o, "xl"); big.style.marginBottom = "12px"; w.append(big, h("h2",null, nickOf(o)),
       h("p",null, S.roomLoaded ? "This is the start of your private messages with " + nickOf(o) + ". Only the two of you can see them." : "Loading messages…")); }
-  else { const r = curRoom(); w.append(h("div",{class:"big"}, ic(r && r.readonly ? "megaphone" : "hash")), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
-      h("p",null, !S.roomLoaded ? "Loading messages…" : (r && r.topic) ? r.topic : "This is the start of the #" + (r ? r.name : "") + " room.")); }
+  else { const r = curRoom(); w.append(h("div",{class:"big"}, ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
+      h("p",null, !S.roomLoaded ? "Loading messages…" : (r && r.private) ? "Private room — only " + listNames(roomPeople(r).map(nickOf)) + " can see this." : (r && r.topic) ? r.topic : "This is the start of the #" + (r ? r.name : "") + " room.")); }
   return w;
 }
 function messageEl(m, first, reacts){
@@ -747,6 +754,7 @@ function renderRPanel(){
   const b = h("div",{class:"rb"}); p.appendChild(b);
   let uids = Object.keys(S.members).filter(u => !isBanned(u));
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); uids = [S.uid, o].filter(u => member(u)); }
+  else { const r = curRoom(); if (r && r.private) uids = roomPeople(r); }
   const sortN = (a,b) => nickOf(a).localeCompare(nickOf(b));
   const special = u => isOwnerUid(u) || (isDev(u) && isOn(u)) || (rankOf(u) === "plusplus" && isOn(u));
   const groups = [["Admin", uids.filter(isOwnerUid)], ["Developers", uids.filter(u => !isOwnerUid(u) && isDev(u) && isOn(u))],
@@ -873,6 +881,7 @@ function updateAutocomplete(){
     const q = m[2].toLowerCase(), start = v.length - m[2].length - 1;
     let pool = Object.keys(S.members).filter(u => !isBanned(u));
     if (S.kind === "dm") pool = pool.filter(u => S.cur.split("_").includes(u));
+    else { const r = curRoom(); if (r && r.private) pool = roomPeople(r); }
     const items = pool.filter(u => nickOf(u).toLowerCase().startsWith(q) || nickOf(u).toLowerCase().includes(" " + q)).sort((a,b) => (isOn(b) - isOn(a)) || nickOf(a).localeCompare(nickOf(b))).slice(0, 8)
       .map(u => ({uid:u, label:nickOf(u), insert:"@" + nickOf(u) + " ", start}));
     if (isAdmin() && S.kind === "room" && "everyone".startsWith(q)) items.push({label:"@everyone", desc:"Notify everyone", insert:"@everyone ", start});
@@ -973,7 +982,8 @@ async function send(extra){
     input.value = ""; autoGrow(); S.replyTo = null; setPending(null); S.stickBottom = true;
     await setDoc(doc(db, ...b, "msgs", id), body);
     const preview = (body.me ? nickOf(S.uid) + " " : "") + (text || (body.gif ? "sent a GIF" : body.img ? "sent an image" : "")).slice(0, 120);
-    const meta = {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview:preview, lastMentions:mentions, lastEveryone:!!body.everyone};
+    const priv = kind === "room" && (curRoom() || {}).private;
+    const meta = {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview: priv ? "New message in a private room" : preview, lastMentions:mentions, lastEveryone:!!body.everyone};
     if (kind === "dm") setDoc(doc(db, "dms", chatId), Object.assign({users:chatId.split("_")}, meta), {merge:true}).catch(()=>{});
     else setDoc(doc(db, "meta", chatId), meta).catch(()=>{});
   }catch(e){ toast("Couldn't send: " + errMsg(e)); if (f) setPending(f); }
@@ -1088,9 +1098,23 @@ function roomModal(room, cat){
     let ro = !!(room && room.readonly);
     const sw = h("button",{class:"sw" + (ro ? " on" : ""), onclick:() => { ro = !ro; sw.classList.toggle("on", ro); }});
     m.append(h("label",{class:"f",text:"Room name"}), n, h("label",{class:"f",text:"Topic"}), t, h("label",{class:"f",text:"Category"}), c, dl,
-      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"📣 Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
+    let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
+    const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
+    const drawPeople = () => { people.innerHTML = "";
+      Object.keys(S.members).filter(u => u !== S.uid && !isBanned(u)).sort((a,b) => nickOf(a).localeCompare(nickOf(b))).forEach(u => {
+        const on = allowed.has(u);
+        people.appendChild(h("div",{class:"li pick" + (on ? " on" : ""), onclick:() => { on ? allowed.delete(u) : allowed.add(u); drawPeople(); }},
+          avatar(u, "sm"), paintName(h("span",{class:"nm",text:nickOf(u)}), u), h("span",{class:"chk"}, on ? ic("check") : null))); });
+      if (!people.children.length) people.appendChild(h("div",{class:"note",text:"Nobody else has joined yet."})); };
+    if (isOwner()){
+      const psw = h("button",{class:"sw" + (priv ? " on" : ""), onclick:() => { priv = !priv; psw.classList.toggle("on", priv); people.classList.toggle("hidden", !priv); }});
+      m.append(h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("lock","sm"), " Private room"), h("span",{text:"Only you and the people you pick can see it"})), psw), people);
+      drawPeople();
+    }
     const save = async () => { const s = slug(n.value); if (!s){ toast("Give the room a name"); return; }
       const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro};
+      if (isOwner()){ data.private = priv; data.allowed = priv ? [...allowed] : []; }
       try{ if (room) await updateDoc(doc(db, "rooms", room.id), data);
         else { const id = s + "-" + rid().slice(-4); await setDoc(doc(db, "rooms", id), Object.assign(data, {order:S.rooms.length, createdAt:Date.now()})); close(); openChat("room", id); return; }
         close(); }catch(e){ toast("Couldn't save: " + errMsg(e)); } };
@@ -1322,7 +1346,7 @@ function adminRooms(p){
   p.append(h("button",{class:"btn small", onclick:() => roomModal()}, "+ New room"));
   const list = h("div",{class:"list", style:{marginTop:"12px"}});
   S.rooms.forEach((r, i) => list.appendChild(h("div",{class:"li"},
-    ic(r.readonly ? "megaphone" : "hash"), h("span",{class:"nm"}, h("b",{text:r.name}), h("span",{class:"s",text:"  · " + (r.category || "Text rooms")})),
+    ic(r.private ? "lock" : r.readonly ? "megaphone" : "hash"), h("span",{class:"nm"}, h("b",{text:r.name}), h("span",{class:"s",text:"  · " + (r.category || "Text rooms")})),
     h("button",{class:"ib", title:"Move up", disabled: i === 0, onclick:() => moveRoom(i, -1)}, ic("chevronup")),
     h("button",{class:"ib", title:"Move down", disabled: i === S.rooms.length - 1, onclick:() => moveRoom(i, 1)}, ic("chevron")),
     h("button",{class:"btn small ghost", onclick:() => roomModal(r)}, "Edit"),

@@ -524,3 +524,15 @@ html.compact .msg .gut{width:24px}
 .newdot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none;margin-right:2px;box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 22%,transparent);animation:newpulse 2s ease-in-out infinite}
 @keyframes newpulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 10%,transparent)}}
 .rail .ri .gdot{position:absolute;right:-2px;bottom:-2px;width:16px;height:16px;border-radius:50%;background:var(--green);border:3px solid var(--rail)}
+
+/* private rooms */
+.ch .x.edit{display:none;align-items:center;justify-content:center;width:20px;height:20px;padding:0;color:var(--dim);background:none;border:0}
+.ch:hover .x.edit{display:flex}
+.ch .x.edit:hover{color:var(--text)}
+.ch .x.edit .i{width:15px;height:15px}
+.li.pick{cursor:pointer}
+.li.pick:hover{background:var(--hover)}
+.li.pick .chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--dim);display:flex;align-items:center;justify-content:center;flex:none}
+.li.pick.on .chk{background:var(--accent);border-color:var(--accent);color:#fff}
+.li.pick .chk .i{width:14px;height:14px}
+.toggle .tl b{display:flex;align-items:center;gap:4px}

@@ -1,5 +1,5 @@
 rules_version = '2';
-// CampusCord security rules (v3.1). Published automatically by GitHub Actions when this file changes.
+// CampusCord security rules (v3.3: private rooms). Published automatically by GitHub Actions when this file changes.
 // Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -84,29 +84,36 @@ service cloud.firestore {
 
     // ---------------- rooms
     match /rooms/{roomId} {
-      function roomOpen() { return !get(/databases/$(database)/documents/rooms/$(roomId)).data.get('readonly', false); }
+      function room() { return get(/databases/$(database)/documents/rooms/$(roomId)).data; }
+      function roomOpen() { return !room().get('readonly', false); }
+      // Private rooms: only the owner and the people on the room's allowed list get in.
+      function inRoom() { return isMember() && (!room().get('private', false) || isOwner() || request.auth.uid in room().get('allowed', [])); }
+      function roomAdmin() { return isAdmin() && inRoom(); }
       allow read: if isMember();
-      allow write: if isAdmin();
+      // Only the owner can make a room private or change who is in it.
+      allow create: if isOwner() || (isAdmin() && !request.resource.data.get('private', false));
+      allow update: if isOwner() || (isAdmin() && !resource.data.get('private', false) && !request.resource.data.get('private', false));
+      allow delete: if isOwner() || (isAdmin() && !resource.data.get('private', false));
 
       match /msgs/{msgId} {
-        allow read: if isMember();
-        allow create: if isMember() && ownsNew() && request.resource.data.text.size() <= 4000
+        allow read: if inRoom();
+        allow create: if inRoom() && ownsNew() && request.resource.data.text.size() <= 4000
           && (roomOpen() || isAdmin());
         // Authors edit their own text; admins pin.
-        allow update: if isMember() && ownsOld()
+        allow update: if inRoom() && ownsOld()
           && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])
           && request.resource.data.text.size() <= 4000;
-        allow update: if isAdmin() && changed().hasOnly(['pinned', 'pinnedBy']);
-        allow delete: if isAdmin() || (isMember() && ownsOld());
+        allow update: if roomAdmin() && changed().hasOnly(['pinned', 'pinnedBy']);
+        allow delete: if roomAdmin() || (inRoom() && ownsOld());
       }
       match /reacts/{reactId} {
-        allow read: if isMember();
-        allow create: if isMember() && ownsNew();
-        allow delete: if isAdmin() || (isMember() && ownsOld());
+        allow read: if inRoom();
+        allow create: if inRoom() && ownsNew();
+        allow delete: if roomAdmin() || (inRoom() && ownsOld());
       }
       match /typing/{uid} {
-        allow read: if isMember();
-        allow write: if isMember() && uid == request.auth.uid;
+        allow read: if inRoom();
+        allow write: if inRoom() && uid == request.auth.uid;
       }
     }
 
