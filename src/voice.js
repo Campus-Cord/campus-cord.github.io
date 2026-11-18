@@ -12,7 +12,7 @@ function rtcConfig(){
   else ice.push({urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"], username:"openrelayproject", credential:"openrelayproject"});
   return {iceServers:ice};
 }
-const VOICE_STALE = 45000;
+const VOICE_STALE = 95000;
 const V = {room:null, stream:null, peers:{}, early:{}, tries:{}, warned:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
 S.voiceParts = {}; S.voiceSubs = {};
 const isVoiceRoom = r => r && r.type === "voice";
@@ -24,7 +24,11 @@ function syncVoiceSubs(){
   const want = new Set(S.rooms.filter(isVoiceRoom).map(r => r.id));
   Object.keys(S.voiceSubs).forEach(id => { if (!want.has(id)){ S.voiceSubs[id](); delete S.voiceSubs[id]; delete S.voiceParts[id]; } });
   want.forEach(id => { if (S.voiceSubs[id]) return;
+    let first = true;
     S.voiceSubs[id] = onSnapshot(collection(db, "rooms", id, "voice"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.voiceParts[id] = p;
+      // a change we just received is fresh activity, whatever the sender's clock says
+      if (!first) snap.docChanges().forEach(c => { if (c.type === "removed") return; const x = c.doc.data(); if (x.lastSeen) SEEN["v:" + c.doc.id + ":" + (x.joinedAt || 0)] = {v:x.lastSeen, at:Date.now()}; });
+      first = false;
       if (V.room === id){ V.parts = p; syncPeers(); need("me"); } need("side"); }, () => {}); });
 }
 setInterval(() => { if (Object.keys(S.voiceParts).length) need("side"); }, 20000);
@@ -61,7 +65,7 @@ async function joinVoice(roomId){
     if ((p.tries || 0) >= 3 && !V.warned[u]){ V.warned[u] = true; toast("Voice can't reach " + nickOf(u) + " yet. One of your networks may be blocking calls — try another Wi-Fi or a hotspot." + (isOwner() ? " (You can add a voice relay in Admin → Overview.)" : "")); }
     if ((st === "new" || st === "connecting" || st === "disconnected") && Date.now() - p.created > wait && S.uid < u){ V.tries[u] = (p.tries || 0) + 1; closePeer(u); makePeer(u, true); } });
     syncPeers(); }, 3000);
-  V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 15000);
+  V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 30000);
   watchLevel(S.uid, V.stream);
   syncPeers(); tone(true); need("side","composer","me","msgs");
 }

@@ -1314,17 +1314,17 @@ const firebaseConfig = {
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.30";
+const APP_VERSION = "2026-11-18.31";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
 const COLORS = ["#7c5cff","#3fb8ff","#3ecf7a","#f5b83d","#f0565c","#ff7ac6","#22d3c5","#ff9447"];
 const QUICK = ["👍","❤️","😂","😮","😢","🔥","💀","🎉"];
 const EMOJIS = "😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 😘 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 😮‍💨 🤥 😌 😔 😪 😴 😷 🤒 🤕 🤢 🤮 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 💀 ☠️ 💩 🤡 👻 👽 🤖 🙈 🙉 🙊 💯 💥 💫 💦 💨 💬 💭 💤 👋 🤚 ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 👏 🙌 👐 🤲 🤝 🙏 💪 🧠 👀 🫡 🫠 🫶 ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💔 ❣️ 💕 💞 💓 💗 💖 💘 🔥 ✨ ⭐ 🌟 ⚡ 🌈 ☀️ 🌙 ❄️ 🎉 🎊 🎈 🎁 🏆 🥇 🎮 🕹️ 🎧 🎵 🎶 📚 📝 ✏️ 📌 📎 💻 📱 ☕ 🍕 🍔 🍟 🌮 🍿 🍩 🍪 🎂 🍦 🧃 🥤 🐶 🐱 🐸 🐵 🦄 🐢 🐍 🦖 🐙 🦋 🌸 🌵 🍀 🚀 ✈️ 🚗 🏀 ⚽ 🏈 ⚾ 🎾 🏐 ✅ ❌ ⚠️ ❓ ❗ 💡 🔔 🔒 🗿 🤷 🤦 🙋 💁 🙆 🙅".split(" ");
-const ONLINE_MS = 75000, HEARTBEAT_MS = 30000, PAGE = 100;
+const ONLINE_MS = 330000, HEARTBEAT_MS = 150000, PAGE = 100;
 
 const THEMES = [
   {id:"dark", name:"Dark", c:["#17181c","#22242a","#2b2d34"]},
@@ -1597,7 +1597,10 @@ function boot(){
   applyPrefs();
   document.querySelectorAll("[data-ic]").forEach(b => b.prepend(ic(b.dataset.ic)));
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "PASTE_HERE"){ gateMsg("Not configured", "Paste your Firebase config at the top of the script."); return; }
-  try{ const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
+  try{ const app = initializeApp(firebaseConfig); auth = getAuth(app);
+    // Keep a copy of the data on this device: reopening CampusCord only downloads what changed, which keeps us well
+    // inside Firebase's free daily limits. Falls back to the normal mode if the browser can't store it.
+    try{ db = initializeFirestore(app, {localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})}); }catch(e){ db = getFirestore(app); } }
   catch(e){ gateMsg("Firebase config problem", "Double-check the Firebase config in this file. (" + errMsg(e) + ")"); return; }
   const t = setTimeout(() => { $("loadmsg").textContent = "Still connecting… check your internet connection."; }, 10000);
   onAuthStateChanged(auth, user => {
@@ -1781,7 +1784,7 @@ function initApp(){
     S.dms = snap.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => (b.lastTs||b.createdAt||0) - (a.lastTs||a.createdAt||0));
     need("side","rail","header"); if (S.kind === "home") need("msgs");
   }, e => console.warn("DMs unavailable", e)));
-  S.unsubApp.push(onSnapshot(query(collection(db, "gifs"), orderBy("ts","desc"), limit(60)), snap => { S.gifs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("gifs"); }, ()=>{}));
+  S.unsubApp.push(onSnapshot(query(collection(db, "gifs"), orderBy("ts","desc"), limit(30)), snap => { S.gifs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("gifs"); }, ()=>{}));
   S.unsubApp.push(onSnapshot(doc(db, "config/shop"), s => { S.shop = s.exists() ? s.data() : {}; refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => {
     const before = Object.fromEntries((S.myOrders || []).map(o => [o.id, o.status]));
@@ -2650,11 +2653,11 @@ async function setMyProfile(patch){
 // ---------------------------------------------------------------- typing
 let typingT = null, typingSent = 0, typingPath = null;
 function iAmTyping(){
-  if (Date.now() - typingSent > 3000){ typingSent = Date.now(); typingPath = base(); setDoc(doc(db, ...typingPath, "typing", S.uid), {t:typingSent}).catch(()=>{}); }
+  if (Date.now() - typingSent > 6000){ typingSent = Date.now(); typingPath = base(); setDoc(doc(db, ...typingPath, "typing", S.uid), {t:typingSent}).catch(()=>{}); }
   clearTimeout(typingT); typingT = setTimeout(stopTyping, 4000);
 }
 function stopTyping(){ clearTimeout(typingT); if (typingSent && typingPath) deleteDoc(doc(db, ...typingPath, "typing", S.uid)).catch(()=>{}); typingSent = 0; typingPath = null; }
-function typersIn(kind, id){ if (kind !== S.kind || id !== S.cur) return []; return S.typing.filter(x => x.uid !== S.uid && Date.now() - x.t < 7000 && member(x.uid)).map(x => x.uid); }
+function typersIn(kind, id){ if (kind !== S.kind || id !== S.cur) return []; return S.typing.filter(x => x.uid !== S.uid && Date.now() - seenAt("t:" + x.uid, x.t) < 10000 && member(x.uid)).map(x => x.uid); }
 function renderTyping(){
   const t = $("typing"); t.innerHTML = "";
   const who = typersIn(S.kind, S.cur); if (!who.length) return;
@@ -3966,7 +3969,7 @@ async function claimVouchRewards(){
 // Keep an eye on the #vouches room (latest 100) so approvals pay out and the owner sees how many are waiting.
 let vFeedUnsub = null, vFeedRoom = null;
 function watchVouches(){ const vr = S.rooms.find(isVouchRoom); if (!vr || vFeedRoom === vr.id) return; if (vFeedUnsub) vFeedUnsub(); vFeedRoom = vr.id;
-  vFeedUnsub = onSnapshot(query(collection(db, "rooms", vr.id, "msgs"), orderBy("ts", "desc"), limit(100)), snap => {
+  vFeedUnsub = onSnapshot(query(collection(db, "rooms", vr.id, "msgs"), orderBy("ts", "desc"), limit(40)), snap => {
     S.vouchFeed = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("side"); setTimeout(claimVouchRewards, 400); }, () => {}); }
 const pendingVouches = () => (S.vouchFeed || []).filter(m => m.vouch && !m.approved && !m.rejected && m.uid !== S.uid);
 async function reviewVouch(m, ok){
@@ -4353,7 +4356,7 @@ function rtcConfig(){
   else ice.push({urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"], username:"openrelayproject", credential:"openrelayproject"});
   return {iceServers:ice};
 }
-const VOICE_STALE = 45000;
+const VOICE_STALE = 95000;
 const V = {room:null, stream:null, peers:{}, early:{}, tries:{}, warned:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
 S.voiceParts = {}; S.voiceSubs = {};
 const isVoiceRoom = r => r && r.type === "voice";
@@ -4365,7 +4368,11 @@ function syncVoiceSubs(){
   const want = new Set(S.rooms.filter(isVoiceRoom).map(r => r.id));
   Object.keys(S.voiceSubs).forEach(id => { if (!want.has(id)){ S.voiceSubs[id](); delete S.voiceSubs[id]; delete S.voiceParts[id]; } });
   want.forEach(id => { if (S.voiceSubs[id]) return;
+    let first = true;
     S.voiceSubs[id] = onSnapshot(collection(db, "rooms", id, "voice"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.voiceParts[id] = p;
+      // a change we just received is fresh activity, whatever the sender's clock says
+      if (!first) snap.docChanges().forEach(c => { if (c.type === "removed") return; const x = c.doc.data(); if (x.lastSeen) SEEN["v:" + c.doc.id + ":" + (x.joinedAt || 0)] = {v:x.lastSeen, at:Date.now()}; });
+      first = false;
       if (V.room === id){ V.parts = p; syncPeers(); need("me"); } need("side"); }, () => {}); });
 }
 setInterval(() => { if (Object.keys(S.voiceParts).length) need("side"); }, 20000);
@@ -4402,7 +4409,7 @@ async function joinVoice(roomId){
     if ((p.tries || 0) >= 3 && !V.warned[u]){ V.warned[u] = true; toast("Voice can't reach " + nickOf(u) + " yet. One of your networks may be blocking calls — try another Wi-Fi or a hotspot." + (isOwner() ? " (You can add a voice relay in Admin → Overview.)" : "")); }
     if ((st === "new" || st === "connecting" || st === "disconnected") && Date.now() - p.created > wait && S.uid < u){ V.tries[u] = (p.tries || 0) + 1; closePeer(u); makePeer(u, true); } });
     syncPeers(); }, 3000);
-  V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 15000);
+  V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 30000);
   watchLevel(S.uid, V.stream);
   syncPeers(); tone(true); need("side","composer","me","msgs");
 }

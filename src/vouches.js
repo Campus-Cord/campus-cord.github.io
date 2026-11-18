@@ -26,7 +26,7 @@ async function claimVouchRewards(){
 // Keep an eye on the #vouches room (latest 100) so approvals pay out and the owner sees how many are waiting.
 let vFeedUnsub = null, vFeedRoom = null;
 function watchVouches(){ const vr = S.rooms.find(isVouchRoom); if (!vr || vFeedRoom === vr.id) return; if (vFeedUnsub) vFeedUnsub(); vFeedRoom = vr.id;
-  vFeedUnsub = onSnapshot(query(collection(db, "rooms", vr.id, "msgs"), orderBy("ts", "desc"), limit(100)), snap => {
+  vFeedUnsub = onSnapshot(query(collection(db, "rooms", vr.id, "msgs"), orderBy("ts", "desc"), limit(40)), snap => {
     S.vouchFeed = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("side"); setTimeout(claimVouchRewards, 400); }, () => {}); }
 const pendingVouches = () => (S.vouchFeed || []).filter(m => m.vouch && !m.approved && !m.rejected && m.uid !== S.uid);
 async function reviewVouch(m, ok){

@@ -5,7 +5,7 @@ const firebaseConfig = __FIREBASE_CONFIG__;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
 const APP_VERSION = "__APP_VERSION__";
@@ -15,7 +15,7 @@ const LIVE_URL = "https://campus-cord.github.io/";
 const COLORS = ["#7c5cff","#3fb8ff","#3ecf7a","#f5b83d","#f0565c","#ff7ac6","#22d3c5","#ff9447"];
 const QUICK = ["👍","❤️","😂","😮","😢","🔥","💀","🎉"];
 const EMOJIS = "😀 😃 😄 😁 😆 😅 🤣 😂 🙂 😉 😊 😇 🥰 😍 🤩 😘 😋 😛 😜 🤪 😝 🤑 🤗 🤭 🤫 🤔 🤐 🤨 😐 😑 😶 😏 😒 🙄 😬 😮‍💨 🤥 😌 😔 😪 😴 😷 🤒 🤕 🤢 🤮 🥵 🥶 🥴 😵 🤯 🤠 🥳 😎 🤓 🧐 😕 😟 🙁 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 🥱 😤 😡 😠 🤬 😈 💀 ☠️ 💩 🤡 👻 👽 🤖 🙈 🙉 🙊 💯 💥 💫 💦 💨 💬 💭 💤 👋 🤚 ✋ 🖖 👌 🤌 🤏 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ 👍 👎 ✊ 👊 👏 🙌 👐 🤲 🤝 🙏 💪 🧠 👀 🫡 🫠 🫶 ❤️ 🧡 💛 💚 💙 💜 🖤 🤍 💔 ❣️ 💕 💞 💓 💗 💖 💘 🔥 ✨ ⭐ 🌟 ⚡ 🌈 ☀️ 🌙 ❄️ 🎉 🎊 🎈 🎁 🏆 🥇 🎮 🕹️ 🎧 🎵 🎶 📚 📝 ✏️ 📌 📎 💻 📱 ☕ 🍕 🍔 🍟 🌮 🍿 🍩 🍪 🎂 🍦 🧃 🥤 🐶 🐱 🐸 🐵 🦄 🐢 🐍 🦖 🐙 🦋 🌸 🌵 🍀 🚀 ✈️ 🚗 🏀 ⚽ 🏈 ⚾ 🎾 🏐 ✅ ❌ ⚠️ ❓ ❗ 💡 🔔 🔒 🗿 🤷 🤦 🙋 💁 🙆 🙅".split(" ");
-const ONLINE_MS = 75000, HEARTBEAT_MS = 30000, PAGE = 100;
+const ONLINE_MS = 330000, HEARTBEAT_MS = 150000, PAGE = 100;
 
 const THEMES = [
   {id:"dark", name:"Dark", c:["#17181c","#22242a","#2b2d34"]},
@@ -288,7 +288,10 @@ function boot(){
   applyPrefs();
   document.querySelectorAll("[data-ic]").forEach(b => b.prepend(ic(b.dataset.ic)));
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "PASTE_HERE"){ gateMsg("Not configured", "Paste your Firebase config at the top of the script."); return; }
-  try{ const app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); }
+  try{ const app = initializeApp(firebaseConfig); auth = getAuth(app);
+    // Keep a copy of the data on this device: reopening CampusCord only downloads what changed, which keeps us well
+    // inside Firebase's free daily limits. Falls back to the normal mode if the browser can't store it.
+    try{ db = initializeFirestore(app, {localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})}); }catch(e){ db = getFirestore(app); } }
   catch(e){ gateMsg("Firebase config problem", "Double-check the Firebase config in this file. (" + errMsg(e) + ")"); return; }
   const t = setTimeout(() => { $("loadmsg").textContent = "Still connecting… check your internet connection."; }, 10000);
   onAuthStateChanged(auth, user => {
@@ -472,7 +475,7 @@ function initApp(){
     S.dms = snap.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => (b.lastTs||b.createdAt||0) - (a.lastTs||a.createdAt||0));
     need("side","rail","header"); if (S.kind === "home") need("msgs");
   }, e => console.warn("DMs unavailable", e)));
-  S.unsubApp.push(onSnapshot(query(collection(db, "gifs"), orderBy("ts","desc"), limit(60)), snap => { S.gifs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("gifs"); }, ()=>{}));
+  S.unsubApp.push(onSnapshot(query(collection(db, "gifs"), orderBy("ts","desc"), limit(30)), snap => { S.gifs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("gifs"); }, ()=>{}));
   S.unsubApp.push(onSnapshot(doc(db, "config/shop"), s => { S.shop = s.exists() ? s.data() : {}; refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => {
     const before = Object.fromEntries((S.myOrders || []).map(o => [o.id, o.status]));
@@ -1341,11 +1344,11 @@ async function setMyProfile(patch){
 // ---------------------------------------------------------------- typing
 let typingT = null, typingSent = 0, typingPath = null;
 function iAmTyping(){
-  if (Date.now() - typingSent > 3000){ typingSent = Date.now(); typingPath = base(); setDoc(doc(db, ...typingPath, "typing", S.uid), {t:typingSent}).catch(()=>{}); }
+  if (Date.now() - typingSent > 6000){ typingSent = Date.now(); typingPath = base(); setDoc(doc(db, ...typingPath, "typing", S.uid), {t:typingSent}).catch(()=>{}); }
   clearTimeout(typingT); typingT = setTimeout(stopTyping, 4000);
 }
 function stopTyping(){ clearTimeout(typingT); if (typingSent && typingPath) deleteDoc(doc(db, ...typingPath, "typing", S.uid)).catch(()=>{}); typingSent = 0; typingPath = null; }
-function typersIn(kind, id){ if (kind !== S.kind || id !== S.cur) return []; return S.typing.filter(x => x.uid !== S.uid && Date.now() - x.t < 7000 && member(x.uid)).map(x => x.uid); }
+function typersIn(kind, id){ if (kind !== S.kind || id !== S.cur) return []; return S.typing.filter(x => x.uid !== S.uid && Date.now() - seenAt("t:" + x.uid, x.t) < 10000 && member(x.uid)).map(x => x.uid); }
 function renderTyping(){
   const t = $("typing"); t.innerHTML = "";
   const who = typersIn(S.kind, S.cur); if (!who.length) return;
