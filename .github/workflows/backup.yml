@@ -1,0 +1,49 @@
+name: Nightly backup
+
+# Every night: export the whole CampusCord database, encrypt it with BACKUP_PASSWORD,
+# and keep it for 30 days under this workflow's run (Actions → Nightly backup → a run → Artifacts).
+# To open one:  openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in campuscord-backup.enc -out backup.json.gz && gunzip backup.json.gz
+on:
+  schedule:
+    - cron: "17 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the keys are set
+        id: keys
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$BACKUP_PASSWORD" ] || [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::notice::Skipping: add a BACKUP_PASSWORD secret to turn on nightly backups."; echo "ok=no" >> "$GITHUB_OUTPUT"
+          else echo "ok=yes" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-node@v4
+        if: steps.keys.outputs.ok == 'yes'
+        with:
+          node-version: 20
+      - name: Export database
+        if: steps.keys.outputs.ok == 'yes'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          npm i --no-save --silent firebase-admin@12
+          node scripts/backup.mjs
+      - name: Encrypt
+        if: steps.keys.outputs.ok == 'yes'
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -in backup.json.gz -out campuscord-backup.enc -pass env:BACKUP_PASSWORD
+          rm -f backup.json.gz
+      - uses: actions/upload-artifact@v4
+        if: steps.keys.outputs.ok == 'yes'
+        with:
+          name: campuscord-backup-${{ github.run_number }}
+          path: campuscord-backup.enc
+          retention-days: 30

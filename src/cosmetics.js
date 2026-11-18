@@ -225,7 +225,7 @@ function renderQuestsPage(box){
   const body = h("div",{class:"sbody"}); wrap.appendChild(body);
   if (tab === "all"){
     const qb = BADGES.find(x => x.id === "quest"), st = qb.state(S.uid), n = done.length;
-    const nextAt = n < 1 ? 1 : n < 5 ? 5 : n < QUESTS.length ? QUESTS.length : null;
+    const nextAt = st && st.tier === "gold" ? null : n < 1 ? 1 : n < 5 ? 5 : n < QUESTS.length ? QUESTS.length : null;
     body.appendChild(h("div",{class:"qhero"},
       h("div",{class:"pfx pfx-confetti"}),
       h("div",{class:"shtext"}, h("span",{class:"ichip"}, ic("star"), "EXPLORER BADGE"), h("h2",{text: st ? "Explorer · " + TIERS[st.tier].name : "Earn the Explorer badge"}),

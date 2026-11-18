@@ -352,7 +352,7 @@ async function doJoin(){
   if (nick.length < 2){ $("j-err").textContent = "Pick a name with at least 2 characters."; return; }
   $("j-go").disabled = true; $("j-err").textContent = "Joining…";
   S.joining = true;
-  try{ await setDoc(doc(db, "members", S.uid), {nick, color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); $("j-err").textContent = ""; }
+  try{ await setDoc(doc(db, "members", S.uid), {nick, color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); $("j-err").textContent = ""; if (!isOwner()) S.announceJoin = true; }
   catch(e){
     $("j-err").textContent = e.code !== "permission-denied" ? "Couldn't join: " + errMsg(e)
       : isBanned(S.uid) ? "This account was kicked. Ask the admin to unban you."
@@ -365,12 +365,21 @@ async function doJoin(){
 $("j-go").onclick = doJoin;
 $("j-nick").onkeydown = $("j-code").onkeydown = e => { if (e.key === "Enter") doJoin(); };
 
+// A "👋 X joined" line in the main room so friends see who's new.
+async function announceJoin(){
+  const r = S.rooms.find(x => x.name === "general" && !x.readonly && !x.private && !isVoiceRoom(x)) || S.rooms.find(x => !x.readonly && !x.private && !isVoiceRoom(x)); if (!r) return;
+  const ts = Date.now(), id = ts.toString(36) + "-join" + Math.random().toString(36).slice(2, 5);
+  try{ await setDoc(doc(db, "rooms", r.id, "msgs", id), {uid:S.uid, text:"", join:true, ts});
+    await setDoc(doc(db, "meta", r.id), {lastTs:ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview:"joined CampusCord 👋", lastMentions:[], lastEveryone:false}); }catch(e){ console.warn("join msg", e); }
+}
+const JOIN_LINES = ["just joined. Say hi! 👋", "slid into the server. 😎", "is here. Everyone act normal.", "just showed up. Welcome! 🎉", "joined the party. 🥳", "hopped in. 🐸"];
 // ---------------------------------------------------------------- app init
 function stopAppSubs(){ S.unsubApp.forEach(u => u()); S.unsubApp = []; S.unsubRoom.forEach(u => u()); S.unsubRoom = []; clearInterval(S.hb); }
 function initApp(){
   S.unsubApp.push(onSnapshot(collection(db, "rooms"), snap => {
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
+    if (S.announceJoin && S.rooms.length){ S.announceJoin = false; announceJoin(); }
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
     syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
@@ -910,7 +919,7 @@ function renderMessages(){
     const dl = new Date(m.ts).toDateString();
     if (dl !== prevDay){ box.appendChild(h("div",{class:"day",text:dayLabel(m.ts)})); prevDay = dl; prev = null; }
     if (!divDone && S.unreadSince && m.ts > S.unreadSince && m.uid !== S.uid){ box.appendChild(h("div",{class:"newdiv"}, h("span",{text:"NEW"}))); divDone = true; prev = null; }
-    const first = !prev || prev.uid !== m.uid || (m.ts - prev.ts) > 5*60*1000 || m.reply || m.me;
+    const first = !prev || prev.uid !== m.uid || (m.ts - prev.ts) > 5*60*1000 || m.reply || m.me || prev.join;
     box.appendChild(messageEl(m, first, byMsg[m.id]));
     prev = m;
   });
@@ -931,6 +940,9 @@ function welcomeBlock(){
   return w;
 }
 function messageEl(m, first, reacts){
+  if (m.join){ const line = JOIN_LINES[parseInt(m.id.replace(/\D/g, "").slice(-3) || "0", 10) % JOIN_LINES.length];
+    return h("div",{class:"msg joinmsg first", id:"m-" + m.id}, h("div",{class:"gut"}, h("span",{class:"joinic"}, ic("arrowdown"))),
+      h("div",{class:"body"}, h("div",{class:"jl"}, paintName(h("b",{class:"n",text:nickOf(m.uid), onclick:e => openProfile(m.uid, e.target)}), m.uid), " " + line, h("span",{class:"t",text:" " + fmtDay(m.ts)})))); }
   const mentioned = m.uid !== S.uid && ((m.mentions||[]).includes(S.uid) || m.everyone || (m.reply && m.reply.uid === S.uid));
   const row = h("div",{class:"msg" + (first ? " first" : "") + (mentioned ? " mention" : ""), id:"m-" + m.id});
   const gut = h("div",{class:"gut"});
@@ -999,7 +1011,10 @@ function embedsFor(text){
   const out = []; const urls = (text.match(/https?:\/\/[^\s<]+/g) || []).slice(0, 2);
   urls.forEach(u => { let m;
     if ((m = u.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{11})/))){
-      out.push(h("div",{class:"embed yt"}, h("iframe",{src:"https://www.youtube-nocookie.com/embed/" + m[1], loading:"lazy", allow:"accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture", allowfullscreen:true, title:"YouTube video"})));
+      const vid = m[1]; const box = h("div",{class:"embed yt lite", title:"Play video", onclick:() => { box.innerHTML = ""; box.classList.remove("lite");
+          box.appendChild(h("iframe",{src:"https://www.youtube-nocookie.com/embed/" + vid + "?autoplay=1", allow:"accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture", allowfullscreen:true, title:"YouTube video"})); }},
+        h("img",{src:"https://i.ytimg.com/vi/" + vid + "/hqdefault.jpg", alt:"", loading:"lazy"}), h("span",{class:"ytplay"}));
+      out.push(box);
     } else if (/\.(png|jpe?g|gif|webp)(\?|#|$)/i.test(u)){
       out.push(h("img",{class:"att", src:u, loading:"lazy", referrerpolicy:"no-referrer", onclick:() => lightbox(u), onerror:function(){ this.remove(); }}));
     } });
@@ -1787,12 +1802,40 @@ function openAdmin(start){
     {id:"orders", icon:"receipt", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isOwner()},
   ], start || "overview");
 }
+async function downloadBackup(btn, st){
+  const old = btn.innerHTML; btn.disabled = true;
+  const step = t => { btn.textContent = t; };
+  try{
+    const out = {app:"CampusCord", version:APP_VERSION, exportedAt:new Date().toISOString(), exportedBy:S.uid, collections:{}};
+    const grab = async (path, q) => { const snap = await getDocs(q || collection(db, ...path.split("/"))); return Object.fromEntries(snap.docs.map(d => [d.id, d.data()])); };
+    step("Saving settings…"); out.config = {main:S.config || null, shop:S.shop || null};
+    for (const c of ["members", "profiles", "wallet", "perks", "orders"]){ step("Saving " + c + "…"); try{ out.collections[c] = await grab(c); }catch(e){ out.collections[c] = {error:String(e.message || e)}; } }
+    out.rooms = {}; let n = 0;
+    for (const r of S.allRooms){ step("Saving #" + r.name + "…");
+      const room = {info:Object.assign({}, r), msgs:{}, reacts:{}};
+      try{ room.msgs = await grab("rooms/" + r.id + "/msgs", query(collection(db, "rooms", r.id, "msgs"), orderBy("ts", "asc"))); n += Object.keys(room.msgs).length; }catch(e){ room.msgs = {error:String(e.message || e)}; }
+      try{ room.reacts = await grab("rooms/" + r.id + "/reacts"); }catch(e){}
+      out.rooms[r.id] = room; }
+    out.myDMs = {};
+    for (const d of S.dms){ step("Saving your DMs…"); try{ out.myDMs[d.id] = {info:d, msgs:await grab("dms/" + d.id + "/msgs", query(collection(db, "dms", d.id, "msgs"), orderBy("ts", "asc")))}; }catch(e){} }
+    const blob = new Blob([JSON.stringify(out, null, 1)], {type:"application/json"});
+    const a = h("a",{href:URL.createObjectURL(blob), download:"campuscord-backup-" + new Date().toISOString().slice(0, 10) + ".json"}); document.body.appendChild(a); a.click(); a.remove();
+    prefs.lastBackup = Date.now(); savePrefs(); if (st) st.textContent = "Last downloaded today.";
+    toast("Backup saved — " + n.toLocaleString() + " messages in " + S.allRooms.length + " rooms");
+  }catch(e){ toast("Backup failed: " + errMsg(e)); }
+  finally{ btn.disabled = false; btn.innerHTML = old; }
+}
 function adminOverview(p){
   const code = h("input",{class:"inp", value:S.invite || "", maxlength:"24"});
   p.append(h("label",{class:"f",text:"Invite code"}), h("div",{class:"row"}, code,
       h("button",{class:"btn small", onclick:async () => { const v = code.value.trim(); if (v.length < 3){ toast("At least 3 characters"); return; } try{ await setDoc(doc(db, "secret/invite"), {code:v}); toast("Invite code updated"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save"),
       h("button",{class:"btn small ghost", onclick:() => copy("Join me on CampusCord! " + LIVE_URL + "  Invite code: " + code.value, "Invite message copied")}, "Copy invite")),
     h("p",{class:"note",text:"Friends type this the first time they join. Changing it doesn't kick anyone."}));
+  if (isOwner()){ const last = prefs.lastBackup; const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
+    const st = h("span",{class:"note",style:{margin:0},text: last ? "Last downloaded " + (days === 0 ? "today" : days === 1 ? "yesterday" : days + " days ago") + "." : "You haven't downloaded a backup yet."});
+    p.append(h("div",{class:"preview-card bkcard"}, h("div",{style:{flex:"1"}}, h("b",{text:"Backups"}),
+        h("div",{class:"note",style:{margin:"2px 0 0"},text:"Download every room's messages, reactions, pins, members, profiles, Sparks and purchases as one file. Other people's DMs aren't included — they're private."}), st),
+      h("button",{class:"btn small", onclick:e => downloadBackup(e.currentTarget, st)}, ic("arrowdown","sm"), " Download backup"))); }
   if (isOwner()){
     const nm = h("input",{class:"inp", value:(S.config.serverName || "CampusCord"), maxlength:"32"});
     const ic = h("input",{class:"inp", value:(S.config.serverIcon || "CC"), maxlength:"4", style:{width:"90px"}});
@@ -1872,7 +1915,8 @@ function adminMembers(p){
   Object.keys(S.members).filter(u => !isBanned(u)).sort((a,b) => nickOf(a).localeCompare(nickOf(b))).forEach(u => {
     const perks = Object.keys(((S.perks[u]||{}).items)||{}).filter(k => perkActive(S.perks[u].items[k]));
     list.appendChild(h("div",{class:"li"}, avatar(u, "sm", true), h("span",{class:"nm"}, paintName(h("b",{text:nickOf(u)}), u), " ", ...roleTags(u, true), perks.length ? h("span",{class:"s",text:"  ✦ " + perks.join(", ")}) : null),
-      isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "Remove dev" : "Make developer") : null,
+      isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "✓ DEV" : "+ DEV") : null,
+      isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
       u !== S.uid && !isOwnerUid(u) && (isOwner() || !isDev(u)) ? h("button",{class:"btn small danger", onclick:() => confirmBox("Kick " + nickOf(u) + "?", "They'll be locked out and can't rejoin unless unbanned.", "Kick", () => kick(u))}, "Kick") : null));
   });
@@ -1910,12 +1954,12 @@ async function grantPerk(uid, item){
 async function revokePerk(uid, item){ try{ await updateDoc(doc(db, "perks", uid), {["items." + item]:deleteField()}); toast("Removed"); }catch(e){ toast("Couldn't remove: " + errMsg(e)); } }
 function adminShop(p){
   p.append(h("div",{class:"preview-card"},
-    h("b",{text:"How payments work"}),
-    h("ol",{class:"steps",style:{marginTop:"8px",fontSize:"13px"}},
-      h("li",null, "In your ", h("a",{href:"https://dashboard.stripe.com/payment-links",target:"_blank",rel:"noopener"},"Stripe dashboard → Payment Links"), ", create one link per perk (subscription for Campus+, one-time for the rest)."),
-      h("li",null, "Under ", h("b",{text:"After payment"}), ", set it to redirect to ", h("code",{text:LIVE_URL + "#thanks"}), "."),
-      h("li",null, "Paste each link below and Save. Buyers' orders show up under Orders."),
-      h("li",null, "Each checkout carries the order ID as the Stripe ", h("code",{text:"client_reference_id"}), ". Paid orders are delivered automatically every few minutes by the “Deliver purchases” GitHub Action — Approve here is only a backup."))));
+    h("b",{text:"Payments are set up ✓"}),
+    h("ul",{class:"steps",style:{marginTop:"8px",fontSize:"13px"}},
+      h("li",null, "Every item below already has a live Stripe payment link (one-time payments, no auto-renew). Turn an item off to hide it from the shop."),
+      h("li",null, "When someone pays, the “Deliver purchases” job checks Stripe every few minutes and hands out their Sparks or perk automatically. You don't have to approve anything."),
+      h("li",null, "See payments in your ", h("a",{href:"https://dashboard.stripe.com/payments",target:"_blank",rel:"noopener"},"Stripe dashboard"), ". Refunds are done there too."),
+      h("li",null, "Only change a link or price here if you made a new one in Stripe."))));
   const rows = CATALOG.map(c => { const it = shopItem(c.id);
     const price = h("input",{class:"inp", value:it.price, style:{width:"140px"}}); const link = h("input",{class:"inp", value:it.link, placeholder:"https://buy.stripe.com/…"});
     let en = it.enabled; const sw = h("button",{class:"sw" + (en ? " on" : ""), title:"Show in shop", onclick:() => { en = !en; sw.classList.toggle("on", en); }});
