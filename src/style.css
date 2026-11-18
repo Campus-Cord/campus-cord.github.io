@@ -1178,3 +1178,6 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .vstar.on{color:#f5b83d}.vstar:hover{transform:scale(1.15)}.vstxt{margin-left:10px;font-weight:700;color:var(--muted)}
 .vprof .vpr{display:flex;align-items:center;gap:2px}
 @media (max-width:640px){.vfields{grid-template-columns:1fr}}
+.vreward{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:4px 0 2px;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,#ffd166 14%,var(--rail));border:1px solid color-mix(in srgb,#ffd166 40%,transparent);font-size:13px}
+.vreward b{color:#ffd166}.vreward.none{background:var(--rail);border-color:var(--line);color:var(--muted)}
+.fbrw{margin-top:6px!important;display:flex;align-items:center;gap:4px;color:var(--text)!important;font-size:13px}.fbrw b{color:#ffd166}

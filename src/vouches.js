@@ -3,6 +3,32 @@
 // CampusCord itself — give 1–5 stars, write a review and optionally attach proof. It posts as a numbered vouch card.
 const isVouchRoom = r => r && r.type === "vouches";
 const VOUCH_GOLD = "#f5b83d";
+// Weekly vouch rewards: resets Monday 00:00 Eastern. 1st vouch +200, 2nd +150, then just for fun.
+const VOUCH_REWARDS = [200, 150];
+const weekId = () => Math.floor((Date.now() - 363600000) / 604800000);
+function vouchesThisWeek(){ const w = wal(S.uid); return w.vWeek === weekId() ? (w.vCount || 0) : 0; }
+function nextVouchReward(){ return VOUCH_REWARDS[vouchesThisWeek()] || 0; }
+async function claimVouchReward(roomId, msgId){
+  const n = nextVouchReward(); if (!n || isOwnerUid(S.uid)) return 0;
+  await ensureWallet(); const w = wal(S.uid); const first = w.vWeek !== weekId();
+  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w.earned || 0) + n, vWeek:weekId(), vCount: first ? 1 : (w.vCount || 0) + 1, lastVouch:roomId + "/" + msgId}); return n; }
+  catch(e){ console.warn("vouch reward", e); return 0; }
+}
+// Feedback that the owner/devs accept (Planned, In progress or Done) pays its author 200 Sparks, once per post.
+const FEEDBACK_REWARD = 200; let fbClaiming = false;
+async function claimFeedbackRewards(){
+  if (fbClaiming || !S.walletsLoaded || isOwnerUid(S.uid)) return; fbClaiming = true;
+  try{
+    for (const f of S.feedback.filter(f => f.uid === S.uid && ["planned", "working", "done"].includes(f.status))){
+      const w = wal(S.uid); const paid = w.fbPaid || []; if (paid.includes(f.id)) continue;
+      await ensureWallet();
+      await updateDoc(doc(db, "wallet", S.uid), {earned:(wal(S.uid).earned || 0) + FEEDBACK_REWARD, fbPaid:[...paid, f.id], lastFb:f.id});
+      S.wallets[S.uid] = Object.assign({}, wal(S.uid), {earned:(wal(S.uid).earned || 0) + FEEDBACK_REWARD, fbPaid:[...paid, f.id]});
+      toast("🎉 Your feedback “" + f.title + "” was " + (FB_STATUS[f.status] || {}).name.toLowerCase() + " — +" + FEEDBACK_REWARD + " Sparks!");
+    }
+  }catch(e){ console.warn("feedback reward", e); }
+  finally{ fbClaiming = false; }
+}
 function starsText(n){ return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
 function vouchCount(){ return S.msgs.filter(m => m.vouch).length; }
 function openVouchModal(preTo){
@@ -31,11 +57,15 @@ function openVouchModal(preTo){
         await setDoc(doc(db, "rooms", r.id, "msgs", id), body);
         setDoc(doc(db, "rooms", r.id, "reacts", id + "__" + S.uid + "__" + eKey("✅")), {mid:id, uid:S.uid, e:"✅", ts:Date.now()}).catch(() => {});
         setDoc(doc(db, "meta", r.id), {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview:"left a " + stars + "★ vouch" + (to === "server" ? "" : " for " + nickOf(to)), lastMentions:body.mentions || [], lastEveryone:false}).catch(() => {});
-        bumpStat("vouch"); close(); toast("Vouch #" + body.vouch.n + " posted ✦");
+        bumpStat("vouch"); close();
+        const got = await claimVouchReward(r.id, id);
+        toast("Vouch #" + body.vouch.n + " posted" + (got ? " — +" + got + " Sparks ✦" : " ✦"));
       }catch(e){ toast("Couldn't post: " + errMsg(e)); btn.disabled = false; btn.textContent = "Post vouch"; }
     };
     const btn = h("button",{class:"btn", onclick:go}, "Post vouch");
+    const rw = nextVouchReward();
     m.append(h("div",{class:"vmhead"}, h("span",{class:"vmic"}, "🎉"), h("div",null, h("h3",{style:{margin:0},text:"Write a vouch"}), h("div",{class:"note",style:{margin:0},text:"Vouch #" + (vouchCount() + 1) + " · shows up in #" + r.name + " for everyone"}))),
+      isOwnerUid(S.uid) ? null : h("div",{class:"vreward" + (rw ? "" : " none")}, rw ? [ic("spark","sm"), " This vouch earns ", h("b",{text:"+" + rw + " Sparks"}), vouchesThisWeek() === 0 ? " (your 2nd this week earns +150)" : " (last reward this week)"] : "You've earned this week's vouch rewards — they reset Monday. You can still vouch!"),
       h("label",{class:"f",text:"Vouching for"}), sel, h("label",{class:"f",text:"Stars"}), starRow, h("label",{class:"f",text:"Review"}), txt,
       h("div",{class:"row",style:{marginTop:"10px",alignItems:"center",gap:"10px"}}, pick, proof),
       h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), btn));

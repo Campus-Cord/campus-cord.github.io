@@ -123,6 +123,28 @@ service cloud.firestore {
         && nw().quests.size() == ow().quests.size() + 1
         && nw().quests.toSet().difference(ow().quests.toSet()) == [nw().lastQuest].toSet()
         && nw().earned == ow().earned + cat().quests[nw().lastQuest];
+      // Weekly vouch rewards (week starts Monday 00:00 Eastern): 1st vouch of the week +200, 2nd +150, then nothing.
+      // The claim must point at a real vouch you posted this week, and each vouch can only be claimed once.
+      function week() { return int((request.time.toMillis() - 363600000) / 604800000); }
+      function weekStart() { return week() * 604800000 + 363600000; }
+      function vouchMsg() { let p = nw().lastVouch.split('/'); return get(/databases/$(database)/documents/rooms/$(p[0])/msgs/$(p[1])).data; }
+      allow update: if mine()
+        && changed().hasOnly(['earned', 'vWeek', 'vCount', 'lastVouch'])
+        && nw().lastVouch is string && nw().lastVouch.split('/').size() == 2
+        && nw().lastVouch != ow().get('lastVouch', '')
+        && vouchMsg().uid == uid && ('vouch' in vouchMsg()) && vouchMsg().ts >= weekStart()
+        && nw().vWeek == week()
+        && ((ow().get('vWeek', -1) != week() && nw().vCount == 1 && nw().earned == ow().earned + 200)
+          || (ow().get('vWeek', -1) == week() && ow().get('vCount', 0) == 1 && nw().vCount == 2 && nw().earned == ow().earned + 150));
+      // Feedback reward: +200 once per post of yours that the owner/devs marked Planned, In progress or Done.
+      function fbPost() { return get(/databases/$(database)/documents/feedback/$(nw().lastFb)).data; }
+      allow update: if mine()
+        && changed().hasOnly(['earned', 'fbPaid', 'lastFb'])
+        && nw().lastFb is string
+        && nw().fbPaid.toSet().difference(ow().get('fbPaid', []).toSet()) == [nw().lastFb].toSet()
+        && nw().fbPaid.size() == ow().get('fbPaid', []).size() + 1
+        && fbPost().uid == uid && fbPost().status in ['planned', 'working', 'done']
+        && nw().earned == ow().earned + 200;
       // daily reward
       allow update: if mine()
         && changed().hasOnly(['earned', 'lastDaily'])
@@ -158,7 +180,8 @@ service cloud.firestore {
           && (roomOpen() || isAdmin()) && notTimedOut()
           && (!('vouch' in request.resource.data) || (request.resource.data.vouch.stars is int
               && request.resource.data.vouch.stars >= 1 && request.resource.data.vouch.stars <= 5
-              && request.resource.data.vouch.to is string && request.resource.data.vouch.to != request.auth.uid));
+              && request.resource.data.vouch.to is string && request.resource.data.vouch.to != request.auth.uid
+              && request.resource.data.ts is int && request.resource.data.ts <= request.time.toMillis() + 300000 && request.resource.data.ts >= request.time.toMillis() - 300000));
         // Authors edit their own text; admins pin.
         allow update: if inRoom() && ownsOld()
           && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])

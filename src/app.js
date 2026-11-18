@@ -400,22 +400,23 @@ function spamCheck(text){
   SPAM.times.push(now); return null;
 }
 // Owner's app quietly: marks launch week (for the Early Member badge) and gives every member a one-time welcome gift.
-const WELCOME_SPARKS = 500;
+const WELCOME_SPARKS = 500; const GIFTED = new Set();
 let housekeeping = false;
 async function ownerHousekeeping(){
   if (!isOwner() || housekeeping || !S.config) return; housekeeping = true;
   try{
     if (!S.config.launchAt) await updateDoc(doc(db, "config/main"), {launchAt:Date.now()});
-    if (!S.config.vouchRoomMade && !S.allRooms.some(r => r.type === "vouches")){
+    if (!S.config.vouchRoomMade && !GIFTED.has("#vouches") && !S.allRooms.some(r => r.type === "vouches")){ GIFTED.add("#vouches");
       await setDoc(doc(db, "rooms", "vouches-" + rid().slice(-4)), {name:"vouches", topic:"Vouch for friends and for CampusCord with /vouch ⭐", category:"Text rooms", readonly:false, type:"vouches", order:S.rooms.length, createdAt:Date.now()});
       await updateDoc(doc(db, "config/main"), {vouchRoomMade:true}); }
-    const done = new Set(S.config.welcomed || []);
+    const done = new Set([...(S.config.welcomed || []), ...GIFTED]);
     const todo = Object.keys(S.members).filter(u => !isOwnerUid(u) && !done.has(u) && !isBanned(u));
     if (!S.walletsLoaded) return;
-    for (const u of todo){
+    for (const u of todo){ GIFTED.add(u);
+      await updateDoc(doc(db, "config/main"), {welcomed:arrayUnion(u)});
       if (S.wallets[u]) await updateDoc(doc(db, "wallet", u), {earned:increment(WELCOME_SPARKS), welcomed:Date.now()});
       else await setDoc(doc(db, "wallet", u), Object.assign({}, EMPTY_WALLET, {earned:WELCOME_SPARKS, welcomed:Date.now()}));
-      await updateDoc(doc(db, "config/main"), {welcomed:arrayUnion(u)}); }
+    }
     if (todo.length) toast("🎁 Sent a " + WELCOME_SPARKS + "-Sparks welcome gift to " + todo.map(nickOf).join(", "));
   }catch(e){ console.warn("housekeeping", e); }
   finally{ housekeeping = false; }

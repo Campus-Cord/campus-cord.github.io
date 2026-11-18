@@ -6,7 +6,7 @@ const FB_STATUS = {open:{name:"Open", c:"#b5bac1"}, planned:{name:"Planned", c:"
 S.feedback = []; S.fbSort = "top"; S.fbFilter = "all";
 let fbUnsub = null;
 function watchFeedback(){ if (fbUnsub) return;
-  fbUnsub = onSnapshot(collection(db, "feedback"), snap => { S.feedback = snap.docs.map(d => Object.assign({id:d.id}, d.data())); if (S.kind === "feedback") need("msgs"); need("side"); }, e => console.warn("feedback", e)); }
+  fbUnsub = onSnapshot(collection(db, "feedback"), snap => { S.feedback = snap.docs.map(d => Object.assign({id:d.id}, d.data())); if (S.kind === "feedback") need("msgs"); need("side"); setTimeout(claimFeedbackRewards, 500); }, e => console.warn("feedback", e)); }
 function fbUnseen(){ const seen = prefs.fbSeen || 0; return S.feedback.filter(f => f.ts > seen && f.uid !== S.uid).length; }
 async function vouch(f){
   const on = (f.votes || []).includes(S.uid);
@@ -50,7 +50,8 @@ function renderFeedbackPage(box){
   wrap.appendChild(bar);
   const body = h("div",{class:"sbody"}); wrap.appendChild(body);
   body.appendChild(h("div",{class:"fbhero"}, h("div",null, h("h2",{text:"Feedback & vouches"}),
-    h("p",{text:"Report bugs and suggest changes. Vouch for the posts you agree with — the owner sees what everyone wants most."})),
+    h("p",{text:"Report bugs and suggest changes. Vouch for the posts you agree with — the owner sees what everyone wants most."}),
+    h("p",{class:"fbrw"}, ic("spark","sm"), " Get ", h("b",{text:"+200 Sparks"}), " when your post is marked Planned or Done.")),
     h("div",{class:"fbhb"}, h("button",{class:"btn", onclick:() => fbNewModal("bug")}, ic("alert","sm"), " Report a bug"), h("button",{class:"btn ghost", onclick:() => fbNewModal("idea")}, ic("zap","sm"), " Suggest an idea"))));
   let list = S.feedback.filter(f => S.fbFilter === "all" ? f.status !== "done" && f.status !== "no" : S.fbFilter === "done" ? (f.status === "done" || f.status === "no") : f.type === S.fbFilter && f.status !== "done" && f.status !== "no");
   list.sort((a, b) => S.fbSort === "new" ? b.ts - a.ts : ((b.votes || []).length - (a.votes || []).length) || b.ts - a.ts);

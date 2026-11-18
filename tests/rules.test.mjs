@@ -83,6 +83,23 @@ console.log("Shop");
 await t("members can't grant themselves perks", assertFails(setDoc(doc(as("alice"), "perks/alice"), { items: { plus: { since: now } } })));
 await t("members can't change the catalog", assertFails(setDoc(doc(as("alice"), "config/catalog"), { v: 1, prices: { d_cosmic: 0 } })));
 
+console.log("Vouch & feedback rewards");
+const wk = Math.floor((Date.now() - 363600000) / 604800000);
+const aw = async () => (await getDoc(doc(as("alice"), "wallet/alice"))).data();
+let e0 = (await aw()).earned;
+await t("1st vouch of the week pays 200", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 200, vWeek: wk, vCount: 1, lastVouch: "general/v1" })));
+await t("can't claim the same vouch twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 350, vWeek: wk, vCount: 2, lastVouch: "general/v1" })));
+await t("can't claim someone else's vouch", assertFails(updateDoc(doc(as("bob"), "wallet/bob"), { earned: 200, vWeek: wk, vCount: 1, lastVouch: "general/v1" })));
+await setDoc(doc(as("alice"), "rooms/general/msgs/v4"), { uid: "alice", text: "again", ts: Date.now(), vouch: { to: "server", stars: 4, n: 4 } });
+await t("2nd vouch of the week pays 150", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 350, vWeek: wk, vCount: 2, lastVouch: "general/v4" })));
+await setDoc(doc(as("alice"), "rooms/general/msgs/v5"), { uid: "alice", text: "more", ts: Date.now(), vouch: { to: "server", stars: 3, n: 5 } });
+await t("3rd vouch of the week pays nothing", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 500, vWeek: wk, vCount: 3, lastVouch: "general/v5" })));
+await t("can't backdate a vouch", assertFails(setDoc(doc(as("alice"), "rooms/general/msgs/v6"), { uid: "alice", text: "old", ts: Date.now() - 864e5 * 9, vouch: { to: "server", stars: 5, n: 6 } })));
+await t("dev marks feedback planned", assertSucceeds(updateDoc(doc(as("dev"), "feedback/f1"), { status: "planned", statusBy: "dev", statusAt: Date.now() })));
+e0 = (await aw()).earned;
+await t("feedback author gets 200 once it's planned", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 200, fbPaid: ["f1"], lastFb: "f1" })));
+await t("can't claim the same feedback twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 400, fbPaid: ["f1", "f1x"], lastFb: "f1" })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

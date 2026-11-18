@@ -1193,6 +1193,9 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .vstar.on{color:#f5b83d}.vstar:hover{transform:scale(1.15)}.vstxt{margin-left:10px;font-weight:700;color:var(--muted)}
 .vprof .vpr{display:flex;align-items:center;gap:2px}
 @media (max-width:640px){.vfields{grid-template-columns:1fr}}
+.vreward{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:4px 0 2px;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,#ffd166 14%,var(--rail));border:1px solid color-mix(in srgb,#ffd166 40%,transparent);font-size:13px}
+.vreward b{color:#ffd166}.vreward.none{background:var(--rail);border-color:var(--line);color:var(--muted)}
+.fbrw{margin-top:6px!important;display:flex;align-items:center;gap:4px;color:var(--text)!important;font-size:13px}.fbrw b{color:#ffd166}
 </style>
 </head>
 <body>
@@ -1305,7 +1308,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.27";
+const APP_VERSION = "2026-11-18.28";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1697,22 +1700,23 @@ function spamCheck(text){
   SPAM.times.push(now); return null;
 }
 // Owner's app quietly: marks launch week (for the Early Member badge) and gives every member a one-time welcome gift.
-const WELCOME_SPARKS = 500;
+const WELCOME_SPARKS = 500; const GIFTED = new Set();
 let housekeeping = false;
 async function ownerHousekeeping(){
   if (!isOwner() || housekeeping || !S.config) return; housekeeping = true;
   try{
     if (!S.config.launchAt) await updateDoc(doc(db, "config/main"), {launchAt:Date.now()});
-    if (!S.config.vouchRoomMade && !S.allRooms.some(r => r.type === "vouches")){
+    if (!S.config.vouchRoomMade && !GIFTED.has("#vouches") && !S.allRooms.some(r => r.type === "vouches")){ GIFTED.add("#vouches");
       await setDoc(doc(db, "rooms", "vouches-" + rid().slice(-4)), {name:"vouches", topic:"Vouch for friends and for CampusCord with /vouch ⭐", category:"Text rooms", readonly:false, type:"vouches", order:S.rooms.length, createdAt:Date.now()});
       await updateDoc(doc(db, "config/main"), {vouchRoomMade:true}); }
-    const done = new Set(S.config.welcomed || []);
+    const done = new Set([...(S.config.welcomed || []), ...GIFTED]);
     const todo = Object.keys(S.members).filter(u => !isOwnerUid(u) && !done.has(u) && !isBanned(u));
     if (!S.walletsLoaded) return;
-    for (const u of todo){
+    for (const u of todo){ GIFTED.add(u);
+      await updateDoc(doc(db, "config/main"), {welcomed:arrayUnion(u)});
       if (S.wallets[u]) await updateDoc(doc(db, "wallet", u), {earned:increment(WELCOME_SPARKS), welcomed:Date.now()});
       else await setDoc(doc(db, "wallet", u), Object.assign({}, EMPTY_WALLET, {earned:WELCOME_SPARKS, welcomed:Date.now()}));
-      await updateDoc(doc(db, "config/main"), {welcomed:arrayUnion(u)}); }
+    }
     if (todo.length) toast("🎁 Sent a " + WELCOME_SPARKS + "-Sparks welcome gift to " + todo.map(nickOf).join(", "));
   }catch(e){ console.warn("housekeeping", e); }
   finally{ housekeeping = false; }
@@ -3872,6 +3876,32 @@ setInterval(() => { try{ checkNewBadges(); }catch(e){} }, 4000);
 // CampusCord itself — give 1–5 stars, write a review and optionally attach proof. It posts as a numbered vouch card.
 const isVouchRoom = r => r && r.type === "vouches";
 const VOUCH_GOLD = "#f5b83d";
+// Weekly vouch rewards: resets Monday 00:00 Eastern. 1st vouch +200, 2nd +150, then just for fun.
+const VOUCH_REWARDS = [200, 150];
+const weekId = () => Math.floor((Date.now() - 363600000) / 604800000);
+function vouchesThisWeek(){ const w = wal(S.uid); return w.vWeek === weekId() ? (w.vCount || 0) : 0; }
+function nextVouchReward(){ return VOUCH_REWARDS[vouchesThisWeek()] || 0; }
+async function claimVouchReward(roomId, msgId){
+  const n = nextVouchReward(); if (!n || isOwnerUid(S.uid)) return 0;
+  await ensureWallet(); const w = wal(S.uid); const first = w.vWeek !== weekId();
+  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w.earned || 0) + n, vWeek:weekId(), vCount: first ? 1 : (w.vCount || 0) + 1, lastVouch:roomId + "/" + msgId}); return n; }
+  catch(e){ console.warn("vouch reward", e); return 0; }
+}
+// Feedback that the owner/devs accept (Planned, In progress or Done) pays its author 200 Sparks, once per post.
+const FEEDBACK_REWARD = 200; let fbClaiming = false;
+async function claimFeedbackRewards(){
+  if (fbClaiming || !S.walletsLoaded || isOwnerUid(S.uid)) return; fbClaiming = true;
+  try{
+    for (const f of S.feedback.filter(f => f.uid === S.uid && ["planned", "working", "done"].includes(f.status))){
+      const w = wal(S.uid); const paid = w.fbPaid || []; if (paid.includes(f.id)) continue;
+      await ensureWallet();
+      await updateDoc(doc(db, "wallet", S.uid), {earned:(wal(S.uid).earned || 0) + FEEDBACK_REWARD, fbPaid:[...paid, f.id], lastFb:f.id});
+      S.wallets[S.uid] = Object.assign({}, wal(S.uid), {earned:(wal(S.uid).earned || 0) + FEEDBACK_REWARD, fbPaid:[...paid, f.id]});
+      toast("🎉 Your feedback “" + f.title + "” was " + (FB_STATUS[f.status] || {}).name.toLowerCase() + " — +" + FEEDBACK_REWARD + " Sparks!");
+    }
+  }catch(e){ console.warn("feedback reward", e); }
+  finally{ fbClaiming = false; }
+}
 function starsText(n){ return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
 function vouchCount(){ return S.msgs.filter(m => m.vouch).length; }
 function openVouchModal(preTo){
@@ -3900,11 +3930,15 @@ function openVouchModal(preTo){
         await setDoc(doc(db, "rooms", r.id, "msgs", id), body);
         setDoc(doc(db, "rooms", r.id, "reacts", id + "__" + S.uid + "__" + eKey("✅")), {mid:id, uid:S.uid, e:"✅", ts:Date.now()}).catch(() => {});
         setDoc(doc(db, "meta", r.id), {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview:"left a " + stars + "★ vouch" + (to === "server" ? "" : " for " + nickOf(to)), lastMentions:body.mentions || [], lastEveryone:false}).catch(() => {});
-        bumpStat("vouch"); close(); toast("Vouch #" + body.vouch.n + " posted ✦");
+        bumpStat("vouch"); close();
+        const got = await claimVouchReward(r.id, id);
+        toast("Vouch #" + body.vouch.n + " posted" + (got ? " — +" + got + " Sparks ✦" : " ✦"));
       }catch(e){ toast("Couldn't post: " + errMsg(e)); btn.disabled = false; btn.textContent = "Post vouch"; }
     };
     const btn = h("button",{class:"btn", onclick:go}, "Post vouch");
+    const rw = nextVouchReward();
     m.append(h("div",{class:"vmhead"}, h("span",{class:"vmic"}, "🎉"), h("div",null, h("h3",{style:{margin:0},text:"Write a vouch"}), h("div",{class:"note",style:{margin:0},text:"Vouch #" + (vouchCount() + 1) + " · shows up in #" + r.name + " for everyone"}))),
+      isOwnerUid(S.uid) ? null : h("div",{class:"vreward" + (rw ? "" : " none")}, rw ? [ic("spark","sm"), " This vouch earns ", h("b",{text:"+" + rw + " Sparks"}), vouchesThisWeek() === 0 ? " (your 2nd this week earns +150)" : " (last reward this week)"] : "You've earned this week's vouch rewards — they reset Monday. You can still vouch!"),
       h("label",{class:"f",text:"Vouching for"}), sel, h("label",{class:"f",text:"Stars"}), starRow, h("label",{class:"f",text:"Review"}), txt,
       h("div",{class:"row",style:{marginTop:"10px",alignItems:"center",gap:"10px"}}, pick, proof),
       h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), btn));
@@ -3957,7 +3991,7 @@ const FB_STATUS = {open:{name:"Open", c:"#b5bac1"}, planned:{name:"Planned", c:"
 S.feedback = []; S.fbSort = "top"; S.fbFilter = "all";
 let fbUnsub = null;
 function watchFeedback(){ if (fbUnsub) return;
-  fbUnsub = onSnapshot(collection(db, "feedback"), snap => { S.feedback = snap.docs.map(d => Object.assign({id:d.id}, d.data())); if (S.kind === "feedback") need("msgs"); need("side"); }, e => console.warn("feedback", e)); }
+  fbUnsub = onSnapshot(collection(db, "feedback"), snap => { S.feedback = snap.docs.map(d => Object.assign({id:d.id}, d.data())); if (S.kind === "feedback") need("msgs"); need("side"); setTimeout(claimFeedbackRewards, 500); }, e => console.warn("feedback", e)); }
 function fbUnseen(){ const seen = prefs.fbSeen || 0; return S.feedback.filter(f => f.ts > seen && f.uid !== S.uid).length; }
 async function vouch(f){
   const on = (f.votes || []).includes(S.uid);
@@ -4001,7 +4035,8 @@ function renderFeedbackPage(box){
   wrap.appendChild(bar);
   const body = h("div",{class:"sbody"}); wrap.appendChild(body);
   body.appendChild(h("div",{class:"fbhero"}, h("div",null, h("h2",{text:"Feedback & vouches"}),
-    h("p",{text:"Report bugs and suggest changes. Vouch for the posts you agree with — the owner sees what everyone wants most."})),
+    h("p",{text:"Report bugs and suggest changes. Vouch for the posts you agree with — the owner sees what everyone wants most."}),
+    h("p",{class:"fbrw"}, ic("spark","sm"), " Get ", h("b",{text:"+200 Sparks"}), " when your post is marked Planned or Done.")),
     h("div",{class:"fbhb"}, h("button",{class:"btn", onclick:() => fbNewModal("bug")}, ic("alert","sm"), " Report a bug"), h("button",{class:"btn ghost", onclick:() => fbNewModal("idea")}, ic("zap","sm"), " Suggest an idea"))));
   let list = S.feedback.filter(f => S.fbFilter === "all" ? f.status !== "done" && f.status !== "no" : S.fbFilter === "done" ? (f.status === "done" || f.status === "no") : f.type === S.fbFilter && f.status !== "done" && f.status !== "no");
   list.sort((a, b) => S.fbSort === "new" ? b.ts - a.ts : ((b.votes || []).length - (a.votes || []).length) || b.ts - a.ts);
