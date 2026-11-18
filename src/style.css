@@ -1085,3 +1085,19 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .camchip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
 .camchip:hover:not(.on){color:var(--text)}
 .camtimer.on{background:var(--accent);color:var(--on-accent,#fff)}
+/* v3.13 sidebar sections, pins, drag & drop */
+.cat.pinsec .t{color:#ffd166}.cat .pinic{display:inline-flex;color:#ffd166;margin-right:-2px}.cat .pinic .i{width:12px;height:12px}
+.ch .x.pinb{display:none}.ch:hover .x.pinb{display:inline-flex}.ch .x.pinb.on{color:#ffd166}
+.ch[draggable=true]{cursor:pointer}
+.ch.dragging,.cat.dragging{opacity:.4}
+.ch.dropb{box-shadow:inset 0 2px 0 var(--accent)}.ch.dropa{box-shadow:inset 0 -2px 0 var(--accent)}
+.cat.dropin,.catempty.dropin{background:color-mix(in srgb,var(--accent) 18%,transparent);border-radius:6px;outline:1px dashed var(--accent)}
+.cat.dropb{box-shadow:inset 0 2px 0 var(--accent)}.cat.dropa{box-shadow:inset 0 -2px 0 var(--accent)}
+.catempty{margin:2px 8px 6px 18px;padding:6px 10px;border:1px dashed var(--line);border-radius:6px;font-size:12px;color:var(--muted)}
+.addcat{display:flex;align-items:center;gap:4px;margin:10px 8px 4px;padding:6px 10px;border:1px dashed var(--line);border-radius:8px;background:none;color:var(--muted);font-weight:700;font-size:12px;cursor:pointer;width:calc(100% - 16px)}
+.addcat:hover{color:var(--text);border-color:var(--muted)}
+/* v3.14 thinner owner ring + developer ring (same size, DEV colors) */
+.deco-yinyang{inset:-7%!important}
+.deco-yinyang::before{-webkit-mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%)!important;mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%)!important}
+.av .deco-devring{inset:-7%;filter:drop-shadow(0 0 3px rgba(34,211,197,.55))}
+.deco-devring::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 200deg,#7ef0e6,#22d3c5,#1a9fd6,#22d3c5,#7ef0e6);-webkit-mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%);mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%)}

@@ -242,7 +242,7 @@ function avatar(uid, size, withDot){
   else if (bg) a.style.background = bg.g;
   else { a.style.background = (look.bg && /^#[0-9a-f]{6}$/i.test(look.bg)) ? look.bg : colorOf(uid); a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))"; }
   if (hasPerk(uid, "ring")) a.classList.add("ring");
-  const dc = size !== "xs" && equipped(uid, "deco"); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
+  const dc = size !== "xs" && (equipped(uid, "deco") || (isDev(uid) && !isOwnerUid(uid) ? "d_devring" : null)); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
   if (withDot) a.appendChild(h("span",{class:"dot " + statusOf(uid), title:{online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(uid)]}));
   return a;
 }
@@ -497,30 +497,123 @@ function renderSide(){
   hdr.style.cursor = isAdmin() ? "pointer" : "default";
   hdr.onclick = () => { if (isAdmin()) openAdmin(); };
   hdr.append(h("span",{class:"t",text:(S.config && S.config.serverName) || "CampusCord"}), ...roleTags(S.uid, true), isAdmin() ? h("span",{class:"hdrchev"}, ic("chevron")) : null);
-  // group by category
-  const cats = []; const byCat = {};
-  S.rooms.forEach(r => { const c = r.category || "Text rooms"; if (!byCat[c]){ byCat[c] = []; cats.push(c); } byCat[c].push(r); });
-  if (!cats.length) list.appendChild(h("div",{class:"empty-note",text:"No rooms yet."}));
-  cats.forEach(c => {
+  // ---- sections: Pinned (yours only) first, then the server's categories in the owner's order
+  const DEF = "Text rooms";
+  const catOf = r => r.category || (isVoiceRoom(r) ? "Voice channels" : DEF);
+  const pins = (prefs.pins || []).filter(id => S.rooms.find(r => r.id === id));
+  const cats = catOrder(); const byCat = {}; cats.forEach(c => byCat[c] = []);
+  S.rooms.forEach(r => { if (pins.includes(r.id)) return; const c = catOf(r); (byCat[c] = byCat[c] || []).push(r); if (!cats.includes(c)) cats.push(c); });
+  if (!S.rooms.length) list.appendChild(h("div",{class:"empty-note",text:"No rooms yet."}));
+  const section = (c, rooms, opts) => {
     const closed = !!prefs.collapsed[c];
-    const head = h("div",{class:"cat" + (closed ? " closed" : ""), onclick:() => { prefs.collapsed[c] = !closed; savePrefs(); need("side"); }},
-      h("span",{class:"ar"}, ic("chevron")), h("span",{class:"t",text:c}),
-      isAdmin() ? h("button",{title:"Create room", onclick:e => { e.stopPropagation(); roomModal(null, c); }}, ic("plus")) : null);
+    const head = h("div",{class:"cat" + (closed ? " closed" : "") + (opts.pinned ? " pinsec" : ""), "data-cat": opts.pinned ? "" : c, "data-pinsec": opts.pinned ? "1" : null,
+        draggable: !opts.pinned && isOwner() ? "true" : null,
+        onclick:() => { prefs.collapsed[c] = !closed; savePrefs(); need("side"); }, oncontextmenu: opts.pinned ? null : e => catMenu(e, c)},
+      h("span",{class:"ar"}, ic("chevron")), opts.pinned ? h("span",{class:"pinic"}, ic("pin","sm")) : null, h("span",{class:"t",text: opts.pinned ? "Pinned" : c}),
+      !opts.pinned && isAdmin() ? h("button",{title:"Create room", onclick:e => { e.stopPropagation(); roomModal(null, c); }}, ic("plus")) : null);
     list.appendChild(head);
-    byCat[c].forEach(r => {
+    if (!rooms.length && !opts.pinned && isAdmin()) list.appendChild(h("div",{class:"catempty", "data-cat":c, text:"Drag rooms here"}));
+    rooms.forEach(r => {
       const on = S.kind === "room" && S.cur === r.id; const un = roomUnread(r); const mc = S.mentions[r.id] || 0;
       if (closed && !on && !un && !mc) return;
       const typ = !on && typersIn("room", r.id).length;
       const vr = isVoiceRoom(r), inV = vr && V.room === r.id, vn = vr ? liveVoice(S.voiceParts[r.id]).length : 0;
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : "") + (vr ? " voice" : "") + (inV ? " invoice" : ""),
+          "data-room": r.id, "data-in": opts.pinned ? "pins" : c, draggable: (opts.pinned || isAdmin()) ? "true" : null,
           onclick:() => { if (vr){ joinVoice(r.id); bumpStat("voice"); } openChat("room", r.id); }, oncontextmenu:e => roomMenu(e, r), title: vr ? (inV ? "You're in this voice channel" : "Click to join voice") : null},
         h("span",{class:"ic"}, ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
         vr && vn ? h("span",{class:"vcount",text:vn + "/" + VOICE_MAX}) : null,
+        h("button",{class:"x pinb" + (opts.pinned ? " on" : ""), title: opts.pinned ? "Unpin" : "Pin to top", onclick:e => { e.stopPropagation(); togglePinRoom(r.id); }}, ic("pin")),
         isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
         typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : (un ? h("span",{class:"newdot",title:"New messages"}) : null)));
       if (vr){ const pl = voiceParticipantsEl(r); if (pl) list.appendChild(pl); }
     });
-  });
+  };
+  if (pins.length) section("__pinned", pins.map(id => S.rooms.find(r => r.id === id)), {pinned:true});
+  cats.forEach(c => { if (byCat[c].length || isAdmin()) section(c, byCat[c], {}); });
+  if (isOwner()) list.appendChild(h("button",{class:"addcat", onclick:() => newCategory()}, ic("plus","sm"), " Add section"));
+  wireSideDrag(list);
+}
+// Category order lives in config/main.cats (owner edits it); categories only used by rooms are added at the end.
+function catOrder(){ const out = [...(((S.config || {}).cats) || [])]; S.rooms.forEach(r => { const c = r.category || (isVoiceRoom(r) ? "Voice channels" : "Text rooms"); if (!out.includes(c)) out.push(c); }); return out; }
+async function saveCats(list){ try{ await updateDoc(doc(db, "config/main"), {cats:list}); }catch(e){ toast("Couldn't save sections: " + errMsg(e)); } }
+function togglePinRoom(id){ const p = (prefs.pins || []).filter(x => x !== id); const was = (prefs.pins || []).includes(id); if (!was) p.push(id); prefs.pins = p; savePrefs(); need("side"); toast(was ? "Unpinned" : "Pinned to the top — drag to reorder"); }
+function newCategory(after){
+  modal((m, close) => { const i = h("input",{class:"inp", maxlength:"32", placeholder:"e.g. School, Games, Voice"});
+    const go = async () => { const n = i.value.trim().slice(0, 32); if (!n) return; const list = catOrder(); if (list.includes(n)){ toast("That section already exists"); return; }
+      const at = after ? list.indexOf(after) + 1 : list.length; list.splice(at, 0, n); await saveCats(list); close(); toast("Section added — drag rooms into it"); };
+    i.onkeydown = e => { if (e.key === "Enter") go(); };
+    m.append(h("h3",{text:"New section"}), h("p",{class:"note",text:"Sections group your rooms in the sidebar, like Discord categories."}), i,
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), h("button",{class:"btn small",onclick:go},"Create"))); });
+}
+function renameCategory(c){
+  modal((m, close) => { const i = h("input",{class:"inp", maxlength:"32", value:c});
+    const go = async () => { const n = i.value.trim().slice(0, 32); if (!n || n === c){ close(); return; }
+      const b = writeBatch(db); S.allRooms.filter(r => (r.category || (isVoiceRoom(r) ? "Voice channels" : "Text rooms")) === c).forEach(r => b.update(doc(db, "rooms", r.id), {category:n}));
+      try{ await b.commit(); await saveCats(catOrder().map(x => x === c ? n : x).filter((x, k, a) => a.indexOf(x) === k)); if (prefs.collapsed[c]){ prefs.collapsed[n] = true; delete prefs.collapsed[c]; savePrefs(); } close(); }catch(e){ toast("Couldn't rename: " + errMsg(e)); } };
+    i.onkeydown = e => { if (e.key === "Enter") go(); };
+    m.append(h("h3",{text:"Rename section"}), i, h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), h("button",{class:"btn small",onclick:go},"Save"))); });
+}
+async function deleteCategory(c){
+  const rooms = S.allRooms.filter(r => (r.category || (isVoiceRoom(r) ? "Voice channels" : "Text rooms")) === c);
+  const target = catOrder().find(x => x !== c) || "Text rooms";
+  const b = writeBatch(db); rooms.forEach(r => b.update(doc(db, "rooms", r.id), {category:target}));
+  try{ if (rooms.length) await b.commit(); await saveCats(catOrder().filter(x => x !== c)); toast(rooms.length ? "Section removed — its rooms moved to " + target : "Section removed"); }catch(e){ toast("Couldn't remove: " + errMsg(e)); }
+}
+function catMenu(e, c){
+  ctxMenu(e, [
+    {label: prefs.collapsed[c] ? "Expand section" : "Collapse section", icon:"chevron", run:() => { prefs.collapsed[c] = !prefs.collapsed[c]; savePrefs(); need("side"); }},
+    isAdmin() ? {label:"Create room here", icon:"plus", run:() => roomModal(null, c)} : null,
+    isOwner() ? "-" : null,
+    isOwner() ? {label:"Rename section", icon:"pencil", run:() => renameCategory(c)} : null,
+    isOwner() ? {label:"Add section below", icon:"plus", run:() => newCategory(c)} : null,
+    isOwner() ? {label:"Move section up", icon:"chevronup", run:() => moveCat(c, -1)} : null,
+    isOwner() ? {label:"Move section down", icon:"chevron", run:() => moveCat(c, 1)} : null,
+    isOwner() ? {label:"Delete section", icon:"trash", danger:true, run:() => confirmBox("Delete " + c + "?", "Its rooms move to another section. No messages are deleted.", "Delete", () => deleteCategory(c))} : null,
+  ]);
+}
+function moveCat(c, d){ const l = catOrder(); const i = l.indexOf(c), j = i + d; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; saveCats(l); }
+// Moves a room to category `cat`, placed before room `beforeId` (or at the end), and renumbers that section.
+async function placeRoom(id, cat, beforeId){
+  const r = S.allRooms.find(x => x.id === id); if (!r) return;
+  const catOfR = x => x.category || (isVoiceRoom(x) ? "Voice channels" : "Text rooms");
+  const list = S.rooms.filter(x => catOfR(x) === cat && x.id !== id);
+  const at = beforeId ? list.findIndex(x => x.id === beforeId) : -1; list.splice(at < 0 ? list.length : at, 0, r);
+  const b = writeBatch(db); list.forEach((x, k) => { const patch = {order:k}; if (x.id === id && catOfR(x) !== cat) patch.category = cat; if (x.order !== k || patch.category) b.update(doc(db, "rooms", x.id), patch); });
+  // show it right away
+  list.forEach((x, k) => { x.order = k; if (x.id === id) x.category = cat; }); S.rooms.sort((a, c) => catOrder().indexOf(catOfR(a)) - catOrder().indexOf(catOfR(c)) || (a.order||0) - (c.order||0)); need("side");
+  try{ await b.commit(); if (!catOrder().includes(cat) || !((S.config || {}).cats || []).includes(cat)) { if (isOwner()) saveCats(catOrder()); } }catch(e){ toast("Couldn't move room: " + errMsg(e)); }
+}
+function wireSideDrag(list){
+  let drag = null;
+  const clear = () => list.querySelectorAll(".dropb,.dropa,.dropin").forEach(x => x.classList.remove("dropb","dropa","dropin"));
+  list.ondragstart = e => { const row = e.target.closest("[draggable=true]"); if (!row) return;
+    drag = row.dataset.room ? {room:row.dataset.room, from:row.dataset.in} : row.dataset.cat ? {cat:row.dataset.cat} : null;
+    if (!drag){ e.preventDefault(); return; } e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", drag.room || drag.cat); row.classList.add("dragging"); };
+  list.ondragend = e => { list.querySelectorAll(".dragging").forEach(x => x.classList.remove("dragging")); clear(); drag = null; };
+  const target = e => { if (!drag) return null; const t = e.target.closest(".ch[data-room],.cat,.catempty"); if (!t) return null;
+    const box = t.getBoundingClientRect(), after = e.clientY > box.top + box.height / 2; return {t, after}; };
+  list.ondragover = e => { const x = target(e); if (!x) return;
+    if (drag.cat && !x.t.dataset.cat) return; // sections only drop on sections
+    if (drag.room && drag.from !== "pins" && x.t.dataset.in === "pins" && !isAdmin()) return;
+    e.preventDefault(); clear();
+    if (x.t.classList.contains("cat") || x.t.classList.contains("catempty")) x.t.classList.add(drag.cat ? (x.after ? "dropa" : "dropb") : "dropin"); else x.t.classList.add(x.after ? "dropa" : "dropb"); };
+  list.ondragleave = e => { if (!list.contains(e.relatedTarget)) clear(); };
+  list.ondrop = e => { const x = target(e); clear(); if (!x || !drag) return; e.preventDefault(); const d = drag; drag = null;
+    if (d.cat){ const c2 = x.t.dataset.cat; if (!c2 || c2 === d.cat) return; const l = catOrder().filter(c => c !== d.cat); const i = l.indexOf(c2); l.splice(x.after ? i + 1 : i, 0, d.cat); saveCats(l); return; }
+    const t = x.t;
+    // into / within Pinned (personal)
+    if (t.dataset.pinsec || t.dataset.in === "pins"){ let p = (prefs.pins || []).filter(id => id !== d.room); let i = t.dataset.in === "pins" ? p.indexOf(t.dataset.room) + (x.after ? 1 : 0) : (x.after ? p.length : 0); if (i < 0) i = p.length;
+      p.splice(i, 0, d.room); prefs.pins = p; savePrefs(); need("side"); return; }
+    // out of Pinned into a section: unpin, and (admins) also move it there
+    if (d.from === "pins"){ prefs.pins = (prefs.pins || []).filter(id => id !== d.room); savePrefs(); need("side"); if (!isAdmin()) return; }
+    if (!isAdmin()) return;
+    const cat = t.dataset.cat || t.dataset.in;
+    let before = null;
+    if (t.dataset.room){ if (x.after){ const sib = S.rooms.filter(r => (r.category || (isVoiceRoom(r) ? "Voice channels" : "Text rooms")) === cat && r.id !== d.room); const k = sib.findIndex(r => r.id === t.dataset.room); before = (sib[k + 1] || {}).id || null; } else before = t.dataset.room; }
+    else if (!x.after && t.classList.contains("cat")){ const first = S.rooms.find(r => (r.category || (isVoiceRoom(r) ? "Voice channels" : "Text rooms")) === cat && r.id !== d.room); before = first ? first.id : null; }
+    placeRoom(d.room, cat, before);
+  };
 }
 function dmHidden(d){ const t = (prefs.hiddenDMs || {})[d.id]; return !!t && (d.lastTs || d.createdAt || 0) <= t && !(S.kind === "dm" && S.cur === d.id); }
 function closeDM(d){
@@ -942,15 +1035,24 @@ function roomMenu(ev, r){
   ctxMenu(ev, [
     {label:"Mark as read", icon:"check", run:() => { S.lastRead[r.id] = Date.now(); delete S.mentions[r.id]; store("lastRead", S.lastRead); store("mentions", S.mentions); need("side","rail"); }},
     {label: isMuted(r.id) ? "Unmute room" : "Mute room", icon:"bell", run:() => { prefs.muted = prefs.muted || {}; if (prefs.muted[r.id]) delete prefs.muted[r.id]; else prefs.muted[r.id] = true; savePrefs(); need("side","rail"); toast(isMuted(r.id) ? "#" + r.name + " muted — you'll still get @mentions" : "#" + r.name + " unmuted"); }},
+    {label: (prefs.pins || []).includes(r.id) ? "Unpin" : "Pin to top", icon:"pin", run:() => togglePinRoom(r.id)},
     isAdmin() && (isOwner() || !r.private) ? "-" : null,
+    isAdmin() ? {label:"Move to section…", icon:"menu", run:() => moveRoomModal(r)} : null,
     isAdmin() && (isOwner() || !r.private) ? {label:"Edit room", icon:"settings", run:() => roomModal(r)} : null,
   ]);
+}
+function moveRoomModal(r){
+  modal((m, close) => { m.append(h("h3",{text:"Move #" + r.name}), h("p",{class:"note",text:"Pick a section. Tip: you can also drag rooms in the sidebar."}),
+    h("div",{class:"list"}, catOrder().map(c => h("button",{class:"li", style:{cursor:"pointer",border:0,width:"100%",textAlign:"left"}, onclick:() => { close(); placeRoom(r.id, c, null); }}, ic("menu","sm"), h("span",{class:"nm",text:c}))),
+      isOwner() ? h("button",{class:"li", style:{cursor:"pointer",border:0,width:"100%",textAlign:"left"}, onclick:() => { close(); newCategory(); }}, ic("plus","sm"), h("span",{class:"nm",text:"New section…"})) : null),
+    h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"))); });
 }
 function serverMenu(ev){
   ctxMenu(ev, [
     {label:"Mark all as read", icon:"check", run:() => { S.rooms.forEach(r => S.lastRead[r.id] = Date.now()); S.mentions = {}; store("lastRead", S.lastRead); store("mentions", {}); need("side","rail"); }},
     isAdmin() ? {label:"Copy invite", icon:"copy", run:() => copy("Join me on CampusCord! " + LIVE_URL + "  Invite code: " + (S.invite || "(ask me)"), "Invite copied")} : null,
     isAdmin() ? {label:"Server settings", icon:"shield", run:() => openAdmin()} : null,
+    isOwner() ? {label:"Add section", icon:"plus", run:() => newCategory()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
