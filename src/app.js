@@ -414,6 +414,7 @@ function renderRail(){
   else if (S.rooms.some(roomUnread)) srv.appendChild(h("span",{class:"gdot",title:"New messages"}));
   r.appendChild(srv);
   r.appendChild(h("div",{class:"sp"}));
+  if (!isInstalled() && location.protocol !== "file:") r.appendChild(h("button",{class:"ri" + (installEvt ? " installri" : ""), title:"Install the CampusCord app", onclick:() => installApp()}, ic("arrowdown")));
   r.appendChild(h("button",{class:"ri shopri", title:"Campus+ Shop", onclick:() => openShop()}, ic("bag")));
   if (isAdmin()){ const ab = h("button",{class:"ri", title:"Server settings", onclick:() => openAdmin()}, ic("shield"));
     const pend = isOwner() ? S.orders.filter(o => o.status === "pending").length : 0; if (pend) ab.appendChild(h("span",{class:"bdg",text:String(pend)})); r.appendChild(ab); }
@@ -847,6 +848,7 @@ function serverMenu(ev){
     isAdmin() ? {label:"Server settings", icon:"shield", run:() => openAdmin()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
+    !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
 }
 function canModerate(uid){ return isAdmin() && uid !== S.uid && !isOwnerUid(uid) && (isOwner() || !isDev(uid)); }
@@ -1377,7 +1379,7 @@ function openSettings(start){
     {id:"shortcuts", label:"Shortcuts & commands", icon:"keyboard", render:paneShortcuts},
     {header:"Campus+"},
     {id:"shop", label:"Shop & ranks", icon:"bag", action:close => { close(); openShop(); }},
-    {id:"about", label:"About", icon:"info", render:paneAbout},
+    {id:"about", label:"Desktop app & about", icon:"info", render:paneAbout},
   ], start === "shop" ? "account" : (start || "account"));
   if (start === "shop"){ closeTopModal(); openShop(); }
 }
@@ -1450,6 +1452,10 @@ function paneShortcuts(p){
   p.append(h("label",{class:"f",text:"Slash commands"}), h("div",{class:"list"}, SLASH.map(c => h("div",{class:"li"}, h("span",{class:"nm",style:{fontFamily:"monospace"},text:"/" + c.c + " " + c.a}), h("span",{class:"s",text:c.d})))));
 }
 function paneAbout(p){
+  p.append(h("div",{class:"preview-card",style:{display:"flex",gap:"14px",alignItems:"center",marginBottom:"16px"}},
+    h("img",{src:"icons/icon-192.png", style:{width:"56px",height:"56px",borderRadius:"14px"}}),
+    h("div",{style:{flex:"1"}}, h("b",{text:"CampusCord desktop app"}), h("div",{class:"note",style:{margin:"2px 0 0"},text: isInstalled() ? "Installed ✓ — it updates itself." : "Get CampusCord in its own window, in your Dock."})),
+    isInstalled() ? null : h("button",{class:"btn small", onclick:() => installApp()}, ic("arrowdown"), " Install app")));
   p.append(h("p",{class:"note",style:{fontSize:"14px"}}, "CampusCord version ", h("b",{text:APP_VERSION}), ". Live at ", h("a",{href:LIVE_URL,target:"_blank"},LIVE_URL), "."),
     h("p",{class:"note",text:"When a new version is published, a Refresh bar appears at the top of the app."}));
 }
@@ -1689,6 +1695,28 @@ async function kick(uid){
     await updateDoc(doc(db, "config/main"), upd);
     await deleteDoc(doc(db, "members", uid)); toast("Kicked"); refreshOpenPane();
   }catch(e){ toast("Couldn't kick: " + errMsg(e)); }
+}
+
+// ---------------------------------------------------------------- install as an app
+let installEvt = null;
+const isInstalled = () => matchMedia("(display-mode: standalone)").matches || matchMedia("(display-mode: window-controls-overlay)").matches || navigator.standalone === true;
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; need("rail"); refreshOpenPane(); });
+window.addEventListener("appinstalled", () => { installEvt = null; toast("CampusCord is installed! Find it in your Dock or Applications."); need("rail"); refreshOpenPane(); });
+function installApp(){
+  if (installEvt){ installEvt.prompt(); installEvt.userChoice.finally(() => { installEvt = null; need("rail"); }); return; }
+  modal((m, close) => {
+    const safari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    m.append(h("h3",{text:"Install CampusCord"}),
+      isInstalled() ? h("p",{class:"note",text:"You're already using the installed app ✓"}) :
+      safari ? h("ol",{class:"steps",style:{marginTop:"10px"}}, h("li",null, "In Safari's menu bar, click ", h("b",{text:"File → Add to Dock"}), "."), h("li",null, "Click ", h("b",{text:"Add"}), ". CampusCord appears in your Dock and Launchpad."))
+      : h("ol",{class:"steps",style:{marginTop:"10px"}},
+          h("li",null, "Open ", h("b",{text:"campus-cord.github.io"}), " in ", h("b",{text:"Chrome"}), " or ", h("b",{text:"Edge"}), "."),
+          h("li",null, "Click the ", h("b",{text:"install icon"}), " at the right end of the address bar (a monitor with a down arrow), or the ⋮ menu → ", h("b",{text:"Cast, save and share → Install page as app"}), "."),
+          h("li",null, "Click ", h("b",{text:"Install"}), ". It opens in its own window and shows up in your Dock and Applications folder.")),
+      h("p",{class:"note",text:"The app updates itself automatically — you never need to download it again."}),
+      h("div",{class:"foot"}, h("button",{class:"btn small",onclick:close},"Got it")));
+  });
 }
 
 // ---------------------------------------------------------------- updates
