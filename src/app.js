@@ -28,7 +28,7 @@ const THEMES = [
   {id:"sakura", name:"Sakura", c:["#f7dce6","#fdeef3","#fff7fa"], premium:true},
 ];
 const ACCENTS = ["#7c5cff","#5865f2","#3fb8ff","#22d3c5","#3ecf7a","#f5b83d","#ff9447","#f0565c","#ff7ac6"];
-const NAME_FX = [{id:"rainbow",name:"Rainbow"},{id:"gold",name:"Gold"},{id:"fire",name:"Fire"},{id:"ocean",name:"Ocean"},{id:"neon",name:"Neon"},{id:"prism",name:"Prism",ex:true},{id:"aurora",name:"Aurora",ex:true}];
+const NAME_FX = [{id:"yinyang",name:"Yin-Yang",own:true},{id:"rainbow",name:"Rainbow"},{id:"gold",name:"Gold"},{id:"fire",name:"Fire"},{id:"ocean",name:"Ocean"},{id:"neon",name:"Neon"},{id:"prism",name:"Prism",ex:true},{id:"aurora",name:"Aurora",ex:true}];
 const STATUSES = [{id:"online",name:"Online",d:""},{id:"idle",name:"Idle",d:"Shows a moon"},{id:"dnd",name:"Do Not Disturb",d:"Mutes your notifications"},{id:"invisible",name:"Invisible",d:"Look offline to others"}];
 
 // ---------------------------------------------------------------- icons (Lucide, MIT)
@@ -52,6 +52,7 @@ const ICONS = {
   pencil:'<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>',
   copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   trash:'<path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  yinyang:'<circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20a5 5 0 0 1 0-10a5 5 0 0 0 0-10z" fill="currentColor"/><circle cx="12" cy="7" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="17" r="1.6" stroke="none" style="fill:var(--yyb,#000)"/>',
   crown:'<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zM5 20h14"/>',
   code:'<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
   gem:'<path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6M2 9h20"/>',
@@ -211,7 +212,7 @@ function statusOf(uid){
 }
 const isOn = uid => statusOf(uid) !== "offline";
 function fxOf(uid){ if (!hasPerk(uid, "name_fx")) return null; const f = profile(uid).nameFx; if (f === "none") return null;
-  const fx = NAME_FX.find(x => x.id === f); if (fx && (!fx.ex || hasPerk(uid, "fx_exclusive"))) return f; return isOwnerUid(uid) ? "rainbow" : null; }
+  const fx = NAME_FX.find(x => x.id === f); if (fx && (fx.own ? isOwnerUid(uid) : (!fx.ex || hasPerk(uid, "fx_exclusive")))) return f; return isOwnerUid(uid) ? "yinyang" : null; }
 function paintName(node, uid){ const fx = fxOf(uid); if (fx){ node.classList.add("fx","fx-"+fx); } else node.style.color = colorOf(uid); return node; }
 const AV_BGS = [
   {id:"sunset", g:"linear-gradient(135deg,#ff7ac6,#ffd166)"}, {id:"ocean", g:"linear-gradient(135deg,#22d3c5,#3fb8ff)"},
@@ -241,7 +242,7 @@ function chip(cls, iconName, text, title){ return h("span",{class:"tag " + cls +
 function miniTags(uid){ CHIP_MINI = true; try{ return roleTags(uid, true); } finally { CHIP_MINI = false; } }
 function roleTags(uid, compact){
   const out = [];
-  if (isOwnerUid(uid)) out.push(chip("admin","crown","ADMIN","Server admin"));
+  if (isOwnerUid(uid)) out.push(chip("admin","yinyang","ADMIN","Server admin"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   const r = rankOf(uid);
   if (r === "plusplus") out.push(chip("pp","zap","PLUS+","Campus++"));
@@ -390,6 +391,7 @@ function initApp(){
   S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => { S.myOrders = s.docs.map(d => Object.assign({id:d.id}, d.data())); refreshOpenPane(); }, ()=>{}));
   if (isOwner()) S.unsubApp.push(onSnapshot(collection(db, "orders"), s => { S.orders = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => b.ts - a.ts); need("rail"); refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
+    if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
   ensureWallet();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
@@ -1491,8 +1493,8 @@ function paneProfile(p){
   // name effect
   const fxOk = hasPerk(S.uid, "name_fx");
   p.append(h("label",{class:"f"}, "Name effect ", fxOk ? null : ic("lock","sm")));
-  const cur = pr.nameFx || (isOwner() ? "rainbow" : "none");
-  p.append(h("div",{class:"seg wrap"}, [{id:"none",name:"None"}, ...NAME_FX].map(fx => { const ok = fx.ex ? hasPerk(S.uid, "fx_exclusive") : fxOk;
+  const cur = pr.nameFx || (isOwner() ? "yinyang" : "none");
+  p.append(h("div",{class:"seg wrap"}, [{id:"none",name:"None"}, ...NAME_FX.filter(x => !x.own || isOwner())].map(fx => { const ok = fx.own ? isOwner() : fx.ex ? hasPerk(S.uid, "fx_exclusive") : fxOk;
     return h("button",{class: cur === fx.id ? "on" : "", disabled: !ok, title: ok ? "" : (fx.ex ? "Campus++ exclusive" : "Locked"), onclick:async () => { if (!ok) return; await setMyProfile({nameFx:fx.id}).catch(()=>{}); refreshOpenPane(); }},
     fx.id === "none" ? h("span",{text:"None"}) : h("span",{class:"fx fx-" + fx.id, text:fx.name}), !ok ? ic("lock","sm") : null); })));
   if (!fxOk) p.append(h("p",{class:"note"}, "Unlock animated names with ", h("a",{href:"#", onclick:e => { e.preventDefault(); openShop(); }}, "Animated Name or Campus+"), "."));
@@ -1566,7 +1568,7 @@ function drawRanks(m, draw){
         h("div",{class:"shophero"},
           h("div",{class:"shg"}, ic("sparkles")),
           h("div",null, h("h2",{text:"Campus+ Shop"}), h("p",{text:"Ranks, animated names and themes. Every purchase supports the server."})),
-          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin","crown","ADMIN") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
+          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin","yinyang","ADMIN") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
       const tiers = h("div",{class:"tiers"});
       CATALOG.filter(c => c.tier).forEach(c => {
         const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
@@ -1581,8 +1583,8 @@ function drawRanks(m, draw){
       m.appendChild(tiers);
       // name effect preview
       const prev = h("div",{class:"fxrow"});
-      NAME_FX.forEach(fx => { const ok = hasPerk(S.uid, fx.ex ? "fx_exclusive" : "name_fx");
-        prev.appendChild(h("button",{class:"fxpv" + ((profile(S.uid).nameFx || (isOwner() ? "rainbow" : "")) === fx.id ? " on" : ""), title: ok ? "Use " + fx.name : (fx.ex ? "Campus++ only" : "Unlock with Animated Name or Campus+"),
+      NAME_FX.filter(x => !x.own || isOwner()).forEach(fx => { const ok = fx.own ? isOwner() : hasPerk(S.uid, fx.ex ? "fx_exclusive" : "name_fx");
+        prev.appendChild(h("button",{class:"fxpv" + ((profile(S.uid).nameFx || (isOwner() ? "yinyang" : "")) === fx.id ? " on" : ""), title: ok ? "Use " + fx.name : (fx.ex ? "Campus++ only" : "Unlock with Animated Name or Campus+"),
           onclick:() => { if (!ok){ toast(fx.ex ? fx.name + " is a Campus++ exclusive" : "Unlock animated names first"); return; } setMyProfile({nameFx:fx.id}).then(() => { toast(fx.name + " equipped"); draw(); }).catch(()=>{}); }},
           h("span",{class:"fx fx-" + fx.id, text:nickOf(S.uid)}), h("small",null, ok ? null : ic("lock","sm"), " " + fx.name + (fx.ex ? " ++" : "")))); });
       m.append(h("h3",{class:"sh3",text:"Preview your name"}), prev);

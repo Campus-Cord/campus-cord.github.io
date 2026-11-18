@@ -257,7 +257,7 @@ function renderQuestsPage(box){
 function ownedCount(uid){ const items = wal(uid).items || []; const set = new Set(); items.forEach(i => { const c = COSM_BY[i]; if (!c) return; if (c.items) c.items.forEach(x => set.add(x)); else set.add(i); }); return set.size; }
 function badgesOf(uid){
   const out = [], m = member(uid) || {}, w = wal(uid), r = rankOf(uid);
-  if (isOwnerUid(uid)) out.push({id:"owner", icon:"crown", name:"Server Owner", desc:"Runs this CampusCord"});
+  if (isOwnerUid(uid)) out.push({id:"owner", icon:"yinyang", name:"Server Owner", desc:"Runs this CampusCord"});
   if (isDev(uid)) out.push({id:"dev", icon:"code", name:"Developer", desc:"Helps build CampusCord"});
   if (r === "plusplus") out.push({id:"pp", icon:"zap", name:"Campus++", desc:"Subscriber"});
   else if (r === "plus") out.push({id:"plus", icon:"sparkles", name:"Campus+", desc:"Subscriber"});
