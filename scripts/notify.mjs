@@ -14,7 +14,7 @@ const SITE = "https://campus-cord.github.io/";
 const keyRef = db.doc("secret/vapid");
 let keys = (await keyRef.get()).data();
 if (!keys){ keys = webpush.generateVAPIDKeys(); await keyRef.set(keys); console.log("Made a new push key pair."); }
-await db.doc("config/push").set({ publicKey: keys.publicKey }, { merge: true });
+if (!keys.published){ await db.doc("config/push").set({ publicKey: keys.publicKey }, { merge: true }); await keyRef.set({ published: true }, { merge: true }); }
 webpush.setVapidDetails("mailto:massimotestaiuti112@gmail.com", keys.publicKey, keys.privateKey);
 
 // what changed since last time (first run only looks back 10 minutes so nobody gets a flood)
@@ -23,40 +23,44 @@ const state = (await stateRef.get()).data() || {};
 const now = Date.now();
 const since = state.lastRun || now - 10 * 60000;
 
+// Kept cheap on purpose (Firebase's free plan has a daily read limit): each run only asks for things newer than the
+// last run, and only loads names/rooms when there's actually something to send.
 const cfg = (await db.doc("config/main").get()).data() || {};
 const admins = new Set([cfg.ownerUid, ...(cfg.admins || [])].filter(Boolean));
-const members = Object.fromEntries((await db.collection("members").get()).docs.map(d => [d.id, d.data()]));
-const nick = u => (members[u] && members[u].nick) || "Someone";
+let members = null;
+const loadMembers = async () => { if (!members) members = Object.fromEntries((await db.collection("members").get()).docs.map(d => [d.id, d.data()])); return members; };
+const nick = u => (members && members[u] && members[u].nick) || "Someone";
 const out = {}; // uid -> [{title, body, url, tag, kind}]
-const add = (uid, kind, n) => { if (!members[uid]) return; (out[uid] = out[uid] || []).push(Object.assign({ kind }, n)); };
+const add = (uid, kind, n) => { (out[uid] = out[uid] || []).push(Object.assign({ kind }, n)); };
 
 // DMs
 for (const d of (await db.collection("dms").where("lastTs", ">", since).get()).docs){
   const x = d.data(); for (const u of x.users || []) if (u !== x.lastUid) add(u, "dms", { title: x.lastNick || nick(x.lastUid), body: x.lastPreview || "sent you a message", url: SITE + "?open=dm:" + d.id, tag: "dm-" + d.id });
 }
 // @mentions / @everyone in rooms (private rooms only notify people in them)
-const rooms = Object.fromEntries((await db.collection("rooms").get()).docs.map(d => [d.id, d.data()]));
-for (const d of (await db.collection("meta").where("lastTs", ">", since).get()).docs){
+const metaNew = (await db.collection("meta").where("lastTs", ">", since).get()).docs;
+const rooms = Object.fromEntries((await db.collection("rooms").where("type", "==", "vouches").get()).docs.map(d => [d.id, d.data()]));
+for (const d of metaNew) if (!rooms[d.id]){ const r = await db.doc("rooms/" + d.id).get(); if (r.exists) rooms[d.id] = r.data(); }
+if (metaNew.length) await loadMembers();
+for (const d of metaNew){
   const x = d.data(), r = rooms[d.id]; if (!r) continue;
   const can = u => !r.private || u === cfg.ownerUid || (r.allowed || []).includes(u);
   const who = x.lastEveryone ? Object.keys(members) : (x.lastMentions || []);
   for (const u of who) if (u !== x.lastUid && can(u)) add(u, "mentions", { title: (x.lastNick || nick(x.lastUid)) + " in #" + (r.name || "room"), body: r.private ? "mentioned you" : (x.lastPreview || "mentioned you"), url: SITE + "?open=room:" + d.id, tag: "room-" + d.id });
 }
-// new vouches (for admins to review) and approved vouches (for authors)
+// new vouches waiting for review (admins)
 for (const [rid, r] of Object.entries(rooms)){
   if (r.type !== "vouches") continue;
-  for (const d of (await db.collection("rooms").doc(rid).collection("msgs").where("ts", ">", now - 14 * 864e5).get()).docs){
-    const m = d.data(); if (!m.vouch) continue;
-    if (m.ts > since && !m.approved && !m.rejected) for (const a of admins) if (a !== m.uid) add(a, "vouches", { title: "New vouch to review", body: nick(m.uid) + " left a " + m.vouch.stars + "★ vouch: " + (m.text || "").slice(0, 80), url: SITE + "?open=room:" + rid, tag: "vouch-review" });
-    if (m.approved && !(state.approved || []).includes(d.id)) { if (state.lastRun) add(m.uid, "rewards", { title: "Your vouch was approved ✅", body: "Open CampusCord to collect your Sparks.", url: SITE + "?open=room:" + rid, tag: "vouch-ok" }); (state.approved = state.approved || []).push(d.id); }
-  }
+  const fresh = (await db.collection("rooms").doc(rid).collection("msgs").where("ts", ">", since).get()).docs.map(d => d.data()).filter(m => m.vouch && !m.approved && !m.rejected);
+  if (fresh.length){ await loadMembers(); const m = fresh[fresh.length - 1];
+    for (const a of admins) if (fresh.some(x => x.uid !== a)) add(a, "vouches", { title: fresh.length > 1 ? fresh.length + " new vouches to review" : "New vouch to review", body: nick(m.uid) + " left a " + m.vouch.stars + "★ vouch: " + (m.text || "").slice(0, 80), url: SITE + "?open=room:" + rid, tag: "vouch-review" }); }
 }
 // feedback: new posts (admins) and accepted posts (authors)
-for (const d of (await db.collection("feedback").get()).docs){
-  const f = d.data();
-  if (f.ts > since) for (const a of admins) if (a !== f.uid) add(a, "feedback", { title: "New " + (f.type || "feedback") + " from " + nick(f.uid), body: f.title || "", url: SITE + "?open=feedback:all", tag: "feedback" });
-  if (f.statusAt > since && ["planned", "working", "done"].includes(f.status)) add(f.uid, "rewards", { title: "Your feedback was " + (f.status === "done" ? "completed" : "accepted") + " 🎉", body: (f.title || "") + " — open CampusCord to collect +200 Sparks.", url: SITE + "?open=feedback:all", tag: "fb-" + d.id });
-}
+const fbNew = (await db.collection("feedback").where("ts", ">", since).get()).docs;
+const fbStatus = (await db.collection("feedback").where("statusAt", ">", since).get()).docs;
+if (fbNew.length) await loadMembers();
+for (const d of fbNew){ const f = d.data(); for (const a of admins) if (a !== f.uid) add(a, "feedback", { title: "New " + (f.type || "feedback") + " from " + nick(f.uid), body: f.title || "", url: SITE + "?open=feedback:all", tag: "feedback" }); }
+for (const d of fbStatus){ const f = d.data(); if (["planned", "working", "done"].includes(f.status)) add(f.uid, "rewards", { title: "Your feedback was " + (f.status === "done" ? "completed" : "accepted") + " 🎉", body: (f.title || "") + " — open CampusCord to collect +200 Sparks.", url: SITE + "?open=feedback:all", tag: "fb-" + d.id }); }
 state.approved = (state.approved || []).slice(-300);
 
 // send
