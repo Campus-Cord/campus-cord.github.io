@@ -1068,3 +1068,20 @@ html,body{overflow:hidden}
 .spacks .spackitem.sp4{border-color:#f5a52488;box-shadow:0 0 24px -8px #f5a524}
 .modal.sparksmodal{width:min(900px,95vw)!important;max-width:95vw!important}.modal.sparksmodal .spacks{grid-template-columns:repeat(5,1fr)!important}@media (max-width:900px){.modal.sparksmodal .spacks{grid-template-columns:repeat(2,1fr)!important}}
 .profile .pbadges{max-width:200px}.profile .bdgrow{flex-wrap:nowrap}
+/* v3.12 Photo Booth effects */
+canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:block}
+.camwrap{position:relative;width:100%;display:flex;justify-content:center}
+.camlabel{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:#fff;font-weight:700;font-size:13px;padding:4px 12px;border-radius:99px;pointer-events:none}
+.camlabel:empty{display:none}
+.camgrid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr) auto;gap:4px;padding:4px;background:#000}
+.camtile{position:relative;border:0;padding:0;background:#111;border-radius:6px;overflow:hidden;cursor:pointer;outline:2px solid transparent}
+.camtile canvas{width:100%;height:100%;object-fit:cover;display:block}
+.camtile span{position:absolute;left:0;right:0;bottom:0;padding:3px 4px;font-size:11px;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.75));text-align:center}
+.camtile:hover{outline-color:rgba(255,255,255,.5)}.camtile.on{outline-color:var(--accent)}
+.campager{grid-column:1/-1;display:flex;justify-content:center;gap:6px;padding:2px 0}
+.campager button{border:0;border-radius:99px;padding:4px 12px;font-size:12px;font-weight:700;background:rgba(255,255,255,.12);color:#ddd;cursor:pointer}
+.campager button.on{background:#fff;color:#111}
+.camchip{flex:none;border:1px solid var(--line);background:var(--rail);color:var(--muted);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.camchip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
+.camchip:hover:not(.on){color:var(--text)}
+.camtimer.on{background:var(--accent);color:var(--on-accent,#fff)}
