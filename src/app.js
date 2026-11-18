@@ -401,29 +401,41 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden){ S.h
 // ---------------------------------------------------------------- rail + sidebar
 function unreadDMs(){ return S.dms.filter(d => d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0) && !(S.kind === "dm" && S.cur === d.id)); }
 function roomUnread(r){ const m = S.meta[r.id]; return !isMuted(r.id) && !(S.kind === "room" && S.cur === r.id) && m && m.lastTs > (S.lastRead[r.id]||0) && m.lastUid !== S.uid; }
+function railItem({label, tip, on, cls, onclick, oncontextmenu, content, badge, dot}){
+  const btn = h("button",{class:"ri" + (on ? " on" : "") + (cls ? " " + cls : ""), "aria-label":tip || label, onclick, oncontextmenu}, content);
+  if (badge) btn.appendChild(h("span",{class:"bdg",text: badge > 99 ? "99+" : String(badge)}));
+  else if (dot) btn.appendChild(h("span",{class:"gdot"}));
+  const wrap = h("div",{class:"rwrap" + (on ? " on" : ""), "data-tip":tip || label}, h("i",{class:"pill"}), btn, h("span",{class:"rl",text:label}));
+  return wrap;
+}
 function renderRail(){
   const r = $("rail"); r.innerHTML = "";
-  const dmU = unreadDMs().length;
-  const home = h("button",{class:"ri" + (S.mode === "dms" ? " on" : ""), title:"Direct messages", onclick:() => goDMs()}, ic("message"));
-  if (dmU) home.appendChild(h("span",{class:"bdg",text:String(dmU)}));
-  r.appendChild(home);
-  r.appendChild(h("div",{class:"sep"}));
-  const icon = (S.config && S.config.serverIcon) || "CC";
-  const srv = h("button",{oncontextmenu:e => serverMenu(e), class:"ri srv" + (S.mode === "server" ? " on" : ""), title:(S.config && S.config.serverName) || "CampusCord", onclick:() => goServer()}, icon);
-  const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0); if (mc) srv.appendChild(h("span",{class:"bdg",text:String(mc)}));
-  else if (S.rooms.some(roomUnread)) srv.appendChild(h("span",{class:"gdot",title:"New messages"}));
-  r.appendChild(srv);
-  r.appendChild(h("div",{class:"sp"}));
-  if (!isInstalled() && location.protocol !== "file:") r.appendChild(h("button",{class:"ri" + (installEvt ? " installri" : ""), title:"Install the CampusCord app", onclick:() => installApp()}, ic("arrowdown")));
-  r.appendChild(h("button",{class:"ri shopri", title:"Campus+ Shop", onclick:() => openShop()}, ic("bag")));
-  if (isAdmin()){ const ab = h("button",{class:"ri", title:"Server settings", onclick:() => openAdmin()}, ic("shield"));
-    const pend = isOwner() ? S.orders.filter(o => o.status === "pending").length : 0; if (pend) ab.appendChild(h("span",{class:"bdg",text:String(pend)})); r.appendChild(ab); }
+  const top = h("div",{class:"rgroup"}), bot = h("div",{class:"rgroup"});
+  top.appendChild(railItem({label:"Messages", tip:"Direct messages & friends", on: S.mode === "dms", onclick:() => goDMs(), content:ic("message"), badge: unreadDMs().length}));
+  top.appendChild(h("div",{class:"sep"}));
+  const name = (S.config && S.config.serverName) || "CampusCord";
+  const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0);
+  top.appendChild(railItem({label:"Rooms", tip: name + " — all rooms", on: S.mode === "server", cls:"srv", onclick:() => goServer(), oncontextmenu:e => serverMenu(e),
+    content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
+  bot.appendChild(railItem({label:"Shop", tip:"Campus+ Shop — ranks & perks", cls:"shopri", onclick:() => openShop(), content:ic("bag")}));
+  if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
+  if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length : 0}));
+  bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
+  r.append(top, bot);
 }
+// hover tooltips for the left bar
+(() => { let tip = null;
+  document.addEventListener("mouseover", e => { const w = e.target.closest && e.target.closest(".rwrap"); if (!w){ if (tip){ tip.remove(); tip = null; } return; }
+    if (tip && tip._for === w) return; if (tip) tip.remove();
+    tip = h("div",{class:"rtip",text:w.dataset.tip}); tip._for = w; document.body.appendChild(tip);
+    const b = w.querySelector(".ri").getBoundingClientRect(); tip.style.top = (b.top + b.height / 2 - tip.offsetHeight / 2) + "px"; tip.style.left = (b.right + 12) + "px"; });
+  document.addEventListener("mousedown", () => { if (tip){ tip.remove(); tip = null; } }, true);
+})();
 function renderSide(){
   const hdr = $("sideHdr"), list = $("chList"); hdr.innerHTML = ""; list.innerHTML = "";
   if (S.mode === "dms"){
     hdr.onclick = null; hdr.style.cursor = "default";
-    hdr.append(h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
+    hdr.append(h("span",{class:"hdric"}, ic("message")), h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
     const f = h("input",{class:"dmsearch", placeholder:"Find a conversation", value:S.dmFilter||"", oninput:e => { S.dmFilter = e.target.value; renderDMList(box); }});
     list.appendChild(f);
     list.appendChild(h("div",{class:"ch" + (S.kind === "home" ? " on" : ""), onclick:() => openChat("home", "home")}, h("span",{class:"ic"}, ic("users")), h("span",{class:"nm",text:"Friends"})));
@@ -919,7 +931,10 @@ async function togglePin(m){
 function startReply(m){ S.replyTo = {id:m.id, uid:m.uid, text:snippet(m)}; need("composer"); $("input").focus(); }
 
 // ---------------------------------------------------------------- right panel (members / pins / search)
-$("btnMembers").onclick = () => { S.rpanel = S.rpanel === "members" ? null : "members"; prefs.showMembers = S.rpanel === "members"; savePrefs(); need("rpanel","header"); };
+window.addEventListener("resize", () => { clearTimeout(S.rsT); S.rsT = setTimeout(() => need("rpanel","header"), 120); });
+document.addEventListener("mousedown", e => { if (window.innerWidth < 1100 && S.rpanelForced && !e.target.closest("#rpanel,#btnMembers,.profile,.ctx")){ S.rpanelForced = false; need("rpanel","header"); } });
+$("btnMembers").onclick = () => { if (window.innerWidth < 1100){ const vis = !$("rpanel").classList.contains("hidden") && S.rpanel === "members"; S.rpanel = "members"; S.rpanelForced = !vis; need("rpanel","header"); return; }
+  S.rpanel = S.rpanel === "members" ? null : "members"; prefs.showMembers = S.rpanel === "members"; savePrefs(); need("rpanel","header"); };
 $("btnPins").onclick = () => { if (S.rpanel === "pins"){ S.rpanel = prefs.showMembers ? "members" : null; } else { S.rpanel = "pins"; loadPins(); } need("rpanel","header"); };
 $("search").addEventListener("input", e => { S.searchQ = e.target.value.trim(); S.rpanel = S.searchQ ? "search" : (prefs.showMembers ? "members" : null); need("rpanel"); });
 $("search").addEventListener("keydown", e => { if (e.key === "Escape"){ e.target.value = ""; S.searchQ = ""; S.rpanel = prefs.showMembers ? "members" : null; need("rpanel"); } });
@@ -932,7 +947,8 @@ async function loadPins(){
 }
 function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
-  if (S.rpanel === null && prefs.showMembers === false || !S.rpanel){ p.classList.add("hidden"); return; }
+  const narrow = window.innerWidth < 1100;
+  if (S.rpanel === null && prefs.showMembers === false || !S.rpanel || (narrow && S.rpanel === "members" && !S.rpanelForced)){ p.classList.add("hidden"); $("btnMembers").classList.remove("on"); return; }
   p.classList.remove("hidden");
   const close = h("button",{class:"ib",title:"Close",onclick:() => { if (S.rpanel === "search"){ $("search").value = ""; S.searchQ = ""; } S.rpanel = S.rpanel === "members" ? null : (prefs.showMembers ? "members" : null); if (S.rpanel === null){ prefs.showMembers = false; savePrefs(); } need("rpanel","header"); }}, ic("x"));
   if (S.rpanel === "pins"){

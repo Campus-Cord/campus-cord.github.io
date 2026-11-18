@@ -595,3 +595,43 @@ html.compact .msg .gut{width:24px}
 .friend .fi span{font-size:13px;color:var(--muted)}
 .friend .ib{background:var(--side);border-radius:50%}
 .rail .ri.installri{background:var(--green);color:#06210f;border-radius:16px}
+
+/* ================= v3.5 left bar + scrollbars ================= */
+html,body{overflow:hidden}
+#app{height:100vh;height:100dvh;overflow:hidden}
+/* scrollbars: hidden until you hover the area (like Discord) */
+.chlist,.msgs,.rpanel .rb,.modal,.big-modal .pane,.big-modal .nav,.emojis,.gifs .grid,.avfaces,.ac{scrollbar-width:thin;scrollbar-color:transparent transparent}
+.chlist:hover,.msgs:hover,.rpanel .rb:hover,.modal:hover,.big-modal .pane:hover,.big-modal .nav:hover,.emojis:hover,.gifs .grid:hover,.avfaces:hover,.ac:hover{scrollbar-color:color-mix(in srgb,var(--text) 22%,transparent) transparent}
+::-webkit-scrollbar{width:8px;height:8px;background:transparent}
+::-webkit-scrollbar-thumb{background:transparent;border-radius:6px}
+:hover::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text) 22%,transparent)}
+::-webkit-scrollbar-corner{background:transparent}
+
+.rail{width:76px;padding:10px 0 12px;gap:0;justify-content:space-between;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+#app{grid-template-columns:76px 248px 1fr auto}
+@media (max-width:1100px){#app{grid-template-columns:76px 248px 1fr}}
+.rgroup{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+.rgroup .sep{margin:4px 0}
+.rwrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;width:100%}
+.rwrap .pill{position:absolute;left:0;top:20px;transform:translateY(-50%);width:4px;height:0;border-radius:0 4px 4px 0;background:var(--text);transition:height .15s}
+.rwrap:hover .pill{height:18px}
+.rwrap.on .pill{height:36px}
+.rail .ri.on::before{display:none}
+.rwrap .rl{font-size:10px;font-weight:600;color:var(--dim);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+.rwrap.on .rl,.rwrap:hover .rl{color:var(--text)}
+.rail .ri{width:44px;height:44px}
+.rail .ri .i{width:22px;height:22px}
+.rail .ri.srv{background:var(--side);color:var(--text);border-radius:22px}
+.rail .ri.srv .srvic{font-weight:800;font-size:15px}
+.rail .ri.srv.on,.rail .ri.srv:hover{background:linear-gradient(135deg,var(--accent),#3fb8ff);color:#fff;border-radius:14px}
+.rail .ri.shopri{animation:none}
+.rail .ri .bdg{right:-5px;bottom:-5px}
+.rail .ri .gdot{right:-3px;bottom:-3px}
+.rtip{position:fixed;z-index:99;background:#111214;color:#f2f3f5;font-size:13px;font-weight:600;padding:7px 10px;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.45);pointer-events:none;white-space:nowrap}
+.rtip::before{content:"";position:absolute;left:-5px;top:50%;transform:translateY(-50%);border:5px solid transparent;border-left:0;border-right-color:#111214}
+.side .hdr .hdric{display:flex;color:var(--muted)}.side .hdr .hdric .i{width:18px;height:18px}
+@media (max-width:760px){ .rail{width:76px} .side{left:76px} }
+@media (max-height:520px){ .rwrap .rl{display:none} .rgroup{gap:4px} }
+#app{grid-template-rows:minmax(0,1fr)}
+.rail,.side,.main{min-height:0}
