@@ -16,7 +16,9 @@ const VOICE_STALE = 45000;
 const V = {room:null, stream:null, peers:{}, early:{}, tries:{}, warned:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
 S.voiceParts = {}; S.voiceSubs = {};
 const isVoiceRoom = r => r && r.type === "voice";
-function liveVoice(parts){ return Object.keys(parts || {}).filter(u => Date.now() - (parts[u].lastSeen || 0) < VOICE_STALE && member(u)); }
+// Presence uses *our* clock: when someone's lastSeen value changes we note the local time we saw it. A friend whose
+// computer clock is a minute off used to look "gone", so nobody ever connected to them.
+function liveVoice(parts){ return Object.keys(parts || {}).filter(u => member(u) && (u === S.uid || Date.now() - seenAt("v:" + u + ":" + (parts[u].joinedAt || 0), parts[u].lastSeen) < VOICE_STALE)); }
 // keep a live list of who's in every voice room (for the sidebar)
 function syncVoiceSubs(){
   const want = new Set(S.rooms.filter(isVoiceRoom).map(r => r.id));
@@ -40,8 +42,19 @@ async function joinVoice(roomId){
   catch(e){ toast("CampusCord needs your microphone for voice. Allow it in the browser's address bar, then try again."); return; }
   V.room = roomId; V.parts = S.voiceParts[roomId] || {};
   V.stream.getAudioTracks().forEach(t => t.enabled = !V.muted && !V.deaf);
+  // Listen for connection messages *before* announcing ourselves. Anything already waiting is left over from an
+  // earlier call, so it's cleared instead of processed (this used to rely on comparing clocks across computers).
+  let firstSignals = true, ready;
+  const gotFirst = new Promise(r => ready = r);
+  V.unsubs.push(onSnapshot(query(collection(db, "rooms", roomId, "signals"), where("to", "==", S.uid)), snap => {
+    const added = snap.docChanges().filter(c => c.type === "added").sort((a, b) => a.doc.id < b.doc.id ? -1 : 1);
+    if (firstSignals){ firstSignals = false; added.forEach(c => deleteDoc(doc(db, "rooms", roomId, "signals", c.doc.id)).catch(() => {})); ready(); return; }
+    added.forEach(c => { const s = c.doc.data(), id = c.doc.id;
+      deleteDoc(doc(db, "rooms", roomId, "signals", id)).catch(() => {});
+      V.chain = V.chain.then(() => handleSignal(s)).catch(e => console.warn("signal", e)); }); }, e => { console.warn("signals", e); ready(); toast("Voice couldn't connect to the server: " + errMsg(e)); }));
+  await Promise.race([gotFirst, new Promise(r => setTimeout(r, 4000))]);
   try{ await setDoc(doc(db, "rooms", roomId, "voice", S.uid), {joinedAt:Date.now(), lastSeen:Date.now(), muted:V.muted, deaf:V.deaf}); }
-  catch(e){ toast("Couldn't join voice: " + errMsg(e)); stopStream(); V.room = null; return; }
+  catch(e){ toast("Couldn't join voice: " + errMsg(e)); V.unsubs.forEach(u => u()); V.unsubs = []; stopStream(); V.room = null; need("side","me"); return; }
   // retry any connection that hasn't come up within 8 seconds
   V.retry = setInterval(() => { Object.keys(V.peers).forEach(u => { const p = V.peers[u]; const st = p.pc.connectionState;
     const wait = Math.min(24000, 8000 + (p.tries || 0) * 4000);
@@ -49,10 +62,6 @@ async function joinVoice(roomId){
     if ((st === "new" || st === "connecting" || st === "disconnected") && Date.now() - p.created > wait && S.uid < u){ V.tries[u] = (p.tries || 0) + 1; closePeer(u); makePeer(u, true); } });
     syncPeers(); }, 3000);
   V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 15000);
-  V.unsubs.push(onSnapshot(query(collection(db, "rooms", roomId, "signals"), where("to", "==", S.uid)), snap => {
-    snap.docChanges().filter(c => c.type === "added").sort((a, b) => a.doc.id < b.doc.id ? -1 : 1).forEach(c => { const s = c.doc.data(), id = c.doc.id;
-      deleteDoc(doc(db, "rooms", roomId, "signals", id)).catch(() => {});
-      V.chain = V.chain.then(() => handleSignal(s)).catch(e => console.warn("signal", e)); }); }, e => console.warn("signals", e)));
   watchLevel(S.uid, V.stream);
   syncPeers(); tone(true); need("side","composer","me","msgs");
 }
@@ -81,8 +90,8 @@ function makePeer(u, initiator){
   const pc = new RTCPeerConnection(rtcConfig()); const p = {pc, ice:[], created:Date.now(), sid: initiator ? Math.random().toString(36).slice(2, 10) : null, tries}; V.peers[u] = p;
   V.stream.getTracks().forEach(t => pc.addTrack(t, V.stream));
   pc.onicecandidate = e => { if (e.candidate && p.sid) sendSignal(u, {type:"ice", sid:p.sid, c:JSON.stringify(e.candidate)}); };
-  pc.ontrack = e => { let a = V.audio[u]; if (!a){ a = new Audio(); a.autoplay = true; V.audio[u] = a; }
-    a.srcObject = e.streams[0]; a.muted = V.deaf; a.volume = (prefs.vol || {})[u] ?? 1; a.play().catch(() => {}); watchLevel(u, e.streams[0]); };
+  pc.ontrack = e => { let a = V.audio[u]; if (!a){ a = document.createElement("audio"); a.autoplay = true; a.setAttribute("playsinline", ""); audioBox().appendChild(a); V.audio[u] = a; }
+    a.srcObject = e.streams[0] || new MediaStream([e.track]); a.muted = V.deaf; a.volume = (prefs.vol || {})[u] ?? 1; playAudio(a); watchLevel(u, a.srcObject); };
   pc.onconnectionstatechange = () => { const st = pc.connectionState;
     if (st === "failed"){ closePeer(u); if (S.uid < u) setTimeout(syncPeers, 1500); }
     if (st === "connected"){ p.tries = 0; V.tries[u] = 0; tuneBitrate(); }
@@ -94,11 +103,16 @@ function makePeer(u, initiator){
 function tuneBitrate(){ const n = Object.keys(V.peers).length; const br = n <= 5 ? 48000 : n <= 10 ? 32000 : 20000;
   Object.values(V.peers).forEach(p => p.pc.getSenders().forEach(sd => { if (!sd.track || sd.track.kind !== "audio") return;
     try{ const prm = sd.getParameters(); if (!prm.encodings || !prm.encodings.length) prm.encodings = [{}]; if (prm.encodings[0].maxBitrate === br) return; prm.encodings[0].maxBitrate = br; sd.setParameters(prm).catch(() => {}); }catch(e){} })); }
+function audioBox(){ let b = document.getElementById("vaudio"); if (!b){ b = h("div",{id:"vaudio", style:{position:"fixed", width:"0", height:"0", overflow:"hidden"}}); document.body.appendChild(b); } return b; }
+// Some browsers (Safari especially) refuse to start audio without a click. If that happens, show a button that does it.
+function playAudio(a){ const p = a.play(); if (p && p.catch) p.catch(() => { if (document.querySelector(".vunlock")) return;
+  const btn = h("button",{class:"vunlock", onclick:() => { Object.values(V.audio).forEach(x => x.play().catch(() => {})); if (V.actx && V.actx.state === "suspended") V.actx.resume(); btn.remove(); }}, ic("volume"), " Click to hear voice chat");
+  document.body.appendChild(btn); }); }
 function closePeer(u){ const p = V.peers[u]; if (!p) return; try{ p.pc.close(); }catch(e){} delete V.peers[u]; tuneBitrate();
-  const a = V.audio[u]; if (a){ a.srcObject = null; delete V.audio[u]; } stopLevel(u); }
+  const a = V.audio[u]; if (a){ a.srcObject = null; a.remove(); delete V.audio[u]; } stopLevel(u); }
 async function flushIce(p){ const list = p.ice; p.ice = []; for (const c of list) await p.pc.addIceCandidate(c).catch(() => {}); }
 async function handleSignal(s){
-  if (!V.room || !s || Date.now() - (s.ts || 0) > 60000) return;
+  if (!V.room || !s) return;
   const u = s.from;
   if (s.type === "offer"){
     if (V.peers[u]) closePeer(u);
@@ -158,6 +172,28 @@ function voiceBarEl(){
   const good = Object.values(V.peers).every(p => p.pc.connectionState === "connected");
   return h("div",{class:"vbar"},
     h("div",{class:"vinfo", onclick:() => openChat("room", V.room)}, h("b",{class: good ? "ok" : "wait"}, ic("signal","sm"), " Voice Connected"), h("span",{text:(r ? r.name : "voice") + " · " + voiceStatusText()})),
+    h("button",{class:"ib", title:"Connection details", onclick:() => voiceDetails()}, ic("info")),
     h("button",{class:"ib danger", title:"Disconnect", onclick:() => leaveVoice()}, ic("phoneoff")));
+}
+// Shows each connection's state and whether audio goes direct or through the relay — handy when something's wrong.
+async function pairType(pc){ try{ const st = await pc.getStats(); let pair = null; st.forEach(r => { if (r.type === "transport" && r.selectedCandidatePairId) pair = st.get(r.selectedCandidatePairId); });
+  if (!pair) st.forEach(r => { if (r.type === "candidate-pair" && (r.selected || r.nominated) && r.state === "succeeded") pair = r; });
+  if (!pair) return "—"; const loc = st.get(pair.localCandidateId), rem = st.get(pair.remoteCandidateId);
+  const t = [loc && loc.candidateType, rem && rem.candidateType]; return t.includes("relay") ? "through relay" : t.includes("srflx") || t.includes("prflx") ? "direct (internet)" : "direct (same network)"; }catch(e){ return "—"; } }
+function voiceDetails(){
+  modal((m, close, bg) => {
+    const draw = async () => { if (!V.room){ close(); return; }
+      const rows = await Promise.all(liveVoice(V.parts).filter(u => u !== S.uid).map(async u => { const p = V.peers[u]; const st = p ? p.pc.connectionState : "not started";
+        return h("div",{class:"li"}, avatar(u, "sm"), h("span",{class:"nm",text:nickOf(u)}), h("span",{class:"s vst " + st,text:st}), h("span",{class:"s",text: p && st === "connected" ? await pairType(p.pc) : (p && p.tries ? "retry " + p.tries : "")})); }));
+      const track = V.stream && V.stream.getAudioTracks()[0];
+      m.innerHTML = "";
+      m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")), h("h3",{text:"Voice connection"}),
+        h("p",{class:"note",text:"Your mic: " + (track ? (track.label || "microphone") + (track.enabled ? "" : " (muted)") : "none")}),
+        rows.length ? h("div",{class:"list"}, rows) : h("p",{class:"note",text:"Nobody else is here yet."}),
+        h("p",{class:"note",text:"“connecting” for a long time usually means a network is blocking calls (school or work Wi-Fi). Try another network or a phone hotspot."}),
+        h("div",{class:"foot"}, h("button",{class:"btn ghost", onclick:() => { Object.keys(V.peers).forEach(u => { if (S.uid < u){ closePeer(u); makePeer(u, true); } }); toast("Reconnecting…"); }}, ic("refresh","sm"), " Reconnect"), h("button",{class:"btn small", onclick:close}, "Done")));
+    };
+    draw(); const t = setInterval(() => { if (!document.body.contains(bg)){ clearInterval(t); return; } draw(); }, 2000);
+  });
 }
 window.__cc = {V, S, statusOf: u => statusOf(u), setAway: on => setAway(on)};

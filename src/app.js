@@ -212,10 +212,15 @@ function hasPlus(uid){ return hasPerk(uid, "plus"); }
 // rank for display: "plusplus" | "plus" | "supporter" | null (the owner shows ADMIN instead)
 function rankOf(uid){ const items = ((S.perks[uid]||{}).items)||{};
   if (perkActive(items.plusplus)) return "plusplus"; if (perkActive(items.plus)) return "plus"; if (perkActive(items.supporter)) return "supporter"; return null; }
+// Freshness on *our* clock: the first time we see a timestamp we trust it (capped at now); after that, whenever it
+// changes we record when we saw the change. Friends whose computer clocks are off no longer look offline.
+const SEEN = {};
+function seenAt(key, ts){ if (!ts) return 0; const r = SEEN[key];
+  if (!r){ SEEN[key] = {v:ts, at:Math.min(Date.now(), ts)}; } else if (r.v !== ts){ r.v = ts; r.at = Date.now(); } return SEEN[key].at; }
 function statusOf(uid){
   const p = profile(uid), m = member(uid);
   if (uid === S.uid){ if (p.status === "invisible") return "offline"; if (p.status === "dnd") return "dnd"; return (p.status === "idle" || S.away) ? "idle" : "online"; }
-  if (!m || !m.lastSeen || Date.now() - m.lastSeen > ONLINE_MS || p.status === "invisible") return "offline";
+  if (!m || !m.lastSeen || Date.now() - seenAt("m:" + uid, m.lastSeen) > ONLINE_MS || p.status === "invisible") return "offline";
   if (p.status === "dnd") return "dnd";
   return p.status === "idle" || m.away ? "idle" : "online";
 }
