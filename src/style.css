@@ -1117,3 +1117,9 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .shophero .myrank .tag,.tier .th .tag{font-size:11px!important;padding:3px 8px!important}
 .av .deco-designring{inset:-7%;filter:drop-shadow(0 0 3px rgba(255,122,198,.5))}
 .deco-designring::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 200deg,#ffd1ea,#ff7ac6,#c084fc,#ff7ac6,#ffd1ea);-webkit-mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%);mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%)}
+.proles{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.proles .pl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:auto}
+.rolepill{background:transparent;border:1px solid currentColor;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:800;letter-spacing:.08em;cursor:pointer;opacity:.6}
+.rolepill:hover,.rolepill.on{opacity:1}
+.rolepill.dev{color:#5ee6dc}.rolepill.design{color:#ff9ad5}
+.profile .acts{flex-wrap:nowrap}.profile .acts .btn{flex:1;white-space:nowrap}
