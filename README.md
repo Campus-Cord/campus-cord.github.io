@@ -19,6 +19,9 @@ A Discord-style group chat for friends, running on Firebase.
 - Timeouts (5 min / 1 hour / 1 day) for admins and developers, enforced by the rules
 - Built-in Help bot (? button or /help)
 - Private rooms (owner picks who can see them)
+- Voice channels (up to 8 people, peer-to-peer audio, mute/deafen, speaking rings, per-person volume)
+- Profile badges (Owner, Developer, Campus+/++, Supporter, Early Member, Quester, Collector, Big Spender) and animated profile banners
+- Away status when CampusCord isn't focused; the NEW line clears once you've read it
 - Sparks shop: avatar decorations, profile effects, nameplates and bundles, bought with Sparks earned free from Quests and a daily reward (or Spark packs via Stripe)
 - `tests/rules.test.mjs` runs in the Firestore emulator on GitHub before any rules are published
 - Appearance: 8 themes, accent color, font size, compact mode, 24h time

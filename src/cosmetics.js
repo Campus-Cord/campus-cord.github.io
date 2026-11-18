@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 1;
+const CAT_V = 2;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -27,16 +27,25 @@ const COSM = [
   {id:"p_matcha", type:"plate", name:"Matcha", price:300, tag:"new", desc:"Fresh green, very calming."},
   {id:"p_candy", type:"plate", name:"Cotton Candy", price:300, desc:"Pink and blue, extra sweet."},
   {id:"p_midnight", type:"plate", name:"Midnight", price:400, desc:"Deep navy with tiny stars."},
+  // animated profile banners
+  {id:"n_galaxy", type:"pban", name:"Galaxy", price:600, tag:"exclusive", desc:"A slowly swirling galaxy with twinkling stars."},
+  {id:"n_aurora", type:"pban", name:"Aurora Flow", price:500, tag:"new", desc:"Northern-light colors flowing across your banner."},
+  {id:"n_synth", type:"pban", name:"Synthwave", price:600, tag:"exclusive", desc:"A neon grid racing toward a retro sunset."},
+  {id:"n_lava", type:"pban", name:"Lava Lamp", price:500, desc:"Warm blobs drifting around."},
+  {id:"n_ocean", type:"pban", name:"Ocean Waves", price:400, desc:"Rolling waves in deep blue."},
+  {id:"n_holo", type:"pban", name:"Holographic", price:700, tag:"exclusive", desc:"A shimmering rainbow foil."},
+  {id:"n_sakura", type:"pban", name:"Sakura Breeze", price:400, desc:"Soft pink with drifting petals."},
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
   {id:"b_aurora", type:"bundle", name:"Aurora Bundle", items:["d_aurora","e_aurora","p_matcha"], tag:"new", desc:"Aurora Mist, Northern Lights and the Matcha nameplate."},
   {id:"b_winter", type:"bundle", name:"Winter Bundle", items:["d_frost","e_snow","p_ocean"], desc:"Frostbite, Snow Day and the Deep Ocean nameplate."},
   {id:"b_love", type:"bundle", name:"Sweetheart Bundle", items:["d_sakura","e_hearts","p_candy"], desc:"Sakura Bloom, Floating Hearts and Cotton Candy."},
+  {id:"b_galaxy", type:"bundle", name:"Deep Space Bundle", items:["d_cosmic","e_starfall","p_midnight","n_galaxy"], tag:"exclusive", desc:"The full space look: Cosmic Swirl, Starfall, Midnight nameplate and the animated Galaxy banner."},
 ];
 const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
 BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
-const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", bundle:"Bundle"};
+const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bundle:"Bundle"};
 const DAILY_SPARKS = 50, DAILY_MS = 20 * 3600 * 1000;
 const QUESTS = [
   {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:100},
@@ -46,7 +55,8 @@ const QUESTS = [
   {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:150},
   {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:100},
   {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:100},
-  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate ? 1 : 0; }, reward:150},
+  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:150},
+  {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:150},
   {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:250},
   {id:"q_regular", icon:"star", name:"Regular", desc:"Claim the daily reward 3 times.", goal:3, stat:"dailies", reward:200},
 ];
@@ -61,7 +71,7 @@ function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid)
   if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }
 function ownsBundleFully(uid, b){ return owns(uid, b.id) || b.items.every(i => owns(uid, i)); }
 function equipped(uid, slot){ const id = profile(uid)[slot]; return id && COSM_BY[id] && COSM_BY[id].type === slot && owns(uid, id) ? id : null; }
-function qstats(){ return Object.assign({msgs:0, reacts:0, votes:0, polls:0, dailies:0}, store("qstats_" + S.uid) || {}); }
+function qstats(){ return Object.assign({msgs:0, reacts:0, votes:0, polls:0, dailies:0, voice:0}, store("qstats_" + S.uid) || {}); }
 function bumpStat(k, n){ const s = qstats(); s[k] = (s[k] || 0) + (n || 1); store("qstats_" + S.uid, s); if (S.kind === "quests") need("msgs"); }
 function questProgress(q){ return Math.min(q.goal, q.check ? q.check() : (qstats()[q.stat] || 0)); }
 async function ensureWallet(){ if (S.walletsLoaded && !S.wallets[S.uid] && !S.walletCreating){ S.walletCreating = true;
@@ -101,9 +111,11 @@ function itemArt(c){
   const art = h("div",{class:"art art-" + c.type + " tint-" + (c.items ? c.items[0] : c.id).slice(2)});
   if (c.type === "deco") art.appendChild(previewAvatar(c.id));
   else if (c.type === "pfx"){ art.appendChild(h("div",{class:"minicard"}, h("div",{class:"mb2"}), h("div",{class:"mav"}, previewAvatar(null, "sm")), h("i",{class:"l1"}), h("i",{class:"l2"}), h("div",{class:"pfx pfx-" + c.id.slice(2)}))); }
+  else if (c.type === "pban"){ art.appendChild(h("div",{class:"minicard"}, h("div",{class:"mb2 ban-" + c.id.slice(2)}), h("div",{class:"mav"}, previewAvatar(null, "sm")), h("i",{class:"l1"}), h("i",{class:"l2"}))); }
   else if (c.type === "plate"){ art.appendChild(h("div",{class:"platedemo"}, h("div",{class:"pd ghost"}, h("i"), h("b")),
       h("div",{class:"pd plate plate-" + c.id.slice(2)}, previewAvatar(null, "sm"), paintName(h("span",{text:nickOf(S.uid)}), S.uid)), h("div",{class:"pd ghost"}, h("i"), h("b")))); }
-  else if (c.type === "bundle"){ const [d, e, p] = c.items;
+  else if (c.type === "bundle"){ const [d, e, p, n] = c.items;
+    if (n) art.appendChild(h("div",{class:"bban ban-" + n.slice(2)}));
     art.append(h("div",{class:"pfx pfx-" + e.slice(2)}), h("div",{class:"bdeco"}, previewAvatar(d)), h("div",{class:"bplate pd plate plate-" + p.slice(2)}, paintName(h("span",{text:nickOf(S.uid)}), S.uid))); }
   return art;
 }
@@ -153,7 +165,7 @@ function itemModal(c){
 }
 
 // ---- Shop page
-const SHOP_TABS = [{id:"featured", name:"Featured"}, {id:"deco", name:"Decorations"}, {id:"pfx", name:"Profile Effects"}, {id:"plate", name:"Nameplates"}, {id:"bundle", name:"Bundles"}, {id:"ranks", name:"Ranks & Sparks"}];
+const SHOP_TABS = [{id:"featured", name:"Featured"}, {id:"deco", name:"Decorations"}, {id:"pfx", name:"Profile Effects"}, {id:"pban", name:"Banners"}, {id:"plate", name:"Nameplates"}, {id:"bundle", name:"Bundles"}, {id:"ranks", name:"Ranks & Sparks"}];
 function shopHeaderBar(active){
   const bar = h("div",{class:"shopbar"});
   bar.append(h("span",{class:"sbic"}, ic("bag")));
@@ -172,6 +184,7 @@ function shopSection(title, items, tab){
     h("div",{class:"igrid"}, items.map(itemCard)));
 }
 function renderShopPage(box){
+  if (prefs.shopSeen !== CAT_V){ prefs.shopSeen = CAT_V; savePrefs(); need("side"); }
   const keep = box.scrollTop; box.innerHTML = "";
   const tab = S.page || "featured";
   const wrap = h("div",{class:"shoppage"}); wrap.appendChild(shopHeaderBar(tab));
@@ -187,7 +200,8 @@ function renderShopPage(box){
       h("div",{class:"shart"}, previewAvatar("d_cosmic"), h("div",{class:"pd plate plate-nebula"}, paintName(h("span",{text:nickOf(S.uid)}), S.uid)))));
     if (!owns(S.uid, "d_bubble")) body.appendChild(h("div",{class:"freebar", onclick:() => itemModal(COSM_BY.d_bubble)}, previewAvatar("d_bubble", "sm"),
       h("div",{style:{flex:"1"}}, h("b",{text:"Free avatar decoration!"}), h("div",{class:"note",style:{margin:0},text:"Claim the Bubble decoration — on the house."})), h("button",{class:"btn small"}, "Claim")));
-    body.append(shopSection("Bundles", BUNDLES.slice(0, 3), "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
+    body.append(shopSection("Bundles", [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]], "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
+      shopSection("Animated Banners", COSM.filter(c => c.type === "pban").slice(0, 4), "pban"),
       shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));
     body.appendChild(h("div",{class:"earnbar"}, ic("star"), h("div",{style:{flex:"1"}}, h("b",{text:"Earn Sparks for free"}), h("div",{class:"note",style:{margin:0},text:"Complete quests and claim your daily reward. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
       h("button",{class:"btn small", onclick:() => openChat("quests", "all")}, "Go to Quests")));
@@ -238,3 +252,31 @@ function renderQuestsPage(box){
   body.appendChild(h("p",{class:"note",style:{textAlign:"center",marginTop:"20px"},text:"Sparks are free and only for cosmetics. Spend them in the Shop."}));
   box.appendChild(wrap); box.scrollTop = keep;
 }
+
+// ---------------------------------------------------------------- profile badges
+function ownedCount(uid){ const items = wal(uid).items || []; const set = new Set(); items.forEach(i => { const c = COSM_BY[i]; if (!c) return; if (c.items) c.items.forEach(x => set.add(x)); else set.add(i); }); return set.size; }
+function badgesOf(uid){
+  const out = [], m = member(uid) || {}, w = wal(uid), r = rankOf(uid);
+  if (isOwnerUid(uid)) out.push({id:"owner", icon:"crown", name:"Server Owner", desc:"Runs this CampusCord"});
+  if (isDev(uid)) out.push({id:"dev", icon:"code", name:"Developer", desc:"Helps build CampusCord"});
+  if (r === "plusplus") out.push({id:"pp", icon:"zap", name:"Campus++", desc:"Subscriber"});
+  else if (r === "plus") out.push({id:"plus", icon:"sparkles", name:"Campus+", desc:"Subscriber"});
+  if (perkActive(((S.perks[uid] || {}).items || {}).supporter)) out.push({id:"sup", icon:"gem", name:"Supporter", desc:"Backs CampusCord"});
+  if (S.config && m.joinedAt && m.joinedAt < (S.config.createdAt || 0) + 7 * 864e5) out.push({id:"early", icon:"flag", name:"Early Member", desc:"Joined in the first week"});
+  if ((w.quests || []).length >= QUESTS.length) out.push({id:"quest", icon:"trophy", name:"Quest Champion", desc:"Finished every quest"});
+  else if ((w.quests || []).length >= 5) out.push({id:"quester", icon:"star", name:"Quester", desc:"Finished 5+ quests"});
+  if (!isOwnerUid(uid) && ownedCount(uid) >= 5) out.push({id:"collector", icon:"bag", name:"Collector", desc:"Owns 5+ cosmetics"});
+  if (!isOwnerUid(uid) && (w.spent || 0) >= 2000) out.push({id:"baller", icon:"spark", name:"Big Spender", desc:"Spent 2,000+ Sparks"});
+  return out;
+}
+function badgeRow(uid){
+  const b = badgesOf(uid); if (!b.length) return null;
+  return h("div",{class:"bdgrow"}, b.map(x => h("span",{class:"pbadge pb-" + x.id, "data-tip":x.name + " — " + x.desc}, ic(x.icon))));
+}
+// hover tooltips for profile badges
+(() => { let tip = null;
+  document.addEventListener("mouseover", e => { const el = e.target.closest && e.target.closest(".pbadge"); if (!el){ if (tip){ tip.remove(); tip = null; } return; }
+    if (tip && tip._for === el) return; if (tip) tip.remove();
+    tip = h("div",{class:"rtip up",text:el.dataset.tip}); tip._for = el; document.body.appendChild(tip);
+    const b = el.getBoundingClientRect(); tip.style.top = (b.top - tip.offsetHeight - 8) + "px"; tip.style.left = Math.max(8, b.left + b.width / 2 - tip.offsetWidth / 2) + "px"; });
+})();

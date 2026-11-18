@@ -835,6 +835,86 @@ html,body{overflow:hidden}
   .qgrid{grid-template-columns:1fr}
 }
 .shtext .btn .spk,.shtext .btn .spk .i{color:#1b1530}
+
+/* ================= v3.7: voice, badges, banners ================= */
+/* voice in sidebar */
+.ch.voice .ic{color:var(--muted)}
+.ch.invoice{color:var(--green)}.ch.invoice .ic{color:var(--green)}
+.vcount{font-size:11px;color:var(--dim);background:var(--rail);padding:1px 6px;border-radius:8px}
+.vlist{display:flex;flex-direction:column;gap:1px;margin:0 0 4px 26px}
+.vp{display:flex;align-items:center;gap:8px;padding:3px 8px;border-radius:6px;font-size:13px;color:var(--muted);cursor:pointer}
+.vp:hover{background:var(--hover);color:var(--text)}
+.vp .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vp .i{color:var(--red)}
+.vp .av.xs{width:24px;height:24px;font-size:10px;transition:box-shadow .1s}
+.av.speaking{box-shadow:0 0 0 2px var(--side),0 0 0 4px var(--green)!important}
+#vbar .vbar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:color-mix(in srgb,var(--rail) 70%,var(--side));border-top:1px solid var(--line)}
+.vbar .vinfo{flex:1;min-width:0;cursor:pointer;display:flex;flex-direction:column}
+.vbar .vinfo b{display:flex;align-items:center;gap:4px;font-size:13px}
+.vbar .vinfo b.ok{color:var(--green)}.vbar .vinfo b.wait{color:var(--yellow)}
+.vbar .vinfo span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vbar .vinfo:hover span{text-decoration:underline}
+.ib.danger:hover{color:var(--red)}
+.mebtn{width:32px}
+.mebtn.off{color:var(--red)}
+.mebtn.off:hover{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red)}
+.mebar .who{padding-right:2px}
+.ctxvol{padding:6px 8px;display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);min-width:220px}
+
+/* NEW line fade once read */
+.newdiv{transition:opacity .6s}
+.newdiv.fade{opacity:0}
+
+/* badges: chips get a shine + profile badge row */
+.tag{overflow:hidden}
+.tag.admin::after,.tag.plus::after,.tag.pp::after,.tag.dev::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.65) 45%,transparent 60%);transform:translateX(-120%);animation:chipshine 4s ease-in-out infinite}
+@keyframes chipshine{0%,70%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+.tag{border:1px solid rgba(255,255,255,.18)}
+.tag.mini{border-radius:6px;padding:2px 4px}
+.tag.mini .i{width:12px;height:12px}
+.bdgrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding:6px 8px;background:color-mix(in srgb,var(--rail) 55%,transparent);border-radius:10px;width:max-content;max-width:100%}
+.pbadge{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;cursor:default;position:relative;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 6px rgba(0,0,0,.25)}
+.pbadge .i{width:15px;height:15px}
+.pbadge .i svg{stroke-width:2.4}
+.pb-owner{background:linear-gradient(135deg,#ffe08a,#f5a524 60%,#c77700);color:#3a2300}
+.pb-dev{background:linear-gradient(135deg,#7ef0e6,#22d3c5 50%,#1a9fd6);color:#04252c}
+.pb-pp{background:linear-gradient(110deg,#ff7ac6,#ffd166,#7ef0e6,#a78bfa,#ff7ac6);background-size:250% 100%;animation:holo 4s linear infinite;color:#1a0b2e}
+.pb-plus{background:linear-gradient(135deg,#ff9ad5,#c084fc 55%,#8b5cf6)}
+.pb-sup{background:linear-gradient(135deg,#9be7ff,#3fb8ff);color:#04203a}
+.pb-early{background:linear-gradient(135deg,#86efac,#16a34a)}
+.pb-quest{background:linear-gradient(135deg,#fde68a,#f59e0b);color:#422006}
+.pb-quester{background:linear-gradient(135deg,#fcd34d,#d97706)}
+.pb-collector{background:linear-gradient(135deg,#f9a8d4,#db2777)}
+.pb-baller{background:linear-gradient(135deg,#c4b5fd,#6d28d9)}
+.rtip.up::before{left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-bottom:0;border-top-color:#111214}
+
+/* animated profile banners */
+.banner[class*="ban-"],.mb2[class*="ban-"],.bban{background-size:300% 300%!important;animation:banflow 12s ease-in-out infinite;position:relative;overflow:hidden}
+@keyframes banflow{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.ban-galaxy{background:radial-gradient(circle at 30% 60%,rgba(167,139,250,.9),transparent 35%),radial-gradient(circle at 70% 30%,rgba(63,184,255,.7),transparent 30%),radial-gradient(circle at 50% 50%,#2e1065,#0b0420 70%)!important;background-size:200% 200%!important}
+.ban-galaxy::after{content:"";position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 15% 30%,#fff,transparent),radial-gradient(1px 1px at 40% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 70% 20%,#e0e7ff,transparent),radial-gradient(1px 1px at 85% 60%,#fff,transparent),radial-gradient(1px 1px at 55% 40%,#fff,transparent);animation:twinkle 2.2s ease-in-out infinite alternate}
+.ban-aurora{background:linear-gradient(120deg,#0f766e,#22d3c5,#3ecf7a,#a78bfa,#3fb8ff,#0f766e)!important}
+.ban-synth{background:linear-gradient(180deg,#1e0638 0%,#5b1068 45%,#ff3d8b 62%,#ff9447 66%,#14062b 66.5%)!important;background-size:100% 100%!important;animation:none}
+.ban-synth::before{content:"";position:absolute;left:50%;top:22%;width:38%;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:repeating-linear-gradient(180deg,#ffd166 0 8%,#ff7a59 8% 10%);-webkit-mask:linear-gradient(#000 55%,transparent 55%);mask:linear-gradient(#000 55%,transparent 55%);filter:drop-shadow(0 0 10px #ff6ab0)}
+.ban-synth::after{content:"";position:absolute;left:-50%;right:-50%;bottom:0;height:36%;background-image:linear-gradient(rgba(255,61,139,.9) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(255,61,139,.9) 1.5px,transparent 1.5px);background-size:22px 12px;transform:perspective(60px) rotateX(55deg);transform-origin:bottom;animation:gridrun .8s linear infinite}
+@keyframes gridrun{to{background-position:0 12px}}
+.ban-lava{background:radial-gradient(circle at 20% 70%,#ff4d4d,transparent 40%),radial-gradient(circle at 80% 30%,#ffd166,transparent 35%),radial-gradient(circle at 55% 80%,#ff9447,transparent 40%),linear-gradient(135deg,#7f1d1d,#c2410c)!important;background-size:180% 180%!important;animation:banflow 8s ease-in-out infinite}
+.ban-ocean{background:linear-gradient(180deg,#0c4a6e,#0369a1 45%,#06b6d4)!important;background-size:100% 100%!important;animation:none}
+.ban-ocean::after,.ban-ocean::before{content:"";position:absolute;left:-50%;right:-50%;height:60%;bottom:-20%;background:radial-gradient(ellipse 40px 14px at 50% 0,rgba(255,255,255,.35) 98%,transparent) 0 0/80px 100% repeat-x;animation:waves 3s linear infinite}
+.ban-ocean::before{bottom:-30%;opacity:.5;animation-duration:5s;animation-direction:reverse}
+@keyframes waves{to{transform:translateX(80px)}}
+.ban-holo{background:linear-gradient(115deg,#ff9ad5,#c4b5fd,#7ef0e6,#fde68a,#ff9ad5,#c4b5fd)!important;background-size:400% 400%!important;animation:banflow 6s linear infinite}
+.ban-holo::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.6) 50%,transparent 65%);animation:sheen 3.5s ease-in-out infinite}
+.ban-sakura{background:linear-gradient(135deg,#fbcfe8,#f9a8d4 50%,#fda4af)!important}
+.ban-sakura::after{content:"";position:absolute;inset:-50% 0 0;background-image:radial-gradient(ellipse 5px 3px at 20% 20%,#fff 98%,transparent),radial-gradient(ellipse 4px 3px at 60% 50%,#ffe4ef 98%,transparent),radial-gradient(ellipse 5px 3px at 85% 30%,#fff 98%,transparent);background-size:90px 90px;animation:fall 7s linear infinite}
+.art-pban .minicard .mb2{height:52px}
+.bban{position:absolute!important;left:0;right:0;top:0;height:45%;opacity:.85;z-index:1}
+.profile .banner{height:84px}
+.shopbar{flex-wrap:nowrap}
+.stab{padding:8px 10px;white-space:nowrap}
+.ssearch{width:170px;flex:none}
+@media (max-width:1300px){ .ssearch{width:130px} .stab{padding:8px 7px;font-size:13px} }
+@media (max-width:1050px){ .shopbar{overflow-x:auto} .ssearch{display:none} }
 </style>
 </head>
 <body>
@@ -880,8 +960,11 @@ html,body{overflow:hidden}
     <div class="hdr" id="sideHdr"></div>
     <div class="chlist" id="chList"></div>
     <div id="promo"></div>
+    <div id="vbar"></div>
     <div class="mebar">
       <div class="who" id="meWho" title="Your profile"></div>
+      <button class="ib mebtn" id="meMic" title="Mute"></button>
+      <button class="ib mebtn" id="meDeaf" title="Deafen"></button>
       <button class="ib" id="meSettings" title="User settings" data-ic="settings"></button>
     </div>
   </aside>
@@ -943,7 +1026,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.8";
+const APP_VERSION = "2026-11-18.9";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1000,6 +1083,15 @@ const ICONS = {
   palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.83-.44-1.12-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/>',
   wand:'<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72ZM14 7l3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>',
   zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  volume:'<path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5ZM16 9a5 5 0 0 1 0 6M19.4 18.4a9 9 0 0 0 0-12.8"/>',
+  mic:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>',
+  micoff:'<path d="M2 2l20 20M18.89 13.23A7.12 7.12 0 0 0 19 12v-2M5 10v2a7 7 0 0 0 12 5M15 9.34V5a3 3 0 0 0-5.68-1.33M9 9v3a3 3 0 0 0 5.12 2.12M12 19v3"/>',
+  headphones:'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+  headoff:'<path d="M2 2l20 20M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 2.6-6.4M21 14v-2a9 9 0 0 0-13.4-7.9M21 14h-1M18 21a2 2 0 0 1-2-2v-1"/>',
+  phoneoff:'<path d="M10.7 13.3a16 16 0 0 0 3.4 2.6l1.3-1.3a2 2 0 0 1 2.1-.4 12.8 12.8 0 0 0 2.8.7 2 2 0 0 1 1.7 2v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1M5.2 13.2A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9M22 2 2 22"/>',
+  signal:'<path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>',
+  trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
   arrowdown:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
   bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
@@ -1130,9 +1222,10 @@ function rankOf(uid){ const items = ((S.perks[uid]||{}).items)||{};
   if (perkActive(items.plusplus)) return "plusplus"; if (perkActive(items.plus)) return "plus"; if (perkActive(items.supporter)) return "supporter"; return null; }
 function statusOf(uid){
   const p = profile(uid), m = member(uid);
-  if (uid === S.uid) return p.status === "invisible" ? "offline" : (p.status || "online");
+  if (uid === S.uid){ if (p.status === "invisible") return "offline"; if (p.status === "dnd") return "dnd"; return (p.status === "idle" || S.away) ? "idle" : "online"; }
   if (!m || !m.lastSeen || Date.now() - m.lastSeen > ONLINE_MS || p.status === "invisible") return "offline";
-  return p.status === "idle" || p.status === "dnd" ? p.status : "online";
+  if (p.status === "dnd") return "dnd";
+  return p.status === "idle" || m.away ? "idle" : "online";
 }
 const isOn = uid => statusOf(uid) !== "offline";
 function fxOf(uid){ if (!hasPerk(uid, "name_fx")) return null; const f = profile(uid).nameFx; if (f === "none") return null;
@@ -1283,6 +1376,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
+    syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
     need("side","header","composer");
   }, ()=>{}));
@@ -1316,13 +1410,20 @@ function initApp(){
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
   ensureWallet();
-  heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS);
+  heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
   need("rail","side","header","msgs","rpanel","me","composer","gifs");
   $("input").focus();
   handleReturnFromCheckout();
 }
+// When you click out of CampusCord (another window/app, or hide the tab) you show as Away (yellow moon).
+function setAway(on){ if (S.away === on || !member(S.uid)) return; S.away = on; need("me","rpanel","side");
+  updateDoc(doc(db, "members", S.uid), {away:on, lastSeen:Date.now()}).catch(() => {}); }
+let awayT = null;
+const checkAway = () => { clearTimeout(awayT); const gone = document.hidden || !document.hasFocus();
+  if (gone && !V.room) awayT = setTimeout(() => setAway(true), 1500); else setAway(false); };
+window.addEventListener("blur", checkAway); window.addEventListener("focus", checkAway); document.addEventListener("visibilitychange", checkAway);
 function heartbeat(){ if (!member(S.uid)) return; const inv = profile(S.uid).status === "invisible"; if (inv && S.sentInvisible) return; S.sentInvisible = inv;
   updateDoc(doc(db, "members", S.uid), {lastSeen: inv ? 0 : Date.now()}).catch(()=>{}); }
 window.addEventListener("beforeunload", () => { if (member(S.uid)) updateDoc(doc(db, "members", S.uid), {lastSeen:0}).catch(()=>{}); });
@@ -1388,7 +1489,7 @@ function renderSide(){
       h("span",{class:"ic"}, ic(icn)), h("span",{class:"nm",text:label}), extra || null));
     nav("home", "home", "users", "Friends");
     nav("shop", "ranks", "sparkles", "Campus+", hasPlus(S.uid) && !isOwner() ? h("span",{class:"ichip free",text:"ACTIVE"}) : null);
-    nav("shop", "featured", "bag", "Shop", h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
+    nav("shop", "featured", "bag", "Shop", prefs.shopSeen === CAT_V ? null : h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
     const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal) || Date.now() - (wal(S.uid).lastDaily || 0) >= DAILY_MS;
     nav("quests", "all", "star", "Quests", qready ? h("span",{class:"newdot",title:"Rewards ready"}) : null);
     list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
@@ -1412,10 +1513,14 @@ function renderSide(){
       const on = S.kind === "room" && S.cur === r.id; const un = roomUnread(r); const mc = S.mentions[r.id] || 0;
       if (closed && !on && !un && !mc) return;
       const typ = !on && typersIn("room", r.id).length;
-      list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : ""), onclick:() => openChat("room", r.id), oncontextmenu:e => roomMenu(e, r)},
-        h("span",{class:"ic"}, ic(r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+      const vr = isVoiceRoom(r), inV = vr && V.room === r.id, vn = vr ? liveVoice(S.voiceParts[r.id]).length : 0;
+      list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : "") + (vr ? " voice" : "") + (inV ? " invoice" : ""),
+          onclick:() => { if (vr){ joinVoice(r.id); bumpStat("voice"); } openChat("room", r.id); }, oncontextmenu:e => roomMenu(e, r), title: vr ? (inV ? "You're in this voice channel" : "Click to join voice") : null},
+        h("span",{class:"ic"}, ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+        vr && vn ? h("span",{class:"vcount",text:vn + "/8"}) : null,
         isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
         typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : (un ? h("span",{class:"newdot",title:"New messages"}) : null)));
+      if (vr){ const pl = voiceParticipantsEl(r); if (pl) list.appendChild(pl); }
     });
   });
 }
@@ -1437,13 +1542,20 @@ function renderDMList(box){
 }
 function renderMe(){
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
+  const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
+  const mic = $("meMic"), hd = $("meDeaf"); mic.innerHTML = ""; hd.innerHTML = "";
+  mic.appendChild(ic(V.muted || V.deaf ? "micoff" : "mic")); mic.classList.toggle("off", V.muted || V.deaf); mic.title = V.muted ? "Unmute" : "Mute";
+  hd.appendChild(ic(V.deaf ? "headoff" : "headphones")); hd.classList.toggle("off", V.deaf); hd.title = V.deaf ? "Undeafen" : "Deafen";
   renderPromo();
   const st = STATUSES.find(s => s.id === (profile(S.uid).status || "online"));
-  w.append(avatar(S.uid, "sm", true), h("div",{style:{minWidth:0}}, paintName(h("div",{class:"nick",text:nickOf(S.uid)}), S.uid),
+  const myav = avatar(S.uid, "sm", true); myav.setAttribute("data-vu", S.uid); if (V.speaking[S.uid]) myav.classList.add("speaking");
+  w.append(myav, h("div",{style:{minWidth:0}}, paintName(h("div",{class:"nick",text:nickOf(S.uid)}), S.uid),
     h("div",{class:"st",text: profile(S.uid).customStatus || (st ? st.name : "Online")})));
   w.onclick = e => openProfile(S.uid, w, true);
 }
 $("meSettings").onclick = () => openSettings("account");
+$("meMic").onclick = () => setMute(!V.muted || V.deaf ? !V.muted : false);
+$("meDeaf").onclick = () => setDeaf(!V.deaf);
 $("btnShop").onclick = () => openShop();
 $("btnHelp").onclick = () => openHelp();
 const HELP = [
@@ -1514,6 +1626,10 @@ const curRoom = () => S.kind === "room" ? S.rooms.find(r => r.id === S.cur) : nu
 function timeoutUntil(uid){ const t = ((S.config && S.config.timeouts) || {})[uid]; return t && t > Date.now() ? t : 0; }
 const isMuted = id => !!(prefs.muted || {})[id];
 const canPost = () => { const r = curRoom(); if (S.kind === "room" && timeoutUntil(S.uid)) return false; return !(r && r.readonly) || isAdmin(); };
+// The red NEW line goes away a few seconds after you've actually seen the new messages.
+let newT = null;
+function scheduleNewClear(){ clearTimeout(newT); if (!S.unreadSince) return;
+  newT = setTimeout(() => { if (!document.hidden && document.hasFocus() && S.unreadSince && nearBottom()){ const d = document.querySelector(".newdiv"); if (d) d.classList.add("fade"); setTimeout(() => { S.unreadSince = 0; need("msgs"); }, 600); } else scheduleNewClear(); }, 3000); }
 function markRead(){ if (!S.cur) return; S.lastRead[readKey(S.kind, S.cur)] = Date.now(); store("lastRead", S.lastRead);
   if (S.kind === "room" && S.mentions[S.cur]){ delete S.mentions[S.cur]; store("mentions", S.mentions); need("rail"); } }
 
@@ -1599,7 +1715,7 @@ function renderHeader(){
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
     const st = statusOf(o); d.textContent = profile(o).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st]);
-  } else { const r = curRoom(); icon.appendChild(ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")); t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
+  } else { const r = curRoom(); icon.appendChild(ic(isVoiceRoom(r) ? "volume" : r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")); t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
   $("btnMembers").classList.toggle("on", S.rpanel === "members");
   $("btnPins").classList.toggle("on", S.rpanel === "pins");
   updateTitle();
@@ -1690,6 +1806,7 @@ function renderMessages(){
   });
   if (S.keepFromBottom != null){ box.scrollTop = box.scrollHeight - S.keepFromBottom; S.keepFromBottom = null; }
   else if (atBottom) box.scrollTop = box.scrollHeight; else box.scrollTop = prevTop;
+  if (S.unreadSince && S.roomLoaded) scheduleNewClear();
   if (S.scrollToUnread && S.roomLoaded){ const d = box.querySelector(".newdiv"); if (d){ box.scrollTop = Math.max(0, d.offsetTop - 80); S.stickBottom = nearBottom(); } S.scrollToUnread = false; }
   if (S.flashId){ const el = $("m-" + S.flashId); if (el){ el.scrollIntoView({block:"center"}); el.classList.add("flash"); S.flashId = null; } }
 }
@@ -1697,7 +1814,9 @@ function welcomeBlock(){
   const w = h("div",{class:"welcome"});
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); const big = avatar(o, "xl"); big.style.marginBottom = "12px"; w.append(big, h("h2",null, nickOf(o)),
       h("p",null, S.roomLoaded ? "This is the start of your private messages with " + nickOf(o) + ". Only the two of you can see them." : "Loading messages…")); }
-  else { const r = curRoom(); w.append(h("div",{class:"big"}, ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
+  else { const r = curRoom(); if (isVoiceRoom(r)){ w.append(h("div",{class:"big"}, ic("volume")), h("h2",null, r.name), h("p",null, V.room === r.id ? "You're in voice. This is the text chat for the channel — share links and talk while you're connected." : "Click the channel in the sidebar to join voice. You can chat here too."),
+      V.room === r.id ? h("button",{class:"btn small danger",style:{marginTop:"12px"},onclick:() => leaveVoice()}, ic("phoneoff"), " Leave voice") : h("button",{class:"btn small",style:{marginTop:"12px"},onclick:() => { joinVoice(r.id); bumpStat("voice"); }}, ic("volume"), " Join voice")); return w; }
+    w.append(h("div",{class:"big"}, ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
       h("p",null, !S.roomLoaded ? "Loading messages…" : (r && r.private) ? "Private room — only " + listNames(roomPeople(r).map(nickOf)) + " can see this." : (r && r.topic) ? r.topic : "This is the start of the #" + (r ? r.name : "") + " room.")); }
   return w;
 }
@@ -1972,13 +2091,13 @@ function openProfile(uid, anchor, self){
   const big = avatar(uid, "xl", true);
   const pe = equipped(uid, "pfx");
   const card = h("div",{class:"profile", "data-layer":"profile"}, pe ? h("div",{class:"pfx pfx-" + pe.slice(2)}) : null,
-    h("div",{class:"banner", style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
+    h("div",{class:"banner" + (equipped(uid, "pban") ? " ban-" + equipped(uid, "pban").slice(2) : ""), style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
     h("div",{class:"pav"}, big),
     h("div",{class:"pb"},
-      h("div",{class:"pname"}, paintName(h("span",{text:nickOf(uid)}), uid), gem(uid)),
+      h("div",{class:"pname"}, paintName(h("span",{text:nickOf(uid)}), uid), ...miniTags(uid)),
       h("div",{class:"pstat",text: (p.customStatus ? p.customStatus + " · " : "") + ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st])}),
       timeoutUntil(uid) ? h("div",{class:"pstat tmo"}, ic("hourglass","sm"), " Timed out until " + fmtTime(timeoutUntil(uid))) : null,
-      h("div",{class:"badges"}, ...roleTags(uid), hasPerk(uid,"supporter") && !hasPlus(uid) ? h("span",{class:"tag plus",text:"💎 SUPPORTER"}) : null),
+      badgeRow(uid),
       p.bio ? h("div",{class:"sect"}, h("h4",{text:"About me"}), h("div",{text:p.bio})) : null,
       h("div",{class:"sect"}, h("h4",{text:"Member since"}), h("div",{text: member(uid).joinedAt ? new Date(member(uid).joinedAt).toLocaleDateString([], {month:"long", day:"numeric", year:"numeric"}) : "—"})),
       h("div",{class:"acts"},
@@ -2180,7 +2299,7 @@ async function send(extra){
     if (extra) Object.assign(body, extra);
     const id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
     const stillHere = S.kind === kind && S.cur === chatId;
-    if (stillHere){ input.value = ""; autoGrow(); saveDraft(); } S.replyTo = null; setPending(null); S.stickBottom = true;
+    if (stillHere){ input.value = ""; autoGrow(); saveDraft(); S.unreadSince = 0; } S.replyTo = null; setPending(null); S.stickBottom = true;
     await setDoc(doc(db, ...b, "msgs", id), body); bumpStat("msgs");
     const preview = (body.me ? nickOf(S.uid) + " " : "") + (text || (body.gif ? "sent a GIF" : body.img ? "sent an image" : "")).slice(0, 120);
     const priv = kind === "room" && (roomAtSend || {}).private;
@@ -2299,9 +2418,11 @@ function roomModal(room, cat){
     const t = h("input",{class:"inp", placeholder:"What's this room for?", value: room ? room.topic || "" : ""});
     const c = h("input",{class:"inp", placeholder:"Text rooms", value: room ? room.category || "Text rooms" : (cat || "Text rooms"), list:"catlist"});
     const dl = h("datalist",{id:"catlist"}, [...new Set(S.rooms.map(r => r.category || "Text rooms"))].map(x => h("option",{value:x})));
-    let ro = !!(room && room.readonly);
+    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice");
     const sw = h("button",{class:"sw" + (ro ? " on" : ""), onclick:() => { ro = !ro; sw.classList.toggle("on", ro); }});
+    const vsw = h("button",{class:"sw" + (vc ? " on" : ""), onclick:() => { vc = !vc; vsw.classList.toggle("on", vc); if (vc && !room && (c.value === "Text rooms" || !c.value)) c.value = "Voice rooms"; }});
     m.append(h("label",{class:"f",text:"Room name"}), n, h("label",{class:"f",text:"Topic"}), t, h("label",{class:"f",text:"Category"}), c, dl,
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 8). It also has a text chat."})), vsw),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
     let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
     const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
@@ -2317,7 +2438,7 @@ function roomModal(room, cat){
       drawPeople();
     }
     const save = async () => { const s = slug(n.value); if (!s){ toast("Give the room a name"); return; }
-      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro};
+      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : "text"};
       if (isOwner()){ data.private = priv; data.allowed = priv ? [...allowed] : []; }
       try{ if (room) await updateDoc(doc(db, "rooms", room.id), data);
         else { const id = s + "-" + rid().slice(-4); await setDoc(doc(db, "rooms", id), Object.assign(data, {order:S.rooms.length, createdAt:Date.now()})); close(); openChat("room", id); return; }
@@ -2710,7 +2831,7 @@ function installApp(){
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 1;
+const CAT_V = 2;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -2736,16 +2857,25 @@ const COSM = [
   {id:"p_matcha", type:"plate", name:"Matcha", price:300, tag:"new", desc:"Fresh green, very calming."},
   {id:"p_candy", type:"plate", name:"Cotton Candy", price:300, desc:"Pink and blue, extra sweet."},
   {id:"p_midnight", type:"plate", name:"Midnight", price:400, desc:"Deep navy with tiny stars."},
+  // animated profile banners
+  {id:"n_galaxy", type:"pban", name:"Galaxy", price:600, tag:"exclusive", desc:"A slowly swirling galaxy with twinkling stars."},
+  {id:"n_aurora", type:"pban", name:"Aurora Flow", price:500, tag:"new", desc:"Northern-light colors flowing across your banner."},
+  {id:"n_synth", type:"pban", name:"Synthwave", price:600, tag:"exclusive", desc:"A neon grid racing toward a retro sunset."},
+  {id:"n_lava", type:"pban", name:"Lava Lamp", price:500, desc:"Warm blobs drifting around."},
+  {id:"n_ocean", type:"pban", name:"Ocean Waves", price:400, desc:"Rolling waves in deep blue."},
+  {id:"n_holo", type:"pban", name:"Holographic", price:700, tag:"exclusive", desc:"A shimmering rainbow foil."},
+  {id:"n_sakura", type:"pban", name:"Sakura Breeze", price:400, desc:"Soft pink with drifting petals."},
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
   {id:"b_aurora", type:"bundle", name:"Aurora Bundle", items:["d_aurora","e_aurora","p_matcha"], tag:"new", desc:"Aurora Mist, Northern Lights and the Matcha nameplate."},
   {id:"b_winter", type:"bundle", name:"Winter Bundle", items:["d_frost","e_snow","p_ocean"], desc:"Frostbite, Snow Day and the Deep Ocean nameplate."},
   {id:"b_love", type:"bundle", name:"Sweetheart Bundle", items:["d_sakura","e_hearts","p_candy"], desc:"Sakura Bloom, Floating Hearts and Cotton Candy."},
+  {id:"b_galaxy", type:"bundle", name:"Deep Space Bundle", items:["d_cosmic","e_starfall","p_midnight","n_galaxy"], tag:"exclusive", desc:"The full space look: Cosmic Swirl, Starfall, Midnight nameplate and the animated Galaxy banner."},
 ];
 const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
 BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
-const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", bundle:"Bundle"};
+const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bundle:"Bundle"};
 const DAILY_SPARKS = 50, DAILY_MS = 20 * 3600 * 1000;
 const QUESTS = [
   {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:100},
@@ -2755,7 +2885,8 @@ const QUESTS = [
   {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:150},
   {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:100},
   {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:100},
-  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate ? 1 : 0; }, reward:150},
+  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:150},
+  {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:150},
   {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:250},
   {id:"q_regular", icon:"star", name:"Regular", desc:"Claim the daily reward 3 times.", goal:3, stat:"dailies", reward:200},
 ];
@@ -2770,7 +2901,7 @@ function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid)
   if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }
 function ownsBundleFully(uid, b){ return owns(uid, b.id) || b.items.every(i => owns(uid, i)); }
 function equipped(uid, slot){ const id = profile(uid)[slot]; return id && COSM_BY[id] && COSM_BY[id].type === slot && owns(uid, id) ? id : null; }
-function qstats(){ return Object.assign({msgs:0, reacts:0, votes:0, polls:0, dailies:0}, store("qstats_" + S.uid) || {}); }
+function qstats(){ return Object.assign({msgs:0, reacts:0, votes:0, polls:0, dailies:0, voice:0}, store("qstats_" + S.uid) || {}); }
 function bumpStat(k, n){ const s = qstats(); s[k] = (s[k] || 0) + (n || 1); store("qstats_" + S.uid, s); if (S.kind === "quests") need("msgs"); }
 function questProgress(q){ return Math.min(q.goal, q.check ? q.check() : (qstats()[q.stat] || 0)); }
 async function ensureWallet(){ if (S.walletsLoaded && !S.wallets[S.uid] && !S.walletCreating){ S.walletCreating = true;
@@ -2810,9 +2941,11 @@ function itemArt(c){
   const art = h("div",{class:"art art-" + c.type + " tint-" + (c.items ? c.items[0] : c.id).slice(2)});
   if (c.type === "deco") art.appendChild(previewAvatar(c.id));
   else if (c.type === "pfx"){ art.appendChild(h("div",{class:"minicard"}, h("div",{class:"mb2"}), h("div",{class:"mav"}, previewAvatar(null, "sm")), h("i",{class:"l1"}), h("i",{class:"l2"}), h("div",{class:"pfx pfx-" + c.id.slice(2)}))); }
+  else if (c.type === "pban"){ art.appendChild(h("div",{class:"minicard"}, h("div",{class:"mb2 ban-" + c.id.slice(2)}), h("div",{class:"mav"}, previewAvatar(null, "sm")), h("i",{class:"l1"}), h("i",{class:"l2"}))); }
   else if (c.type === "plate"){ art.appendChild(h("div",{class:"platedemo"}, h("div",{class:"pd ghost"}, h("i"), h("b")),
       h("div",{class:"pd plate plate-" + c.id.slice(2)}, previewAvatar(null, "sm"), paintName(h("span",{text:nickOf(S.uid)}), S.uid)), h("div",{class:"pd ghost"}, h("i"), h("b")))); }
-  else if (c.type === "bundle"){ const [d, e, p] = c.items;
+  else if (c.type === "bundle"){ const [d, e, p, n] = c.items;
+    if (n) art.appendChild(h("div",{class:"bban ban-" + n.slice(2)}));
     art.append(h("div",{class:"pfx pfx-" + e.slice(2)}), h("div",{class:"bdeco"}, previewAvatar(d)), h("div",{class:"bplate pd plate plate-" + p.slice(2)}, paintName(h("span",{text:nickOf(S.uid)}), S.uid))); }
   return art;
 }
@@ -2862,7 +2995,7 @@ function itemModal(c){
 }
 
 // ---- Shop page
-const SHOP_TABS = [{id:"featured", name:"Featured"}, {id:"deco", name:"Decorations"}, {id:"pfx", name:"Profile Effects"}, {id:"plate", name:"Nameplates"}, {id:"bundle", name:"Bundles"}, {id:"ranks", name:"Ranks & Sparks"}];
+const SHOP_TABS = [{id:"featured", name:"Featured"}, {id:"deco", name:"Decorations"}, {id:"pfx", name:"Profile Effects"}, {id:"pban", name:"Banners"}, {id:"plate", name:"Nameplates"}, {id:"bundle", name:"Bundles"}, {id:"ranks", name:"Ranks & Sparks"}];
 function shopHeaderBar(active){
   const bar = h("div",{class:"shopbar"});
   bar.append(h("span",{class:"sbic"}, ic("bag")));
@@ -2881,6 +3014,7 @@ function shopSection(title, items, tab){
     h("div",{class:"igrid"}, items.map(itemCard)));
 }
 function renderShopPage(box){
+  if (prefs.shopSeen !== CAT_V){ prefs.shopSeen = CAT_V; savePrefs(); need("side"); }
   const keep = box.scrollTop; box.innerHTML = "";
   const tab = S.page || "featured";
   const wrap = h("div",{class:"shoppage"}); wrap.appendChild(shopHeaderBar(tab));
@@ -2896,7 +3030,8 @@ function renderShopPage(box){
       h("div",{class:"shart"}, previewAvatar("d_cosmic"), h("div",{class:"pd plate plate-nebula"}, paintName(h("span",{text:nickOf(S.uid)}), S.uid)))));
     if (!owns(S.uid, "d_bubble")) body.appendChild(h("div",{class:"freebar", onclick:() => itemModal(COSM_BY.d_bubble)}, previewAvatar("d_bubble", "sm"),
       h("div",{style:{flex:"1"}}, h("b",{text:"Free avatar decoration!"}), h("div",{class:"note",style:{margin:0},text:"Claim the Bubble decoration — on the house."})), h("button",{class:"btn small"}, "Claim")));
-    body.append(shopSection("Bundles", BUNDLES.slice(0, 3), "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
+    body.append(shopSection("Bundles", [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]], "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
+      shopSection("Animated Banners", COSM.filter(c => c.type === "pban").slice(0, 4), "pban"),
       shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));
     body.appendChild(h("div",{class:"earnbar"}, ic("star"), h("div",{style:{flex:"1"}}, h("b",{text:"Earn Sparks for free"}), h("div",{class:"note",style:{margin:0},text:"Complete quests and claim your daily reward. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
       h("button",{class:"btn small", onclick:() => openChat("quests", "all")}, "Go to Quests")));
@@ -2947,6 +3082,179 @@ function renderQuestsPage(box){
   body.appendChild(h("p",{class:"note",style:{textAlign:"center",marginTop:"20px"},text:"Sparks are free and only for cosmetics. Spend them in the Shop."}));
   box.appendChild(wrap); box.scrollTop = keep;
 }
+
+// ---------------------------------------------------------------- profile badges
+function ownedCount(uid){ const items = wal(uid).items || []; const set = new Set(); items.forEach(i => { const c = COSM_BY[i]; if (!c) return; if (c.items) c.items.forEach(x => set.add(x)); else set.add(i); }); return set.size; }
+function badgesOf(uid){
+  const out = [], m = member(uid) || {}, w = wal(uid), r = rankOf(uid);
+  if (isOwnerUid(uid)) out.push({id:"owner", icon:"crown", name:"Server Owner", desc:"Runs this CampusCord"});
+  if (isDev(uid)) out.push({id:"dev", icon:"code", name:"Developer", desc:"Helps build CampusCord"});
+  if (r === "plusplus") out.push({id:"pp", icon:"zap", name:"Campus++", desc:"Subscriber"});
+  else if (r === "plus") out.push({id:"plus", icon:"sparkles", name:"Campus+", desc:"Subscriber"});
+  if (perkActive(((S.perks[uid] || {}).items || {}).supporter)) out.push({id:"sup", icon:"gem", name:"Supporter", desc:"Backs CampusCord"});
+  if (S.config && m.joinedAt && m.joinedAt < (S.config.createdAt || 0) + 7 * 864e5) out.push({id:"early", icon:"flag", name:"Early Member", desc:"Joined in the first week"});
+  if ((w.quests || []).length >= QUESTS.length) out.push({id:"quest", icon:"trophy", name:"Quest Champion", desc:"Finished every quest"});
+  else if ((w.quests || []).length >= 5) out.push({id:"quester", icon:"star", name:"Quester", desc:"Finished 5+ quests"});
+  if (!isOwnerUid(uid) && ownedCount(uid) >= 5) out.push({id:"collector", icon:"bag", name:"Collector", desc:"Owns 5+ cosmetics"});
+  if (!isOwnerUid(uid) && (w.spent || 0) >= 2000) out.push({id:"baller", icon:"spark", name:"Big Spender", desc:"Spent 2,000+ Sparks"});
+  return out;
+}
+function badgeRow(uid){
+  const b = badgesOf(uid); if (!b.length) return null;
+  return h("div",{class:"bdgrow"}, b.map(x => h("span",{class:"pbadge pb-" + x.id, "data-tip":x.name + " — " + x.desc}, ic(x.icon))));
+}
+// hover tooltips for profile badges
+(() => { let tip = null;
+  document.addEventListener("mouseover", e => { const el = e.target.closest && e.target.closest(".pbadge"); if (!el){ if (tip){ tip.remove(); tip = null; } return; }
+    if (tip && tip._for === el) return; if (tip) tip.remove();
+    tip = h("div",{class:"rtip up",text:el.dataset.tip}); tip._for = el; document.body.appendChild(tip);
+    const b = el.getBoundingClientRect(); tip.style.top = (b.top - tip.offsetHeight - 8) + "px"; tip.style.left = Math.max(8, b.left + b.width / 2 - tip.offsetWidth / 2) + "px"; });
+})();
+
+// ---------------------------------------------------------------- voice channels (WebRTC mesh, Firestore signaling)
+// Each person in a voice room connects directly to everyone else in it (fine for up to ~8 people).
+// Firestore only carries the connection setup ("signals") and who is in the room — never the audio.
+const RTC_CFG = {iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun2.l.google.com:19302"]}]};
+const VOICE_STALE = 45000;
+const V = {room:null, stream:null, peers:{}, early:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
+S.voiceParts = {}; S.voiceSubs = {};
+const isVoiceRoom = r => r && r.type === "voice";
+function liveVoice(parts){ return Object.keys(parts || {}).filter(u => Date.now() - (parts[u].lastSeen || 0) < VOICE_STALE && member(u)); }
+// keep a live list of who's in every voice room (for the sidebar)
+function syncVoiceSubs(){
+  const want = new Set(S.rooms.filter(isVoiceRoom).map(r => r.id));
+  Object.keys(S.voiceSubs).forEach(id => { if (!want.has(id)){ S.voiceSubs[id](); delete S.voiceSubs[id]; delete S.voiceParts[id]; } });
+  want.forEach(id => { if (S.voiceSubs[id]) return;
+    S.voiceSubs[id] = onSnapshot(collection(db, "rooms", id, "voice"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.voiceParts[id] = p;
+      if (V.room === id){ V.parts = p; syncPeers(); need("me"); } need("side"); }, () => {}); });
+}
+setInterval(() => { if (Object.keys(S.voiceParts).length) need("side"); }, 20000);
+function tone(up){ if (!prefs.sound) return; try{ const a = V.actx || (V.actx = new (window.AudioContext || window.webkitAudioContext)()); const t = a.currentTime;
+  [up ? 520 : 660, up ? 780 : 440].forEach((f, i) => { const o = a.createOscillator(), g = a.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0.0001, t + i*0.1); g.gain.exponentialRampToValueAtTime(0.1, t + i*0.1 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + i*0.1 + 0.16); o.connect(g).connect(a.destination); o.start(t + i*0.1); o.stop(t + i*0.1 + 0.2); }); }catch(e){} }
+
+async function joinVoice(roomId){
+  if (V.room === roomId) return;
+  if (V.room) await leaveVoice(true);
+  const r = S.rooms.find(x => x.id === roomId); if (!r) return;
+  if (timeoutUntil(S.uid)){ toast("You're timed out — you can't join voice right now."); return; }
+  if (!navigator.mediaDevices || !window.RTCPeerConnection){ toast("This browser doesn't support voice. Try Chrome or Edge."); return; }
+  if (liveVoice(S.voiceParts[roomId]).length >= 8){ toast("That voice room is full (8 people max)."); return; }
+  try{ V.stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}, video:false}); }
+  catch(e){ toast("CampusCord needs your microphone for voice. Allow it in the browser's address bar, then try again."); return; }
+  V.room = roomId; V.parts = S.voiceParts[roomId] || {};
+  V.stream.getAudioTracks().forEach(t => t.enabled = !V.muted && !V.deaf);
+  try{ await setDoc(doc(db, "rooms", roomId, "voice", S.uid), {joinedAt:Date.now(), lastSeen:Date.now(), muted:V.muted, deaf:V.deaf}); }
+  catch(e){ toast("Couldn't join voice: " + errMsg(e)); stopStream(); V.room = null; return; }
+  // retry any connection that hasn't come up within 8 seconds
+  V.retry = setInterval(() => { Object.keys(V.peers).forEach(u => { const p = V.peers[u]; const st = p.pc.connectionState;
+    if ((st === "new" || st === "connecting" || st === "disconnected") && Date.now() - p.created > 8000 && S.uid < u){ closePeer(u); makePeer(u, true); } });
+    syncPeers(); }, 3000);
+  V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 15000);
+  V.unsubs.push(onSnapshot(query(collection(db, "rooms", roomId, "signals"), where("to", "==", S.uid)), snap => {
+    snap.docChanges().filter(c => c.type === "added").sort((a, b) => a.doc.id < b.doc.id ? -1 : 1).forEach(c => { const s = c.doc.data(), id = c.doc.id;
+      deleteDoc(doc(db, "rooms", roomId, "signals", id)).catch(() => {});
+      V.chain = V.chain.then(() => handleSignal(s)).catch(e => console.warn("signal", e)); }); }, e => console.warn("signals", e)));
+  watchLevel(S.uid, V.stream);
+  syncPeers(); tone(true); need("side","composer","me","msgs");
+}
+function stopStream(){ if (V.stream) V.stream.getTracks().forEach(t => t.stop()); V.stream = null; }
+async function leaveVoice(quiet){
+  if (!V.room) return; const roomId = V.room;
+  clearInterval(V.hb); clearInterval(V.retry); V.unsubs.forEach(u => u()); V.unsubs = [];
+  Object.keys(V.peers).forEach(closePeer); V.early = {};
+  Object.keys(V.meters).forEach(u => stopLevel(u));
+  stopStream(); V.room = null; V.speaking = {};
+  await deleteDoc(doc(db, "rooms", roomId, "voice", S.uid)).catch(() => {});
+  if (!quiet) tone(false); need("side","me","msgs");
+}
+window.addEventListener("pagehide", () => { if (V.room) deleteDoc(doc(db, "rooms", V.room, "voice", S.uid)).catch(() => {}); });
+function syncPeers(){
+  if (!V.room) return;
+  const live = liveVoice(V.parts).filter(u => u !== S.uid);
+  live.forEach(u => { if (!V.peers[u] && S.uid < u) makePeer(u, true); });
+  Object.keys(V.peers).forEach(u => { if (!live.includes(u)) closePeer(u); });
+}
+function sendSignal(to, data){ if (!V.room) return Promise.resolve();
+  const id = Date.now().toString(36).padStart(9, "0") + "-" + (V.seq++).toString(36).padStart(4, "0") + "-" + Math.random().toString(36).slice(2, 6);
+  return setDoc(doc(db, "rooms", V.room, "signals", id), Object.assign({from:S.uid, to, ts:Date.now()}, data)).catch(e => console.warn("send signal", e)); }
+function makePeer(u, initiator){
+  const pc = new RTCPeerConnection(RTC_CFG); const p = {pc, ice:(V.early[u] || []), created:Date.now()}; delete V.early[u]; V.peers[u] = p;
+  V.stream.getTracks().forEach(t => pc.addTrack(t, V.stream));
+  pc.onicecandidate = e => { if (e.candidate) sendSignal(u, {type:"ice", c:JSON.stringify(e.candidate)}); };
+  pc.ontrack = e => { let a = V.audio[u]; if (!a){ a = new Audio(); a.autoplay = true; V.audio[u] = a; }
+    a.srcObject = e.streams[0]; a.muted = V.deaf; a.volume = (prefs.vol || {})[u] ?? 1; a.play().catch(() => {}); watchLevel(u, e.streams[0]); };
+  pc.onconnectionstatechange = () => { const st = pc.connectionState;
+    if (st === "failed"){ closePeer(u); if (S.uid < u) setTimeout(syncPeers, 1500); }
+    need("side","me"); };
+  if (initiator) pc.createOffer().then(o => pc.setLocalDescription(o)).then(() => sendSignal(u, {type:"offer", sdp:pc.localDescription.sdp})).catch(e => console.warn("offer", e));
+  return p;
+}
+function closePeer(u){ const p = V.peers[u]; if (!p) return; try{ p.pc.close(); }catch(e){} delete V.peers[u];
+  const a = V.audio[u]; if (a){ a.srcObject = null; delete V.audio[u]; } stopLevel(u); }
+async function flushIce(p){ const list = p.ice; p.ice = []; for (const c of list) await p.pc.addIceCandidate(c).catch(() => {}); }
+async function handleSignal(s){
+  if (!V.room || !s || Date.now() - (s.ts || 0) > 60000) return;
+  const u = s.from;
+  if (s.type === "offer"){
+    if (V.peers[u]) closePeer(u);
+    const p = makePeer(u, false);
+    await p.pc.setRemoteDescription({type:"offer", sdp:s.sdp});
+    const ans = await p.pc.createAnswer(); await p.pc.setLocalDescription(ans);
+    await sendSignal(u, {type:"answer", sdp:ans.sdp}); await flushIce(p);
+  } else if (s.type === "answer"){
+    const p = V.peers[u]; if (p && p.pc.signalingState === "have-local-offer"){ await p.pc.setRemoteDescription({type:"answer", sdp:s.sdp}); await flushIce(p); }
+  } else if (s.type === "ice"){
+    const c = JSON.parse(s.c); const p = V.peers[u];
+    if (p && p.pc.remoteDescription) await p.pc.addIceCandidate(c).catch(() => {});
+    else if (p) p.ice.push(c); else (V.early[u] = V.early[u] || []).push(c);
+  }
+}
+// speaking indicator
+function watchLevel(u, stream){
+  stopLevel(u);
+  try{ const a = V.actx || (V.actx = new (window.AudioContext || window.webkitAudioContext)()); if (a.state === "suspended") a.resume();
+    const src = a.createMediaStreamSource(stream), an = a.createAnalyser(); an.fftSize = 512; src.connect(an);
+    const buf = new Uint8Array(an.fftSize); let quiet = 0;
+    const t = setInterval(() => { an.getByteTimeDomainData(buf); let sum = 0; for (let i = 0; i < buf.length; i++){ const v = (buf[i] - 128) / 128; sum += v * v; }
+      const loud = Math.sqrt(sum / buf.length) > 0.035 && !(u === S.uid && (V.muted || V.deaf));
+      quiet = loud ? 0 : quiet + 1; const on = loud || (V.speaking[u] && quiet < 4);
+      if (on !== !!V.speaking[u]){ V.speaking[u] = on; document.querySelectorAll('[data-vu="' + u + '"]').forEach(el => el.classList.toggle("speaking", on)); } }, 120);
+    V.meters[u] = {t, src};
+  }catch(e){}
+}
+function stopLevel(u){ const m = V.meters[u]; if (m){ clearInterval(m.t); try{ m.src.disconnect(); }catch(e){} delete V.meters[u]; } V.speaking[u] = false; }
+function setMute(on){ V.muted = on; store("vmuted", on); if (!on && V.deaf) setDeaf(false);
+  if (V.stream) V.stream.getAudioTracks().forEach(t => t.enabled = !V.muted && !V.deaf);
+  if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {muted:V.muted}).catch(() => {}); need("me","side"); }
+function setDeaf(on){ V.deaf = on; store("vdeaf", on);
+  Object.values(V.audio).forEach(a => a.muted = on);
+  if (V.stream) V.stream.getAudioTracks().forEach(t => t.enabled = !V.muted && !V.deaf);
+  if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {deaf:V.deaf}).catch(() => {}); need("me","side"); }
+function setPeerVolume(u, v){ prefs.vol = prefs.vol || {}; prefs.vol[u] = v; savePrefs(); if (V.audio[u]) V.audio[u].volume = v; }
+function voiceStatusText(){ const n = Object.values(V.peers).filter(p => p.pc.connectionState === "connected").length, total = liveVoice(V.parts).filter(u => u !== S.uid).length;
+  if (!total) return "Waiting for others to join"; if (n < total) return "Connecting… (" + n + "/" + total + ")"; return "Connected · " + (total + 1) + " in voice"; }
+function voiceParticipantsEl(r){
+  const parts = S.voiceParts[r.id] || {}; const live = liveVoice(parts); if (!live.length) return null;
+  return h("div",{class:"vlist"}, live.sort((a, b) => (parts[a].joinedAt || 0) - (parts[b].joinedAt || 0)).map(u => { const d = parts[u];
+    const av = avatar(u, "xs"); av.setAttribute("data-vu", u); if (V.speaking[u]) av.classList.add("speaking");
+    return h("div",{class:"vp", onclick:e => openProfile(u, e.currentTarget), oncontextmenu:e => voiceMemberMenu(e, u)}, av, paintName(h("span",{class:"nm",text:nickOf(u)}), u),
+      d.deaf ? ic("headoff","sm") : d.muted ? ic("micoff","sm") : null); }));
+}
+function voiceMemberMenu(ev, u){
+  if (u === S.uid) return memberMenu(ev, u);
+  const cur = (prefs.vol || {})[u] ?? 1;
+  const slider = h("input",{type:"range", min:"0", max:"1", step:"0.05", value:String(cur), oninput:e => setPeerVolume(u, +e.target.value), style:{width:"100%"}});
+  ctxMenu(ev, [{row: h("div",{class:"ctxvol"}, h("span",{text:"Volume for " + nickOf(u)}), slider)}, "-",
+    {label:"Profile", icon:"user", run:() => openProfile(u, ev.target)}, {label:"Message", icon:"message", run:() => openDM(u)}]);
+}
+function voiceBarEl(){
+  if (!V.room) return null; const r = S.rooms.find(x => x.id === V.room);
+  const good = Object.values(V.peers).every(p => p.pc.connectionState === "connected");
+  return h("div",{class:"vbar"},
+    h("div",{class:"vinfo", onclick:() => openChat("room", V.room)}, h("b",{class: good ? "ok" : "wait"}, ic("signal","sm"), " Voice Connected"), h("span",{text:(r ? r.name : "voice") + " · " + voiceStatusText()})),
+    h("button",{class:"ib danger", title:"Disconnect", onclick:() => leaveVoice()}, ic("phoneoff")));
+}
+window.__cc = {V, S, statusOf: u => statusOf(u), setAway: on => setAway(on)};
 
 // ---------------------------------------------------------------- updates
 function updBar(nodes){ const b = $("updbar"); b.innerHTML = ""; b.append(...nodes, h("button",{class:"x",onclick:() => b.classList.add("hidden")}, ic("x"))); b.classList.remove("hidden"); }

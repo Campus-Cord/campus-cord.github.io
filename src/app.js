@@ -65,6 +65,15 @@ const ICONS = {
   palette:'<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.83-.44-1.12-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/>',
   wand:'<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72ZM14 7l3 3M5 6v4M19 14v4M10 2v2M7 8H3M21 16h-4M11 3H9"/>',
   zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>',
+  volume:'<path d="M11 4.7a.7.7 0 0 0-1.2-.5L6.4 7.6A1.4 1.4 0 0 1 5.4 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.4a1.4 1.4 0 0 1 1 .4l3.4 3.4a.7.7 0 0 0 1.2-.5ZM16 9a5 5 0 0 1 0 6M19.4 18.4a9 9 0 0 0 0-12.8"/>',
+  mic:'<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/>',
+  micoff:'<path d="M2 2l20 20M18.89 13.23A7.12 7.12 0 0 0 19 12v-2M5 10v2a7 7 0 0 0 12 5M15 9.34V5a3 3 0 0 0-5.68-1.33M9 9v3a3 3 0 0 0 5.12 2.12M12 19v3"/>',
+  headphones:'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+  headoff:'<path d="M2 2l20 20M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 2.6-6.4M21 14v-2a9 9 0 0 0-13.4-7.9M21 14h-1M18 21a2 2 0 0 1-2-2v-1"/>',
+  phoneoff:'<path d="M10.7 13.3a16 16 0 0 0 3.4 2.6l1.3-1.3a2 2 0 0 1 2.1-.4 12.8 12.8 0 0 0 2.8.7 2 2 0 0 1 1.7 2v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1M5.2 13.2A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9M22 2 2 22"/>',
+  signal:'<path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/>',
+  flag:'<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>',
+  trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
   arrowdown:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
   bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
@@ -195,9 +204,10 @@ function rankOf(uid){ const items = ((S.perks[uid]||{}).items)||{};
   if (perkActive(items.plusplus)) return "plusplus"; if (perkActive(items.plus)) return "plus"; if (perkActive(items.supporter)) return "supporter"; return null; }
 function statusOf(uid){
   const p = profile(uid), m = member(uid);
-  if (uid === S.uid) return p.status === "invisible" ? "offline" : (p.status || "online");
+  if (uid === S.uid){ if (p.status === "invisible") return "offline"; if (p.status === "dnd") return "dnd"; return (p.status === "idle" || S.away) ? "idle" : "online"; }
   if (!m || !m.lastSeen || Date.now() - m.lastSeen > ONLINE_MS || p.status === "invisible") return "offline";
-  return p.status === "idle" || p.status === "dnd" ? p.status : "online";
+  if (p.status === "dnd") return "dnd";
+  return p.status === "idle" || m.away ? "idle" : "online";
 }
 const isOn = uid => statusOf(uid) !== "offline";
 function fxOf(uid){ if (!hasPerk(uid, "name_fx")) return null; const f = profile(uid).nameFx; if (f === "none") return null;
@@ -348,6 +358,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
+    syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
     need("side","header","composer");
   }, ()=>{}));
@@ -381,13 +392,20 @@ function initApp(){
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
   ensureWallet();
-  heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS);
+  heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
   need("rail","side","header","msgs","rpanel","me","composer","gifs");
   $("input").focus();
   handleReturnFromCheckout();
 }
+// When you click out of CampusCord (another window/app, or hide the tab) you show as Away (yellow moon).
+function setAway(on){ if (S.away === on || !member(S.uid)) return; S.away = on; need("me","rpanel","side");
+  updateDoc(doc(db, "members", S.uid), {away:on, lastSeen:Date.now()}).catch(() => {}); }
+let awayT = null;
+const checkAway = () => { clearTimeout(awayT); const gone = document.hidden || !document.hasFocus();
+  if (gone && !V.room) awayT = setTimeout(() => setAway(true), 1500); else setAway(false); };
+window.addEventListener("blur", checkAway); window.addEventListener("focus", checkAway); document.addEventListener("visibilitychange", checkAway);
 function heartbeat(){ if (!member(S.uid)) return; const inv = profile(S.uid).status === "invisible"; if (inv && S.sentInvisible) return; S.sentInvisible = inv;
   updateDoc(doc(db, "members", S.uid), {lastSeen: inv ? 0 : Date.now()}).catch(()=>{}); }
 window.addEventListener("beforeunload", () => { if (member(S.uid)) updateDoc(doc(db, "members", S.uid), {lastSeen:0}).catch(()=>{}); });
@@ -453,7 +471,7 @@ function renderSide(){
       h("span",{class:"ic"}, ic(icn)), h("span",{class:"nm",text:label}), extra || null));
     nav("home", "home", "users", "Friends");
     nav("shop", "ranks", "sparkles", "Campus+", hasPlus(S.uid) && !isOwner() ? h("span",{class:"ichip free",text:"ACTIVE"}) : null);
-    nav("shop", "featured", "bag", "Shop", h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
+    nav("shop", "featured", "bag", "Shop", prefs.shopSeen === CAT_V ? null : h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
     const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal) || Date.now() - (wal(S.uid).lastDaily || 0) >= DAILY_MS;
     nav("quests", "all", "star", "Quests", qready ? h("span",{class:"newdot",title:"Rewards ready"}) : null);
     list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
@@ -477,10 +495,14 @@ function renderSide(){
       const on = S.kind === "room" && S.cur === r.id; const un = roomUnread(r); const mc = S.mentions[r.id] || 0;
       if (closed && !on && !un && !mc) return;
       const typ = !on && typersIn("room", r.id).length;
-      list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : ""), onclick:() => openChat("room", r.id), oncontextmenu:e => roomMenu(e, r)},
-        h("span",{class:"ic"}, ic(r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+      const vr = isVoiceRoom(r), inV = vr && V.room === r.id, vn = vr ? liveVoice(S.voiceParts[r.id]).length : 0;
+      list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : "") + (vr ? " voice" : "") + (inV ? " invoice" : ""),
+          onclick:() => { if (vr){ joinVoice(r.id); bumpStat("voice"); } openChat("room", r.id); }, oncontextmenu:e => roomMenu(e, r), title: vr ? (inV ? "You're in this voice channel" : "Click to join voice") : null},
+        h("span",{class:"ic"}, ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+        vr && vn ? h("span",{class:"vcount",text:vn + "/8"}) : null,
         isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
         typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : (un ? h("span",{class:"newdot",title:"New messages"}) : null)));
+      if (vr){ const pl = voiceParticipantsEl(r); if (pl) list.appendChild(pl); }
     });
   });
 }
@@ -502,13 +524,20 @@ function renderDMList(box){
 }
 function renderMe(){
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
+  const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
+  const mic = $("meMic"), hd = $("meDeaf"); mic.innerHTML = ""; hd.innerHTML = "";
+  mic.appendChild(ic(V.muted || V.deaf ? "micoff" : "mic")); mic.classList.toggle("off", V.muted || V.deaf); mic.title = V.muted ? "Unmute" : "Mute";
+  hd.appendChild(ic(V.deaf ? "headoff" : "headphones")); hd.classList.toggle("off", V.deaf); hd.title = V.deaf ? "Undeafen" : "Deafen";
   renderPromo();
   const st = STATUSES.find(s => s.id === (profile(S.uid).status || "online"));
-  w.append(avatar(S.uid, "sm", true), h("div",{style:{minWidth:0}}, paintName(h("div",{class:"nick",text:nickOf(S.uid)}), S.uid),
+  const myav = avatar(S.uid, "sm", true); myav.setAttribute("data-vu", S.uid); if (V.speaking[S.uid]) myav.classList.add("speaking");
+  w.append(myav, h("div",{style:{minWidth:0}}, paintName(h("div",{class:"nick",text:nickOf(S.uid)}), S.uid),
     h("div",{class:"st",text: profile(S.uid).customStatus || (st ? st.name : "Online")})));
   w.onclick = e => openProfile(S.uid, w, true);
 }
 $("meSettings").onclick = () => openSettings("account");
+$("meMic").onclick = () => setMute(!V.muted || V.deaf ? !V.muted : false);
+$("meDeaf").onclick = () => setDeaf(!V.deaf);
 $("btnShop").onclick = () => openShop();
 $("btnHelp").onclick = () => openHelp();
 const HELP = [
@@ -579,6 +608,10 @@ const curRoom = () => S.kind === "room" ? S.rooms.find(r => r.id === S.cur) : nu
 function timeoutUntil(uid){ const t = ((S.config && S.config.timeouts) || {})[uid]; return t && t > Date.now() ? t : 0; }
 const isMuted = id => !!(prefs.muted || {})[id];
 const canPost = () => { const r = curRoom(); if (S.kind === "room" && timeoutUntil(S.uid)) return false; return !(r && r.readonly) || isAdmin(); };
+// The red NEW line goes away a few seconds after you've actually seen the new messages.
+let newT = null;
+function scheduleNewClear(){ clearTimeout(newT); if (!S.unreadSince) return;
+  newT = setTimeout(() => { if (!document.hidden && document.hasFocus() && S.unreadSince && nearBottom()){ const d = document.querySelector(".newdiv"); if (d) d.classList.add("fade"); setTimeout(() => { S.unreadSince = 0; need("msgs"); }, 600); } else scheduleNewClear(); }, 3000); }
 function markRead(){ if (!S.cur) return; S.lastRead[readKey(S.kind, S.cur)] = Date.now(); store("lastRead", S.lastRead);
   if (S.kind === "room" && S.mentions[S.cur]){ delete S.mentions[S.cur]; store("mentions", S.mentions); need("rail"); } }
 
@@ -664,7 +697,7 @@ function renderHeader(){
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
     const st = statusOf(o); d.textContent = profile(o).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st]);
-  } else { const r = curRoom(); icon.appendChild(ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")); t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
+  } else { const r = curRoom(); icon.appendChild(ic(isVoiceRoom(r) ? "volume" : r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")); t.textContent = r ? r.name : ""; d.textContent = r && r.topic ? r.topic : ""; }
   $("btnMembers").classList.toggle("on", S.rpanel === "members");
   $("btnPins").classList.toggle("on", S.rpanel === "pins");
   updateTitle();
@@ -755,6 +788,7 @@ function renderMessages(){
   });
   if (S.keepFromBottom != null){ box.scrollTop = box.scrollHeight - S.keepFromBottom; S.keepFromBottom = null; }
   else if (atBottom) box.scrollTop = box.scrollHeight; else box.scrollTop = prevTop;
+  if (S.unreadSince && S.roomLoaded) scheduleNewClear();
   if (S.scrollToUnread && S.roomLoaded){ const d = box.querySelector(".newdiv"); if (d){ box.scrollTop = Math.max(0, d.offsetTop - 80); S.stickBottom = nearBottom(); } S.scrollToUnread = false; }
   if (S.flashId){ const el = $("m-" + S.flashId); if (el){ el.scrollIntoView({block:"center"}); el.classList.add("flash"); S.flashId = null; } }
 }
@@ -762,7 +796,9 @@ function welcomeBlock(){
   const w = h("div",{class:"welcome"});
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); const big = avatar(o, "xl"); big.style.marginBottom = "12px"; w.append(big, h("h2",null, nickOf(o)),
       h("p",null, S.roomLoaded ? "This is the start of your private messages with " + nickOf(o) + ". Only the two of you can see them." : "Loading messages…")); }
-  else { const r = curRoom(); w.append(h("div",{class:"big"}, ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
+  else { const r = curRoom(); if (isVoiceRoom(r)){ w.append(h("div",{class:"big"}, ic("volume")), h("h2",null, r.name), h("p",null, V.room === r.id ? "You're in voice. This is the text chat for the channel — share links and talk while you're connected." : "Click the channel in the sidebar to join voice. You can chat here too."),
+      V.room === r.id ? h("button",{class:"btn small danger",style:{marginTop:"12px"},onclick:() => leaveVoice()}, ic("phoneoff"), " Leave voice") : h("button",{class:"btn small",style:{marginTop:"12px"},onclick:() => { joinVoice(r.id); bumpStat("voice"); }}, ic("volume"), " Join voice")); return w; }
+    w.append(h("div",{class:"big"}, ic(r && r.private ? "lock" : r && r.readonly ? "megaphone" : "hash")), h("h2",null,"Welcome to #" + (r ? r.name : "…")),
       h("p",null, !S.roomLoaded ? "Loading messages…" : (r && r.private) ? "Private room — only " + listNames(roomPeople(r).map(nickOf)) + " can see this." : (r && r.topic) ? r.topic : "This is the start of the #" + (r ? r.name : "") + " room.")); }
   return w;
 }
@@ -1037,13 +1073,13 @@ function openProfile(uid, anchor, self){
   const big = avatar(uid, "xl", true);
   const pe = equipped(uid, "pfx");
   const card = h("div",{class:"profile", "data-layer":"profile"}, pe ? h("div",{class:"pfx pfx-" + pe.slice(2)}) : null,
-    h("div",{class:"banner", style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
+    h("div",{class:"banner" + (equipped(uid, "pban") ? " ban-" + equipped(uid, "pban").slice(2) : ""), style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
     h("div",{class:"pav"}, big),
     h("div",{class:"pb"},
-      h("div",{class:"pname"}, paintName(h("span",{text:nickOf(uid)}), uid), gem(uid)),
+      h("div",{class:"pname"}, paintName(h("span",{text:nickOf(uid)}), uid), ...miniTags(uid)),
       h("div",{class:"pstat",text: (p.customStatus ? p.customStatus + " · " : "") + ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st])}),
       timeoutUntil(uid) ? h("div",{class:"pstat tmo"}, ic("hourglass","sm"), " Timed out until " + fmtTime(timeoutUntil(uid))) : null,
-      h("div",{class:"badges"}, ...roleTags(uid), hasPerk(uid,"supporter") && !hasPlus(uid) ? h("span",{class:"tag plus",text:"💎 SUPPORTER"}) : null),
+      badgeRow(uid),
       p.bio ? h("div",{class:"sect"}, h("h4",{text:"About me"}), h("div",{text:p.bio})) : null,
       h("div",{class:"sect"}, h("h4",{text:"Member since"}), h("div",{text: member(uid).joinedAt ? new Date(member(uid).joinedAt).toLocaleDateString([], {month:"long", day:"numeric", year:"numeric"}) : "—"})),
       h("div",{class:"acts"},
@@ -1245,7 +1281,7 @@ async function send(extra){
     if (extra) Object.assign(body, extra);
     const id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
     const stillHere = S.kind === kind && S.cur === chatId;
-    if (stillHere){ input.value = ""; autoGrow(); saveDraft(); } S.replyTo = null; setPending(null); S.stickBottom = true;
+    if (stillHere){ input.value = ""; autoGrow(); saveDraft(); S.unreadSince = 0; } S.replyTo = null; setPending(null); S.stickBottom = true;
     await setDoc(doc(db, ...b, "msgs", id), body); bumpStat("msgs");
     const preview = (body.me ? nickOf(S.uid) + " " : "") + (text || (body.gif ? "sent a GIF" : body.img ? "sent an image" : "")).slice(0, 120);
     const priv = kind === "room" && (roomAtSend || {}).private;
@@ -1364,9 +1400,11 @@ function roomModal(room, cat){
     const t = h("input",{class:"inp", placeholder:"What's this room for?", value: room ? room.topic || "" : ""});
     const c = h("input",{class:"inp", placeholder:"Text rooms", value: room ? room.category || "Text rooms" : (cat || "Text rooms"), list:"catlist"});
     const dl = h("datalist",{id:"catlist"}, [...new Set(S.rooms.map(r => r.category || "Text rooms"))].map(x => h("option",{value:x})));
-    let ro = !!(room && room.readonly);
+    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice");
     const sw = h("button",{class:"sw" + (ro ? " on" : ""), onclick:() => { ro = !ro; sw.classList.toggle("on", ro); }});
+    const vsw = h("button",{class:"sw" + (vc ? " on" : ""), onclick:() => { vc = !vc; vsw.classList.toggle("on", vc); if (vc && !room && (c.value === "Text rooms" || !c.value)) c.value = "Voice rooms"; }});
     m.append(h("label",{class:"f",text:"Room name"}), n, h("label",{class:"f",text:"Topic"}), t, h("label",{class:"f",text:"Category"}), c, dl,
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 8). It also has a text chat."})), vsw),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
     let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
     const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
@@ -1382,7 +1420,7 @@ function roomModal(room, cat){
       drawPeople();
     }
     const save = async () => { const s = slug(n.value); if (!s){ toast("Give the room a name"); return; }
-      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro};
+      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : "text"};
       if (isOwner()){ data.private = priv; data.allowed = priv ? [...allowed] : []; }
       try{ if (room) await updateDoc(doc(db, "rooms", room.id), data);
         else { const id = s + "-" + rid().slice(-4); await setDoc(doc(db, "rooms", id), Object.assign(data, {order:S.rooms.length, createdAt:Date.now()})); close(); openChat("room", id); return; }
@@ -1773,6 +1811,7 @@ function installApp(){
 }
 
 // __COSMETICS__
+// __VOICE__
 // ---------------------------------------------------------------- updates
 function updBar(nodes){ const b = $("updbar"); b.innerHTML = ""; b.append(...nodes, h("button",{class:"x",onclick:() => b.classList.add("hidden")}, ic("x"))); b.classList.remove("hidden"); }
 if (location.protocol === "file:"){
