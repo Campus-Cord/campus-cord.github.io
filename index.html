@@ -1195,7 +1195,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.16";
+const APP_VERSION = "2026-11-18.17";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -3413,13 +3413,14 @@ function displayBadges(uid){ const all = badgesOf(uid), sc = showcaseOf(uid); if
 async function toggleBadgePin(id){ const all = badgesOf(S.uid).map(x => x.b.id); let sc = (showcaseOf(S.uid) || []).filter(x => all.includes(x));
   if (sc.includes(id)) sc = sc.filter(x => x !== id); else { if (sc.length >= 6){ toast("You can pin up to 6 badges"); return; } sc.push(id); }
   try{ await setMyProfile({showcase:sc}); toast(sc.includes(id) ? "Pinned to your profile" : "Unpinned"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }
+function badgeHow(b, uid){ if (isOwnerUid(uid)){ if (b.special) return "You hand this one out. Open anyone's badges and click Give."; if (b.evolve) return "Maxed out — you own CampusCord."; if (b.id !== "owner") return "Yours automatically as the owner."; } return b.how; }
 function badgeTitle(b, st){ return b.name + (st && st.tier ? " · " + TIERS[st.tier].name : ""); }
 function badgeRarity(b, st){ return st && st.tier ? TIERS[st.tier].r : b.rarity || (b.evolve ? TIERS[b.evolve[0][1]].r : "Common"); }
 function badgeRow(uid){
   const list = displayBadges(uid); if (!list.length) return null;
   const shown = list.slice(0, 6);
   const row = h("div",{class:"bdgrow", title:"", onclick:e => { e.stopPropagation(); badgeDirectory(uid); }},
-    shown.map(({b, st}) => { const el = badgeEl(b, st); el.dataset.tipT = badgeTitle(b, st); el.dataset.tipR = badgeRarity(b, st); el.dataset.tipD = b.how; return el; }),
+    shown.map(({b, st}) => { const el = badgeEl(b, st); el.dataset.tipT = badgeTitle(b, st); el.dataset.tipR = badgeRarity(b, st); el.dataset.tipD = badgeHow(b, uid); return el; }),
     list.length > 6 ? h("span",{class:"bmore",text:"+" + (list.length - 6)}) : null);
   return row;
 }
@@ -3462,7 +3463,7 @@ function badgeDirectory(uid){
             b.special && isOwner() && !mine ? h("button",{class:"btn small" + (st ? " ghost" : ""), onclick:async () => { await setSpecial(uid, b.id, !st); setTimeout(draw, 250); }}, st ? "Remove" : "Give") : null);
           grid.appendChild(h("div",{class:"bdcard r-" + r.toLowerCase() + (st ? " have" : " blk")},
             (() => { const e = badgeEl(b, st, "lg"); if (!st) e.classList.add("blk"); return e; })(),
-            h("div",{class:"bdtxt"}, h("b",{text: badgeTitle(b, st)}), h("span",{class:"rar",style:{color:RARITY_COLOR[r]},text:r + (b.special ? " · Owner-given" : "")}), h("span",{class:"note",style:{margin:0},text:b.how}), prog, actions),
+            h("div",{class:"bdtxt"}, h("b",{text: badgeTitle(b, st)}), h("span",{class:"rar",style:{color:RARITY_COLOR[r]},text:r + (b.special && !isOwnerUid(uid) ? " · Owner-given" : "")}), h("span",{class:"note",style:{margin:0},text:badgeHow(b, uid)}), prog, actions),
             st ? h("span",{class:"owned"}, ic("check","sm")) : h("span",{class:"lockic"}, ic("lock","sm")))); });
         return grid;
       }
@@ -3483,7 +3484,7 @@ function checkNewBadges(){
   modal((m, close) => {
     m.append(h("div",{class:"pfx pfx-confetti"}), h("div",{class:"nbglow r-" + r.toLowerCase()}, badgeEl(b, st, "xl")),
       h("span",{class:"ichip",style:{background:RARITY_COLOR[r],color:"#111"}}, tier ? "BADGE EVOLVED" : "NEW BADGE"),
-      h("h2",{text: badgeTitle(b, st)}), h("span",{class:"rar",style:{color:RARITY_COLOR[r]},text:r}), h("p",{class:"note",text:b.how}),
+      h("h2",{text: badgeTitle(b, st)}), h("span",{class:"rar",style:{color:RARITY_COLOR[r]},text:r}), h("p",{class:"note",text:badgeHow(b, S.uid)}),
       h("div",{class:"foot",style:{justifyContent:"center"}}, h("button",{class:"btn ghost", onclick:() => { close(); badgeDirectory(S.uid); }}, "See all badges"), h("button",{class:"btn", onclick:close}, "Nice!")));
     try{ tone(true); }catch(e){}
   }, "newbadge");
