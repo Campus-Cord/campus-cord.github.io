@@ -1200,6 +1200,8 @@ async function send(extra){
   if (!S.cur){ toast("Pick a room or DM first"); return; }
   if (!canPost()){ toast("Only admins can post here"); return; }
   sending = true; stopTyping(); hideAutocomplete();
+  // Lock in which chat this message belongs to *before* any awaits, so switching chats mid-send can't misroute it.
+  const b = base(), kind = S.kind, chatId = S.cur, roomAtSend = curRoom(), replyTo = S.replyTo;
   try{
     let out = {text:raw};
     if (raw.startsWith("/") && !extra){ out = await runSlash(raw); if (!out){ input.value = ""; autoGrow(); return; } }
@@ -1208,16 +1210,16 @@ async function send(extra){
     if (out.me) body.me = true;
     if (out.poll) body.poll = out.poll;
     const mentions = findMentions(text); if (mentions.length) body.mentions = mentions;
-    if (/@everyone\b/.test(text) && isAdmin() && S.kind === "room") body.everyone = true;
-    if (S.replyTo){ body.reply = S.replyTo; }
+    if (/@everyone\b/.test(text) && isAdmin() && kind === "room") body.everyone = true;
+    if (replyTo){ body.reply = replyTo; }
     if (f){ const pn = $("prevName"); if (pn) pn.textContent = "Uploading…"; body.img = await imageToData(f); if (/gif/.test(f.type)) body.gif = true; }
     if (extra) Object.assign(body, extra);
     const id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
-    const b = base(), kind = S.kind, chatId = S.cur;
-    input.value = ""; autoGrow(); saveDraft(); S.replyTo = null; setPending(null); S.stickBottom = true;
+    const stillHere = S.kind === kind && S.cur === chatId;
+    if (stillHere){ input.value = ""; autoGrow(); saveDraft(); } S.replyTo = null; setPending(null); S.stickBottom = true;
     await setDoc(doc(db, ...b, "msgs", id), body);
     const preview = (body.me ? nickOf(S.uid) + " " : "") + (text || (body.gif ? "sent a GIF" : body.img ? "sent an image" : "")).slice(0, 120);
-    const priv = kind === "room" && (curRoom() || {}).private;
+    const priv = kind === "room" && (roomAtSend || {}).private;
     const meta = {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview: priv ? "New message in a private room" : preview, lastMentions:mentions, lastEveryone:!!body.everyone};
     if (kind === "dm") setDoc(doc(db, "dms", chatId), Object.assign({users:chatId.split("_")}, meta), {merge:true}).catch(()=>{});
     else setDoc(doc(db, "meta", chatId), meta).catch(()=>{});
