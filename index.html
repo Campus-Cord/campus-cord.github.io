@@ -1212,7 +1212,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.19";
+const APP_VERSION = "2026-11-18.20";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1601,7 +1601,11 @@ function initApp(){
   }, e => console.warn("DMs unavailable", e)));
   S.unsubApp.push(onSnapshot(query(collection(db, "gifs"), orderBy("ts","desc"), limit(60)), snap => { S.gifs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("gifs"); }, ()=>{}));
   S.unsubApp.push(onSnapshot(doc(db, "config/shop"), s => { S.shop = s.exists() ? s.data() : {}; refreshOpenPane(); }, ()=>{}));
-  S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => { S.myOrders = s.docs.map(d => Object.assign({id:d.id}, d.data())); refreshOpenPane(); }, ()=>{}));
+  S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => {
+    const before = Object.fromEntries((S.myOrders || []).map(o => [o.id, o.status]));
+    S.myOrders = s.docs.map(d => Object.assign({id:d.id}, d.data()));
+    S.myOrders.forEach(o => { if (before[o.id] === "pending" && o.status === "approved"){ const c = CATALOG.find(x => x.id === o.item) || {name:"Your purchase"}; toast("✦ " + c.name + " is here! Thanks for supporting CampusCord 💜"); } });
+    refreshOpenPane(); need("side", "msgs"); }, ()=>{}));
   if (isOwner()) S.unsubApp.push(onSnapshot(collection(db, "orders"), s => { S.orders = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => b.ts - a.ts); need("rail"); refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
     if (isOwner() && !prefs.yy2){ prefs.yy2 = 1; savePrefs(); setMyProfile({deco:"d_yinyang", plate:"p_yinyang"}).catch(()=>{}); }
@@ -2779,10 +2783,10 @@ function shopItem(id){ const base = CATALOG.find(c => c.id === id); const o = ((
 function shopButton(c){
   const it = shopItem(c.id);
   const owned = hasPerk(S.uid, c.id);
-  const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
+  const pend = pendingOrder(c.id);
   const until = (((S.perks[S.uid]||{}).items||{})[c.id]||{}).until;
   if (owned) return h("div",{class:"owned"}, ic("check"), isOwner() ? " Included — you're the admin" : " Active" + (until ? " until " + new Date(until).toLocaleDateString() : ""));
-  if (pend) return h("div",{class:"pending"}, ic("hourglass"), " Payment pending — an admin will activate it soon. ", h("a",{href:"#",onclick:e => { e.preventDefault(); cancelOrder(pend); }},"Cancel"));
+  if (pend) return h("div",{class:"pending"}, ic("hourglass"), " Checking your payment… it's added automatically a few minutes after you pay.");
   if (!it.link) return h("button",{class:"btn buy",disabled:true},"Coming soon");
   return h("button",{class:"btn buy", onclick:() => buy(c.id)}, c.tier ? "Get " + c.name : "Buy");
 }
@@ -2826,14 +2830,16 @@ function drawRanks(m, draw){
           ic((CATALOG.find(c => c.id === o.item)||{icon:"receipt"}).icon), h("span",{class:"nm",text:(CATALOG.find(c => c.id === o.item)||{name:o.item}).name}), h("span",{class:"s",text:new Date(o.ts).toLocaleDateString()}),
           h("span",{class:"s st-" + o.status,text: o.status === "approved" ? "Active" : o.status === "rejected" ? "Not approved" : "Pending"})))));
       }
-      m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. Perks are cosmetic. After you pay, the server admin activates your perk — usually within a few hours."));
+      m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. Perks are cosmetic. After you pay, your perk turns on automatically — usually within 5–15 minutes."));
 
   const sp = sparkPacksEl(); if (sp) m.append(h("h3",{class:"sh3",text:"Spark packs"}), h("p",{class:"note",style:{padding:"0 28px",marginTop:"-4px"},text:"Sparks are bought with real money and spent on anything in the Shop."}), sp);
 }
+// A checkout counts as "in progress" for 30 minutes; after that you can try again (unpaid checkouts just expire).
+function pendingOrder(id){ return S.myOrders.find(o => o.item === id && o.status === "pending" && Date.now() - (o.ts || 0) < 30 * 60000); }
 function sparkPacksEl(){
   const packs = CATALOG.filter(c => c.coins && (shopItem(c.id).enabled || isOwner())); if (!packs.length) return null;
   const grid = h("div",{class:"shop spacks"});
-  packs.forEach((c, i) => { const it = shopItem(c.id); const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
+  packs.forEach((c, i) => { const it = shopItem(c.id); const pend = pendingOrder(c.id);
     grid.appendChild(h("div",{class:"item spackitem sp" + i}, i === packs.length - 1 ? h("span",{class:"ichip best",text:"BEST VALUE"}) : i === 2 ? h("span",{class:"ichip pop",text:"POPULAR"}) : null,
       h("div",{class:"spkart"}, Array.from({length:Math.min(3, i + 1)}, (_, k) => h("span",{class:"spk3 k" + k}, ic("spark"))), i >= 3 ? h("span",{class:"spkx",text:"×" + (i === 3 ? 2 : 5)}) : null),
       h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}),
@@ -2846,7 +2852,7 @@ function openSparks(){
       h("div",{class:"sphead"}, h("div",{class:"spbig"}, ic("spark")), h("h2",{text:"Get Sparks"}),
         h("p",{class:"note",style:{margin:0}}, "You have ", sparkPill(sparks(S.uid)), ". Spend Sparks on decorations, effects, banners and nameplates.")));
     const sp = sparkPacksEl(); m.append(sp || h("p",{class:"note",style:{textAlign:"center",padding:"20px"},text:"Spark packs aren't on sale yet — check back soon."}));
-    m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. After you pay, the admin adds your Sparks — usually within a few hours."));
+    m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. After you pay, your Sparks are added automatically — usually within 5–15 minutes."));
   }, "sparksmodal");
 }
 async function buy(itemId){
@@ -2858,10 +2864,10 @@ async function buy(itemId){
   try{ await setDoc(doc(db, "orders", orderId), {uid:S.uid, nick:nickOf(S.uid), item:itemId, price:it.price, ts:Date.now(), status:"pending"}); }
   catch(e){ toast("Couldn't record your order: " + errMsg(e) + " — tell the admin your order ID " + orderId); return; }
   if (!w) location.href = url; // pop-up blocked: go to checkout in this tab instead
-  toast("Opening Stripe checkout… after you pay, an admin activates your perk.");
+  toast("Opening Stripe checkout… it's added automatically a few minutes after you pay.");
 }
 async function cancelOrder(o){ try{ await deleteDoc(doc(db, "orders", o.id)); }catch(e){ toast("Couldn't cancel: " + errMsg(e)); } }
-function handleReturnFromCheckout(){ if (location.hash === "#thanks"){ history.replaceState(null, "", location.pathname); setTimeout(() => toast("Thanks for your purchase! 💜 An admin will activate your perk shortly."), 800); } }
+function handleReturnFromCheckout(){ if (location.hash === "#thanks"){ history.replaceState(null, "", location.pathname); setTimeout(() => toast("Thanks for your purchase! 💜 It'll show up automatically in a few minutes."), 800); } }
 
 // ---------------------------------------------------------------- admin
 function openAdmin(start){
@@ -3003,7 +3009,7 @@ function adminShop(p){
       h("li",null, "In your ", h("a",{href:"https://dashboard.stripe.com/payment-links",target:"_blank",rel:"noopener"},"Stripe dashboard → Payment Links"), ", create one link per perk (subscription for Campus+, one-time for the rest)."),
       h("li",null, "Under ", h("b",{text:"After payment"}), ", set it to redirect to ", h("code",{text:LIVE_URL + "#thanks"}), "."),
       h("li",null, "Paste each link below and Save. Buyers' orders show up under Orders."),
-      h("li",null, "Each checkout carries the order ID as the Stripe ", h("code",{text:"client_reference_id"}), ". Find the matching payment in Stripe, then click Approve."))));
+      h("li",null, "Each checkout carries the order ID as the Stripe ", h("code",{text:"client_reference_id"}), ". Paid orders are delivered automatically every few minutes by the “Deliver purchases” GitHub Action — Approve here is only a backup."))));
   const rows = CATALOG.map(c => { const it = shopItem(c.id);
     const price = h("input",{class:"inp", value:it.price, style:{width:"140px"}}); const link = h("input",{class:"inp", value:it.link, placeholder:"https://buy.stripe.com/…"});
     let en = it.enabled; const sw = h("button",{class:"sw" + (en ? " on" : ""), title:"Show in shop", onclick:() => { en = !en; sw.classList.toggle("on", en); }});

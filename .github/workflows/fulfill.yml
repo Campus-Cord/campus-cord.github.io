@@ -1,0 +1,36 @@
+name: Deliver purchases
+
+# Every few minutes: check Stripe for paid CampusCord checkouts and hand out the Sparks or perk
+# automatically, so the owner never has to approve orders by hand.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: fulfill
+  cancel-in-progress: false
+
+jobs:
+  fulfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check the keys are set
+        env:
+          STRIPE_KEY: ${{ secrets.STRIPE_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$STRIPE_KEY" ]; then echo "::error::Add the STRIPE_KEY secret (a Stripe restricted key with read access to Checkout Sessions and Payment Links)."; exit 1; fi
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then echo "::error::Add the FIREBASE_SERVICE_ACCOUNT secret."; exit 1; fi
+      - name: Install
+        run: npm i --no-save --silent firebase-admin@12
+      - name: Deliver paid orders
+        env:
+          STRIPE_KEY: ${{ secrets.STRIPE_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/fulfill.mjs
