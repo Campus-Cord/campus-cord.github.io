@@ -251,7 +251,7 @@ function chip(cls, iconName, text, title){ const mini = CHIP_MINI && iconName; r
 function miniTags(uid){ CHIP_MINI = true; try{ return roleTags(uid, true); } finally { CHIP_MINI = false; } }
 function roleTags(uid, compact){
   const out = [];
-  if (isOwnerUid(uid)) out.push(chip("admin",null,"ADMIN","Server admin"));
+  if (isOwnerUid(uid)) out.push(chip("admin",null,"OWNER","Owner of CampusCord"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   const r = rankOf(uid);
   if (r === "plusplus") out.push(chip("pp","zap","PLUS+","Campus++"));
@@ -586,7 +586,7 @@ const HELP = [
   {q:"What do the text formats do?", k:"bold italic markdown format spoiler code quote strikethrough", a:"**bold**, *italic*, __underline__, ~~strike~~, `code`, ```code block```, ||spoiler||, and > quote at the start of a line."},
   {q:"What are private rooms?", k:"private room lock hidden secret invite", a:"Rooms with a lock are only visible to the people the admin picked. Everyone else can't see or read them."},
   {q:"What does timed out mean?", k:"timeout timed out muted can't send blocked", a:"An admin paused your posting in rooms for a while. You can still read and use DMs. The message box shows when it ends."},
-  {q:"Who are the admin and developers?", k:"admin developer dev role crown moderator", a:"The 👑 ADMIN runs the server. 💻 DEVs help build CampusCord and can manage rooms, pin, time out and kick regular members."},
+  {q:"Who are the owner and developers?", k:"owner admin developer dev role crown moderator", a:"The ☯ OWNER runs CampusCord. 💻 DEVs help build CampusCord and can manage rooms, pin, time out and kick regular members."},
 ];
 function helpAnswer(q){
   const words = q.toLowerCase().replace(/[^a-z0-9@ ]/g, " ").split(/\s+/).filter(w => w.length > 1 && !["how","do","i","the","a","to","my","can","what","is","are","in","on","of","and","you","it"].includes(w));
@@ -1068,7 +1068,7 @@ function renderRPanel(){
   else { const r = curRoom(); if (r && r.private) uids = roomPeople(r); }
   const sortN = (a,b) => nickOf(a).localeCompare(nickOf(b));
   const special = u => isOwnerUid(u) || (isDev(u) && isOn(u)) || (rankOf(u) === "plusplus" && isOn(u));
-  const groups = [["Admin", uids.filter(isOwnerUid)], ["Developers", uids.filter(u => !isOwnerUid(u) && isDev(u) && isOn(u))],
+  const groups = [["Owner", uids.filter(isOwnerUid)], ["Developers", uids.filter(u => !isOwnerUid(u) && isDev(u) && isOn(u))],
     ["Campus++", uids.filter(u => !isOwnerUid(u) && !isDev(u) && rankOf(u) === "plusplus" && isOn(u))],
     ["Online", uids.filter(u => !special(u) && isOn(u))], ["Offline", uids.filter(u => !isOwnerUid(u) && !isOn(u))]];
   groups.forEach(([label, arr]) => {
@@ -1495,7 +1495,7 @@ function paneAccount(p){
   const n = h("input",{class:"inp", value:me.nick, maxlength:"24"});
   const cs = h("div",{class:"colors"}, COLORS.map(c => { const b = h("button",{class: c === color ? "on" : "", style:{background:c}, onclick:() => { color = c; [...cs.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); return b; }));
   const av = avatar(S.uid, "xl", true);
-  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "☯ Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "☯ Owner of CampusCord" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
     h("label",{class:"f",text:"Profile picture"}), avatarPhotoControls(),
     avatarMaker(),
     h("label",{class:"f",text:"Display name"}), n, h("label",{class:"f",text:"Name color"}), cs,
@@ -1591,7 +1591,7 @@ function drawRanks(m, draw){
         h("div",{class:"shophero"},
           h("div",{class:"shg"}, ic("sparkles")),
           h("div",null, h("h2",{text:"Campus+ Shop"}), h("p",{text:"Ranks, animated names and themes. Every purchase supports the server."})),
-          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin",null,"ADMIN") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
+          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin",null,"OWNER") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
       const tiers = h("div",{class:"tiers"});
       CATALOG.filter(c => c.tier).forEach(c => {
         const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;

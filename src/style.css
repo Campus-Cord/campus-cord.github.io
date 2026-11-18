@@ -1067,3 +1067,4 @@ html,body{overflow:hidden}
 .spkx{font-weight:900;font-size:18px;color:#ffd166;margin-left:6px;text-shadow:0 0 10px rgba(255,209,102,.6)}
 .spacks .spackitem.sp4{border-color:#f5a52488;box-shadow:0 0 24px -8px #f5a524}
 .modal.sparksmodal{width:min(900px,95vw)!important;max-width:95vw!important}.modal.sparksmodal .spacks{grid-template-columns:repeat(5,1fr)!important}@media (max-width:900px){.modal.sparksmodal .spacks{grid-template-columns:repeat(2,1fr)!important}}
+.profile .pbadges{max-width:200px}.profile .bdgrow{flex-wrap:nowrap}

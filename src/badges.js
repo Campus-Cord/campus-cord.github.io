@@ -85,7 +85,7 @@ function memberDays(uid){ const m = member(uid) || {}; return m.joinedAt ? Math.
 
 // Every badge that exists, in display order, with how it's earned. state(uid) -> null (locked) or {tier?, progress?}
 const BADGES = [
-  {id:"owner", name:"Server Owner", how:"Runs this CampusCord.", rarity:"Mythic", state:uid => isOwnerUid(uid) ? {} : null},
+  {id:"owner", name:"Owner", how:"Owns CampusCord.", rarity:"Mythic", state:uid => isOwnerUid(uid) ? {} : null},
   {id:"dev", name:"Developer", how:"Helps build CampusCord. Given by the owner.", rarity:"Epic", state:uid => isDev(uid) ? {} : null},
   {id:"pp", name:"Campus++", how:"Subscribe to Campus++.", rarity:"Epic", state:uid => rankOf(uid) === "plusplus" ? {} : null},
   {id:"plus", name:"Campus+", how:"Subscribe to Campus+.", rarity:"Rare", state:uid => rankOf(uid) === "plus" ? {} : null},
@@ -100,6 +100,11 @@ const BADGES = [
   {id:"photo", name:"Photogenic", how:"Set a real photo as your profile picture.", rarity:"Common", state:uid => isPhotoAvatar(profile(uid).avatar) ? {} : null},
   {id:"voice", name:"Voice Regular", how:"Finish the Hop in voice quest.", rarity:"Common", state:uid => (wal(uid).quests || []).includes("q_voice") ? {} : null},
 ];
+// The owner has every badge, each at its highest tier.
+BADGES.forEach(b => { const st = b.state, val = b.val;
+  b.state = uid => { if (isOwnerUid(uid)){ if (!b.evolve) return {}; const top = evolveTop(b); return {tier:top[1], at:top[0], next:null}; } return st(uid); };
+  if (val) b.val = uid => isOwnerUid(uid) ? evolveTop(b)[0] : val(uid); });
+function evolveTop(b){ const l = b.id === "quest" ? QUEST_TIERS.map(x => x[1] === "gold" ? [QUESTS.length, "gold"] : x) : b.evolve; return l[l.length - 1]; }
 function badgeSvg(id, tier){ return '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' + BADGE_ART[id](tier) + '</svg>'; }
 function badgeEl(b, st, size){ const s = h("span",{class:"pbadge b-" + b.id + (st && st.tier ? " t-" + st.tier : "") + (size ? " " + size : "")}); s.innerHTML = badgeSvg(b.id, (st && st.tier) || (b.evolve ? b.evolve[0][1] : null)); return s; }
 function badgesOf(uid){ return BADGES.map(b => ({b, st:b.state(uid)})).filter(x => x.st); }
