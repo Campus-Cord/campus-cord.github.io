@@ -536,3 +536,42 @@ html.compact .msg .gut{width:24px}
 .li.pick.on .chk{background:var(--accent);border-color:var(--accent);color:#fff}
 .li.pick .chk .i{width:14px;height:14px}
 .toggle .tl b{display:flex;align-items:center;gap:4px}
+
+/* ================= v3.4 ================= */
+.ctx{position:fixed;z-index:95;min-width:200px;background:var(--rail);border:1px solid var(--line);border-radius:8px;padding:6px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.ctx button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;background:none;border:0;padding:7px 8px;border-radius:4px;font-size:14px;font-weight:500;color:var(--text);text-align:left}
+.ctx button:hover{background:var(--accent);color:var(--on-accent)}
+.ctx button.danger{color:var(--red)}.ctx button.danger:hover{background:var(--red);color:#fff}
+.ctx button .i{width:16px;height:16px;opacity:.8}
+.ctx .sep{height:1px;background:var(--active);margin:4px 2px}
+.ctx .ctxreact{display:flex;gap:2px;padding:2px}
+.ctx .ctxreact button{justify-content:center;font-size:20px;padding:5px;width:auto;flex:1}
+.ctx .ctxreact button:hover{background:var(--hover);color:inherit}
+.newdiv{display:flex;align-items:center;margin:12px 16px 2px;height:1px;background:var(--red);position:relative}
+.newdiv span{position:absolute;right:0;top:50%;transform:translateY(-50%);background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:1px 5px 1px 6px;border-radius:4px 0 0 4px;letter-spacing:.04em}
+.ch.muted{opacity:.45}
+.poll{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;max-width:440px;margin-top:4px;display:flex;flex-direction:column;gap:6px}
+.poll .pq{display:flex;gap:6px;align-items:center;font-weight:700}
+.poll .pq .i{color:var(--accent)}
+.popt{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--rail);border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow:hidden;text-align:left;font-size:14px}
+.popt:hover{border-color:var(--dim)}
+.popt.mine{border-color:var(--accent)}
+.popt .bar{position:absolute;left:0;top:0;bottom:0;background:color-mix(in srgb,var(--accent) 22%,transparent);transition:width .3s}
+.popt .ot,.popt b{position:relative;display:flex;align-items:center;gap:6px}
+.popt .ot .i{color:var(--accent)}
+.poll .pf{font-size:11px;color:var(--dim)}
+.embed.yt{margin-top:6px;width:min(440px,100%);aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#000}
+.embed.yt iframe{width:100%;height:100%;border:0}
+.pstat.tmo{color:var(--yellow);display:flex;align-items:center;gap:4px}
+.modal.helpmodal{max-width:560px}
+.helpchat{background:var(--chat);border-radius:10px;padding:12px;height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.hb{display:flex;gap:10px;align-items:flex-start}
+.hb .hav{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#3fb8ff);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.hb .hav .i{width:18px;height:18px}
+.hb .hbody{background:var(--side);border-radius:10px;padding:8px 12px;font-size:14px;line-height:1.45;max-width:85%}
+.hb .hbody b{display:block;font-size:12px;color:var(--accent);margin-bottom:2px}
+.hb.me{justify-content:flex-end}.hb.me .hbody{background:var(--accent);color:var(--on-accent)}
+.hrel{margin-top:6px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px}
+.hsug{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hsug button{background:var(--rail);border:1px solid var(--line);border-radius:14px;padding:5px 10px;font-size:12px;color:var(--muted)}
+.hsug button:hover{color:var(--text);border-color:var(--dim)}

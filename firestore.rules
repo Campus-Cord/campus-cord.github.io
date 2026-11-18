@@ -1,5 +1,5 @@
 rules_version = '2';
-// CampusCord security rules (v3.3: private rooms). Published automatically by GitHub Actions when this file changes.
+// CampusCord security rules (v3.4: private rooms, timeouts). Published automatically by GitHub Actions when this file changes.
 // Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -18,6 +18,7 @@ service cloud.firestore {
     function ownsNew() { return request.resource.data.uid == request.auth.uid; }
     function ownsOld() { return resource.data.uid == request.auth.uid; }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function notTimedOut() { return !(request.auth.uid in cfg().get('timeouts', {})) || cfg().timeouts[request.auth.uid] < request.time.toMillis(); }
 
     // ---------------- server settings
     match /config/main {
@@ -26,11 +27,13 @@ service cloud.firestore {
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.get('banned', []) is list;
       allow update: if isOwner() && request.resource.data.ownerUid == resource.data.ownerUid;
-      // Developers can only kick/unban, never the owner or another developer.
+      // Developers can only kick/unban/time out, never the owner or another developer.
       allow update: if isAdmin() && !isOwner()
-        && changed().hasOnly(['banned', 'bannedNames'])
+        && changed().hasOnly(['banned', 'bannedNames', 'timeouts'])
         && !(resource.data.ownerUid in request.resource.data.get('banned', []))
-        && !request.resource.data.get('banned', []).hasAny(resource.data.get('admins', []));
+        && !request.resource.data.get('banned', []).hasAny(resource.data.get('admins', []))
+        && !(resource.data.ownerUid in request.resource.data.get('timeouts', {}))
+        && !request.resource.data.get('timeouts', {}).keys().hasAny(resource.data.get('admins', []));
     }
     // Shop prices + Stripe payment links: everyone reads, only the owner edits.
     match /config/shop {
@@ -98,7 +101,7 @@ service cloud.firestore {
       match /msgs/{msgId} {
         allow read: if inRoom();
         allow create: if inRoom() && ownsNew() && request.resource.data.text.size() <= 4000
-          && (roomOpen() || isAdmin());
+          && (roomOpen() || isAdmin()) && notTimedOut();
         // Authors edit their own text; admins pin.
         allow update: if inRoom() && ownsOld()
           && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])

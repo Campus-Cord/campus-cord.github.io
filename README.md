@@ -13,6 +13,12 @@ A Discord-style group chat for friends, running on Firebase.
 - Profiles: bio, custom status, Online / Idle / Do Not Disturb / Invisible
 - Images, GIF library, typing indicators, online status, search, Ctrl/⌘+K quick switcher
 - Desktop notifications + sounds, phone-friendly layout
+- Right-click menus (messages, rooms, people, server), red NEW line at your last-read spot, Mark unread
+- Mute rooms, saved drafts per chat, Alt+↑/↓ to switch rooms
+- Polls (/poll Question | A | B), YouTube and image-link embeds
+- Timeouts (5 min / 1 hour / 1 day) for admins and developers, enforced by the rules
+- Built-in Help bot (? button or /help)
+- Private rooms (owner picks who can see them)
 - Appearance: 8 themes, accent color, font size, compact mode, 24h time
 - Roles: 👑 Admin (owner) and 💻 Developers
 - Campus+ and Campus++ ranks with PLUS / PLUS+ badges, plus individual perks, sold through Stripe Payment Links and approved by the owner
