@@ -123,16 +123,17 @@ service cloud.firestore {
         && nw().quests.size() == ow().quests.size() + 1
         && nw().quests.toSet().difference(ow().quests.toSet()) == [nw().lastQuest].toSet()
         && nw().earned == ow().earned + cat().quests[nw().lastQuest];
-      // Weekly vouch rewards (week starts Monday 00:00 Eastern): 1st vouch of the week +200, 2nd +150, then nothing.
-      // The claim must point at a real vouch you posted this week, and each vouch can only be claimed once.
+      // Weekly vouch rewards (week starts Monday 00:00 Eastern): the owner/devs approve a vouch first, then its author can
+      // claim it — 1st claim of the week +200, 2nd +150, then nothing. Each vouch pays at most once.
       function week() { return int((request.time.toMillis() - 363600000) / 604800000); }
-      function weekStart() { return week() * 604800000 + 363600000; }
       function vouchMsg() { let p = nw().lastVouch.split('/'); return get(/databases/$(database)/documents/rooms/$(p[0])/msgs/$(p[1])).data; }
       allow update: if mine()
-        && changed().hasOnly(['earned', 'vWeek', 'vCount', 'lastVouch'])
+        && changed().hasOnly(['earned', 'vWeek', 'vCount', 'lastVouch', 'vPaid'])
         && nw().lastVouch is string && nw().lastVouch.split('/').size() == 2
-        && nw().lastVouch != ow().get('lastVouch', '')
-        && vouchMsg().uid == uid && ('vouch' in vouchMsg()) && vouchMsg().ts >= weekStart()
+        && nw().vPaid.toSet().difference(ow().get('vPaid', []).toSet()) == [nw().lastVouch].toSet()
+        && nw().vPaid.size() == ow().get('vPaid', []).size() + 1
+        && vouchMsg().uid == uid && ('vouch' in vouchMsg()) && vouchMsg().get('approved', false) == true
+        && vouchMsg().ts >= request.time.toMillis() - 1209600000
         && nw().vWeek == week()
         && ((ow().get('vWeek', -1) != week() && nw().vCount == 1 && nw().earned == ow().earned + 200)
           || (ow().get('vWeek', -1) == week() && ow().get('vCount', 0) == 1 && nw().vCount == 2 && nw().earned == ow().earned + 150));
@@ -186,7 +187,7 @@ service cloud.firestore {
         allow update: if inRoom() && ownsOld()
           && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])
           && request.resource.data.text.size() <= 4000;
-        allow update: if roomAdmin() && changed().hasOnly(['pinned', 'pinnedBy']);
+        allow update: if roomAdmin() && changed().hasOnly(['pinned', 'pinnedBy', 'approved', 'approvedBy', 'rejected']);
         allow delete: if roomAdmin() || (inRoom() && ownsOld());
       }
       match /reacts/{reactId} {

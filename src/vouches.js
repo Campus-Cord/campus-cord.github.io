@@ -8,11 +8,32 @@ const VOUCH_REWARDS = [200, 150];
 const weekId = () => Math.floor((Date.now() - 363600000) / 604800000);
 function vouchesThisWeek(){ const w = wal(S.uid); return w.vWeek === weekId() ? (w.vCount || 0) : 0; }
 function nextVouchReward(){ return VOUCH_REWARDS[vouchesThisWeek()] || 0; }
-async function claimVouchReward(roomId, msgId){
-  const n = nextVouchReward(); if (!n || isOwnerUid(S.uid)) return 0;
-  await ensureWallet(); const w = wal(S.uid); const first = w.vWeek !== weekId();
-  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w.earned || 0) + n, vWeek:weekId(), vCount: first ? 1 : (w.vCount || 0) + 1, lastVouch:roomId + "/" + msgId}); return n; }
-  catch(e){ console.warn("vouch reward", e); return 0; }
+// Rewards only after the owner (or a developer) approves a vouch. The author's app then claims it automatically.
+let vClaiming = false;
+async function claimVouchRewards(){
+  const vr = S.rooms.find(isVouchRoom); if (!vr || vClaiming || !S.walletsLoaded || isOwnerUid(S.uid)) return; vClaiming = true;
+  try{
+    const paid = new Set(wal(S.uid).vPaid || []);
+    const ready = (S.vouchFeed || []).filter(m => m.uid === S.uid && m.vouch && m.approved && !paid.has(vr.id + "/" + m.id) && Date.now() - m.ts < 13 * 864e5).sort((a, b) => a.ts - b.ts);
+    for (const m of ready){ const n = nextVouchReward(); if (!n) break;
+      await ensureWallet(); const w = wal(S.uid); const first = w.vWeek !== weekId(); const key = vr.id + "/" + m.id;
+      const patch = {earned:(w.earned || 0) + n, vWeek:weekId(), vCount: first ? 1 : (w.vCount || 0) + 1, lastVouch:key, vPaid:[...(w.vPaid || []), key]};
+      await updateDoc(doc(db, "wallet", S.uid), patch); S.wallets[S.uid] = Object.assign({}, w, patch);
+      toast("✅ Your vouch #" + (m.vouch.n || "") + " was approved — +" + n + " Sparks!"); }
+  }catch(e){ console.warn("vouch reward", e); }
+  finally{ vClaiming = false; }
+}
+// Keep an eye on the #vouches room (latest 100) so approvals pay out and the owner sees how many are waiting.
+let vFeedUnsub = null, vFeedRoom = null;
+function watchVouches(){ const vr = S.rooms.find(isVouchRoom); if (!vr || vFeedRoom === vr.id) return; if (vFeedUnsub) vFeedUnsub(); vFeedRoom = vr.id;
+  vFeedUnsub = onSnapshot(query(collection(db, "rooms", vr.id, "msgs"), orderBy("ts", "desc"), limit(100)), snap => {
+    S.vouchFeed = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("side"); setTimeout(claimVouchRewards, 400); }, () => {}); }
+const pendingVouches = () => (S.vouchFeed || []).filter(m => m.vouch && !m.approved && !m.rejected && m.uid !== S.uid);
+async function reviewVouch(m, ok){
+  const r = S.rooms.find(isVouchRoom); if (!r) return;
+  try{ await updateDoc(doc(db, "rooms", r.id, "msgs", m.id), ok ? {approved:true, approvedBy:S.uid, rejected:deleteField()} : {rejected:true, approved:false, approvedBy:S.uid});
+    toast(ok ? "Approved — " + nickOf(m.uid) + " gets their Sparks" : "Marked as not approved (no Sparks)"); }
+  catch(e){ toast("Couldn't update: " + errMsg(e)); }
 }
 // Feedback that the owner/devs accept (Planned, In progress or Done) pays its author 200 Sparks, once per post.
 const FEEDBACK_REWARD = 200; let fbClaiming = false;
@@ -46,7 +67,7 @@ function openVouchModal(preTo){
     const proof = h("span",{class:"note",style:{margin:0},text:"No image"});
     const pick = h("button",{class:"btn small ghost", onclick:() => pickPhotoFile(f => { file = f; proof.textContent = f.name; })}, ic("image","sm"), " Add proof (optional)");
     const go = async () => {
-      const review = txt.value.trim(); if (review.length < 3){ toast("Write a short review (at least 3 characters)"); return; }
+      const review = txt.value.trim(); if (review.length < 12){ toast("Write a real review — at least a sentence (12+ characters)"); return; }
       const why = spamCheck(review); if (why){ toast(why); return; }
       btn.disabled = true; btn.textContent = "Posting…";
       try{
@@ -58,14 +79,13 @@ function openVouchModal(preTo){
         setDoc(doc(db, "rooms", r.id, "reacts", id + "__" + S.uid + "__" + eKey("✅")), {mid:id, uid:S.uid, e:"✅", ts:Date.now()}).catch(() => {});
         setDoc(doc(db, "meta", r.id), {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview:"left a " + stars + "★ vouch" + (to === "server" ? "" : " for " + nickOf(to)), lastMentions:body.mentions || [], lastEveryone:false}).catch(() => {});
         bumpStat("vouch"); close();
-        const got = await claimVouchReward(r.id, id);
-        toast("Vouch #" + body.vouch.n + " posted" + (got ? " — +" + got + " Sparks ✦" : " ✦"));
+        toast("Vouch #" + body.vouch.n + " posted ✦" + (nextVouchReward() && !isOwnerUid(S.uid) ? " Once it's approved you'll get +" + nextVouchReward() + " Sparks." : ""));
       }catch(e){ toast("Couldn't post: " + errMsg(e)); btn.disabled = false; btn.textContent = "Post vouch"; }
     };
     const btn = h("button",{class:"btn", onclick:go}, "Post vouch");
     const rw = nextVouchReward();
     m.append(h("div",{class:"vmhead"}, h("span",{class:"vmic"}, "🎉"), h("div",null, h("h3",{style:{margin:0},text:"Write a vouch"}), h("div",{class:"note",style:{margin:0},text:"Vouch #" + (vouchCount() + 1) + " · shows up in #" + r.name + " for everyone"}))),
-      isOwnerUid(S.uid) ? null : h("div",{class:"vreward" + (rw ? "" : " none")}, rw ? [ic("spark","sm"), " This vouch earns ", h("b",{text:"+" + rw + " Sparks"}), vouchesThisWeek() === 0 ? " (your 2nd this week earns +150)" : " (last reward this week)"] : "You've earned this week's vouch rewards — they reset Monday. You can still vouch!"),
+      isOwnerUid(S.uid) ? null : h("div",{class:"vreward" + (rw ? "" : " none")}, rw ? [ic("spark","sm"), " Earn ", h("b",{text:"+" + rw + " Sparks"}), " when the owner approves this vouch. Write something real and specific — short or low-effort vouches won't be approved."] : "You've earned this week's vouch rewards — they reset Monday. You can still vouch!"),
       h("label",{class:"f",text:"Vouching for"}), sel, h("label",{class:"f",text:"Stars"}), starRow, h("label",{class:"f",text:"Review"}), txt,
       h("div",{class:"row",style:{marginTop:"10px",alignItems:"center",gap:"10px"}}, pick, proof),
       h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), btn));
@@ -89,7 +109,14 @@ function vouchEl(m){
           field("Stars", h("span",{class:"vstarsro",text:starsText(v.stars || 0)}), h("span",{class:"vsn",text:" " + (v.stars || 0) + "/5"})),
           field("Vouched At", h("span",{text:new Date(m.ts).toLocaleString([], {month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"})}))),
         m.img ? h("img",{class:"vimg", src:m.img, alt:"Proof", onclick:() => window.open(m.img, "_blank")}) : null,
-        h("div",{class:"vfoot"}, avatar(m.uid, "xs"), h("span",{text:"Vouched by " + nickOf(m.uid) + " • CampusCord Vouches"})))));
+        h("div",{class:"vfoot"}, avatar(m.uid, "xs"), h("span",{text:"Vouched by " + nickOf(m.uid) + " • CampusCord Vouches"})),
+        (isAdmin() || m.uid === S.uid) ? h("div",{class:"vrev " + (m.approved ? "ok" : m.rejected ? "no" : "wait")},
+          m.approved ? [ic("check","sm"), " Approved" + (m.approvedBy ? " by " + nickOf(m.approvedBy) : "")]
+          : m.rejected ? [ic("x","sm"), " Not approved — no Sparks"]
+          : [ic("hourglass","sm"), m.uid === S.uid ? " Waiting for the owner to review" : " Needs review"],
+          isAdmin() && m.uid !== S.uid ? h("span",{class:"sp"}) : null,
+          isAdmin() && m.uid !== S.uid && !m.approved ? h("button",{class:"btn small", onclick:() => reviewVouch(m, true)}, "Approve") : null,
+          isAdmin() && m.uid !== S.uid && !m.rejected ? h("button",{class:"btn small ghost", onclick:() => reviewVouch(m, false)}, m.approved ? "Undo" : "Reject") : null) : null)));
   return row;
 }
 // Profile stats: how many vouches someone has and their average rating (reads the #vouches room once per open).
