@@ -5,7 +5,7 @@ const firebaseConfig = __FIREBASE_CONFIG__;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
 const APP_VERSION = "__APP_VERSION__";
@@ -271,6 +271,12 @@ function need(...k){ k.forEach(x => dirty.add(x)); if (!raf) raf = requestAnimat
 function flush(){ raf = 0; if (S.routed !== "app"){ dirty.clear(); return; } const d = [...dirty]; dirty.clear();
   for (const k of d){ try{ ({rail:renderRail, side:renderSide, header:renderHeader, msgs:renderMessages, rpanel:renderRPanel, me:renderMe, composer:renderComposer, typing:renderTyping, gifs:renderGifs}[k] || (()=>{}))(); }catch(e){ console.error("render", k, e); } } }
 
+// Looping animations (floating bubbles, rings, shimmer) restart from the beginning whenever the screen redraws,
+// which looked like a jump. Pin every looping animation to the page's clock so a redrawn element picks up mid-motion.
+let animSyncQ = 0;
+function syncLoops(){ animSyncQ = 0; if (!document.getAnimations) return;
+  for (const a of document.getAnimations()){ try{ if (a.startTime === 0 || !a.effect || a.effect.getTiming().iterations !== Infinity) continue; a.startTime = 0; }catch(e){} } }
+new MutationObserver(() => { if (!animSyncQ) animSyncQ = requestAnimationFrame(syncLoops); }).observe(document.documentElement, {childList:true, subtree:true});
 // ---------------------------------------------------------------- boot
 function boot(){
   applyPrefs();
@@ -295,12 +301,14 @@ function start(){
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   onSnapshot(collection(db, "members"), snap => {
     const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.members = m; S.membersLoaded = true;
+    if (S.routed === "app" && isOwner()){ clearTimeout(S.hkT); S.hkT = setTimeout(ownerHousekeeping, 3000); }
     route(); need("side","msgs","rpanel","me","header","typing");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   // optional collections (need v3 rules) — fail quietly
   onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; need("side","msgs","rpanel","me","header"); }, () => {});
   onSnapshot(collection(db, "wallet"), snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); S.wallets = w; S.walletsLoaded = true;
-    if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane(); }, () => {});
+    if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane();
+    const mw = w[S.uid]; if (mw && mw.welcomed && prefs.sawWelcome !== mw.welcomed){ prefs.sawWelcome = mw.welcomed; savePrefs(); setTimeout(() => welcomeGiftPopup(), 1200); } }, () => {});
   onSnapshot(collection(db, "perks"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.perks = p; applyPrefs(); need("side","msgs","rpanel","me"); }, () => {});
 }
 
@@ -365,6 +373,51 @@ async function doJoin(){
 $("j-go").onclick = doJoin;
 $("j-nick").onkeydown = $("j-code").onkeydown = e => { if (e.key === "Enter") doJoin(); };
 
+// ---- spam filter: slows down floods, repeats and mass pings before they're sent (owner can turn it off in Admin → Overview)
+const SPAM = {times:[], last:[], strikes:[], muteUntil:0};
+function spamCheck(text){
+  if (isOwner() || (S.config && S.config.spamFilter === false)) return null;
+  const now = Date.now();
+  if (SPAM.muteUntil > now) return "🛑 Spam filter: wait " + Math.ceil((SPAM.muteUntil - now) / 1000) + "s before sending again.";
+  const strike = msg => { SPAM.strikes = SPAM.strikes.filter(t => now - t < 60000); SPAM.strikes.push(now);
+    if (SPAM.strikes.length >= 3){ SPAM.muteUntil = now + 30000; SPAM.strikes = []; return "🛑 Spam filter: you're paused for 30 seconds."; } return msg; };
+  SPAM.times = SPAM.times.filter(t => now - t < 10000);
+  if (SPAM.times.length >= 6) return strike("⏳ Slow down! You're sending messages too fast.");
+  const norm = (text || "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (norm){ SPAM.last = SPAM.last.filter(x => now - x.t < 45000);
+    if (SPAM.last.filter(x => x.s === norm).length >= 2) return strike("🔁 You already sent that. Try saying something new.");
+    const pings = (text.match(/@\S+/g) || []).length; if (pings > 5 && !isAdmin()) return strike("📣 That's a lot of @mentions — keep it to 5 or fewer.");
+    if (/(.)\1{39,}/.test(text)) return strike("That message is mostly one repeated character.");
+    if ((text.match(/https?:\/\//g) || []).length > 4 && !isAdmin()) return strike("🔗 That's a lot of links in one message.");
+    const lines = text.split("\n").length; if (lines > 60) return strike("That message has way too many lines.");
+    SPAM.last.push({s:norm, t:now}); }
+  SPAM.times.push(now); return null;
+}
+// Owner's app quietly: marks launch week (for the Early Member badge) and gives every member a one-time welcome gift.
+const WELCOME_SPARKS = 500;
+let housekeeping = false;
+async function ownerHousekeeping(){
+  if (!isOwner() || housekeeping || !S.config) return; housekeeping = true;
+  try{
+    if (!S.config.launchAt) await updateDoc(doc(db, "config/main"), {launchAt:Date.now()});
+    const done = new Set(S.config.welcomed || []);
+    const todo = Object.keys(S.members).filter(u => !isOwnerUid(u) && !done.has(u) && !isBanned(u));
+    if (!S.walletsLoaded) return;
+    for (const u of todo){
+      if (S.wallets[u]) await updateDoc(doc(db, "wallet", u), {earned:increment(WELCOME_SPARKS), welcomed:Date.now()});
+      else await setDoc(doc(db, "wallet", u), Object.assign({}, EMPTY_WALLET, {earned:WELCOME_SPARKS, welcomed:Date.now()}));
+      await updateDoc(doc(db, "config/main"), {welcomed:arrayUnion(u)}); }
+    if (todo.length) toast("🎁 Sent a " + WELCOME_SPARKS + "-Sparks welcome gift to " + todo.map(nickOf).join(", "));
+  }catch(e){ console.warn("housekeeping", e); }
+  finally{ housekeeping = false; }
+}
+function welcomeGiftPopup(){
+  if (window.__ccNoPop) return; if ($("layer").children.length || document.hidden){ setTimeout(welcomeGiftPopup, 4000); return; }
+  modal((m, close) => m.append(h("div",{class:"pfx pfx-confetti"}), h("div",{class:"spbig",style:{margin:"0 auto 10px"}}, ic("spark")),
+    h("h2",{style:{textAlign:"center",margin:"0 0 6px"},text:"🎁 Welcome to CampusCord!"}),
+    h("p",{class:"note",style:{textAlign:"center"}}, "You got ", sparkPill(WELCOME_SPARKS), " as a welcome gift. Spend them on decorations, banners and nameplates in the Shop."),
+    h("div",{class:"foot",style:{justifyContent:"center"}}, h("button",{class:"btn ghost",onclick:close},"Later"), h("button",{class:"btn",onclick:() => { close(); openChat("shop", "featured"); }},"Open the Shop"))), "newbadge");
+}
 // A "👋 X joined" line in the main room so friends see who's new.
 async function announceJoin(){
   const r = S.rooms.find(x => x.name === "general" && !x.readonly && !x.private && !isVoiceRoom(x)) || S.rooms.find(x => !x.readonly && !x.private && !isVoiceRoom(x)); if (!r) return;
@@ -419,8 +472,9 @@ function initApp(){
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
     if (isOwner() && !prefs.yy2){ prefs.yy2 = 1; savePrefs(); setMyProfile({deco:"d_yinyang", plate:"p_yinyang"}).catch(()=>{}); }
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
+    if (isOwner()) setTimeout(ownerHousekeeping, 2500);
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet();
+  ensureWallet(); watchFeedback();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -503,6 +557,7 @@ function renderSide(){
     nav("shop", "featured", "bag", "Shop", prefs.shopSeen === CAT_V ? null : h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
     const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal);
     nav("quests", "all", "star", "Quests", qready ? h("span",{class:"newdot",title:"Rewards ready"}) : null);
+    nav("feedback", "all", "message", "Feedback", fbUnseen() ? h("span",{class:"ichip new",text:fbUnseen() + " new"}) : null);
     list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
     const box = h("div"); list.appendChild(box); renderDMList(box);
     return;
@@ -760,7 +815,7 @@ async function openDM(uid){
   }
   S.mode = "dms"; openChat("dm", id);
 }
-const isPage = k => k === "home" || k === "shop" || k === "quests";
+const isPage = k => k === "home" || k === "shop" || k === "quests" || k === "feedback";
 function goDMs(){
   if (S.kind === "dm" || (isPage(S.kind) && S.kind !== "home")){ openChat("home", "home"); return; }
   if (S.kind === "home") return;
@@ -827,9 +882,10 @@ function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
   icon.innerHTML = "";
   $("btnPins").classList.toggle("hidden", isPage(S.kind)); $("search").parentElement.classList.toggle("hidden", isPage(S.kind));
-  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
+  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests" || S.kind === "feedback"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
   if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
   if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn badges"; updateTitle(); return; }
+  if (S.kind === "feedback"){ icon.appendChild(ic("message")); t.textContent = "Feedback"; d.textContent = "Bugs, ideas and vouches"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
@@ -907,6 +963,7 @@ function renderMessages(){
   if (S.kind === "home"){ renderHome(box); return; }
   if (S.kind === "shop"){ renderShopPage(box); return; }
   if (S.kind === "quests"){ renderQuestsPage(box); return; }
+  if (S.kind === "feedback"){ renderFeedbackPage(box); return; }
   const atBottom = S.stickBottom !== false;
   const prevTop = box.scrollTop;
   box.innerHTML = "";
@@ -1074,6 +1131,7 @@ function serverMenu(ev){
     isOwner() ? {label:"Add section", icon:"plus", run:() => newCategory()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
+    {label:"Feedback & bugs", icon:"message", run:() => openChat("feedback", "all")},
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
 }
@@ -1162,7 +1220,7 @@ async function loadPins(){
 }
 function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
-  if (S.kind === "shop" || S.kind === "quests"){ p.classList.add("hidden"); return; }
+  if (S.kind === "shop" || S.kind === "quests" || S.kind === "feedback"){ p.classList.add("hidden"); return; }
   const narrow = window.innerWidth < 1100;
   if (S.rpanel === null && prefs.showMembers === false || !S.rpanel || (narrow && S.rpanel === "members" && !S.rpanelForced)){ p.classList.add("hidden"); $("btnMembers").classList.remove("on"); return; }
   p.classList.remove("hidden");
@@ -1411,6 +1469,7 @@ let sending = false;
 async function send(extra){
   if (sending) return;
   let raw = input.value.trim(); const f = S.pending;
+  if ((raw || f) && !extra){ const why = spamCheck(raw); if (why){ toast(why); return; } }
   if (!raw && !f && !extra) return;
   if (!S.cur){ toast("Pick a room or DM first"); return; }
   if (!canPost()){ toast("Only admins can post here"); return; }
@@ -1831,6 +1890,15 @@ function adminOverview(p){
       h("button",{class:"btn small", onclick:async () => { const v = code.value.trim(); if (v.length < 3){ toast("At least 3 characters"); return; } try{ await setDoc(doc(db, "secret/invite"), {code:v}); toast("Invite code updated"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save"),
       h("button",{class:"btn small ghost", onclick:() => copy("Join me on CampusCord! " + LIVE_URL + "  Invite code: " + code.value, "Invite message copied")}, "Copy invite")),
     h("p",{class:"note",text:"Friends type this the first time they join. Changing it doesn't kick anyone."}));
+  if (isOwner()){ let on = !(S.config && S.config.spamFilter === false);
+    const sw = h("button",{class:"sw" + (on ? " on" : ""), onclick:async () => { on = !on; sw.classList.toggle("on", on); try{ await updateDoc(doc(db, "config/main"), {spamFilter:on}); toast(on ? "Spam filter on" : "Spam filter off"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }});
+    p.append(h("div",{class:"toggle",style:{marginTop:"14px"}}, h("div",{class:"tl"}, h("b",{},"Spam filter"), h("span",{text:"Slows down people who flood the chat, repeat the same message, mass-@mention or post walls of links. Repeat offenders get paused for 30 seconds. Doesn't apply to you."})), sw)); }
+  if (isOwner()){ const t = (S.config && S.config.turn) || {};
+    const u1 = h("input",{class:"inp", placeholder:"turn:relay.example.com:3478", value:t.urls || ""}), u2 = h("input",{class:"inp", placeholder:"username", value:t.username || ""}), u3 = h("input",{class:"inp", placeholder:"password / credential", value:t.credential || "", type:"password"});
+    p.append(h("div",{class:"preview-card",style:{marginTop:"14px"}}, h("b",{text:"Voice relay (optional)"}),
+      h("div",{class:"note",style:{margin:"2px 0 8px"},text:"If friends on school Wi-Fi or hotspots can't hear each other, paste a TURN relay from a free Metered or Cloudflare account here. Until then a free public relay is used."}),
+      h("div",{class:"row"}, u1), h("div",{class:"row",style:{marginTop:"6px"}}, u2, u3,
+        h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {turn: u1.value.trim() ? {urls:u1.value.trim(), username:u2.value.trim(), credential:u3.value.trim()} : deleteField()}); toast("Voice relay saved — rejoin voice to use it"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")))); }
   if (isOwner()){ const last = prefs.lastBackup; const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
     const st = h("span",{class:"note",style:{margin:0},text: last ? "Last downloaded " + (days === 0 ? "today" : days === 1 ? "yesterday" : days + " days ago") + "." : "You haven't downloaded a backup yet."});
     p.append(h("div",{class:"preview-card bkcard"}, h("div",{style:{flex:"1"}}, h("b",{text:"Backups"}),
@@ -1914,7 +1982,12 @@ function adminMembers(p){
   const list = h("div",{class:"list"});
   Object.keys(S.members).filter(u => !isBanned(u)).sort((a,b) => nickOf(a).localeCompare(nickOf(b))).forEach(u => {
     const perks = Object.keys(((S.perks[u]||{}).items)||{}).filter(k => perkActive(S.perks[u].items[k]));
-    list.appendChild(h("div",{class:"li"}, avatar(u, "sm", true), h("span",{class:"nm"}, paintName(h("b",{text:nickOf(u)}), u), " ", ...roleTags(u, true), perks.length ? h("span",{class:"s",text:"  ✦ " + perks.join(", ")}) : null),
+    const bl = badgesOf(u); const welcomed = (S.config.welcomed || []).includes(u);
+    list.appendChild(h("div",{class:"li amem"}, avatar(u, "sm", true),
+      h("div",{class:"nm"}, h("div",null, paintName(h("b",{text:nickOf(u)}), u), " ", ...roleTags(u, true)),
+        h("div",{class:"amsub"}, h("span",{class:"ambd", title:bl.map(x => badgeTitle(x.b, x.st)).join(", ")}, ...bl.slice(0, 8).map(x => badgeEl(x.b, x.st, "sm")), bl.length > 8 ? h("small",{text:"+" + (bl.length - 8)}) : null),
+          isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
+          !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null)),
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "✓ DEV" : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
@@ -2021,6 +2094,7 @@ function installApp(){
 }
 
 // __COSMETICS__
+// __FEEDBACK__
 // __CAMERA__
 // __VOICE__
 // ---------------------------------------------------------------- updates

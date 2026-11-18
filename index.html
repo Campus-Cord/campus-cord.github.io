@@ -1149,6 +1149,26 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .ytplay{position:absolute;left:50%;top:50%;width:68px;height:48px;transform:translate(-50%,-50%);background:#f00;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .ytplay::after{content:"";position:absolute;left:28px;top:14px;border-style:solid;border-width:10px 0 10px 17px;border-color:transparent transparent transparent #fff}
 .bkcard{display:flex;align-items:center;gap:14px;margin-top:16px}
+.li.amem{align-items:center}.li.amem .nm{flex:1;min-width:0}
+.amsub{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:3px;font-size:12px}
+.ambd{display:inline-flex;gap:1px;align-items:center}.ambd small{color:var(--muted);margin-left:2px}
+/* v3.17 feedback board */
+.fbhero{display:flex;align-items:center;gap:20px;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 22%,var(--rail)),var(--rail));border:1px solid var(--line);border-radius:16px;padding:20px 24px;margin-bottom:16px}
+.fbhero h2{margin:0 0 4px}.fbhero p{margin:0;color:var(--muted)}.fbhb{display:flex;gap:8px}
+.fbcard{display:flex;gap:14px;background:var(--rail);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.vouch{flex:none;width:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);cursor:pointer;padding:6px 0}
+.vouch b{font-size:18px;color:var(--text);line-height:1.1}.vouch small{font-size:10px}.vouch .i{width:18px;height:18px}
+.vouch:hover{border-color:var(--accent);color:var(--text)}.vouch.on{background:color-mix(in srgb,var(--accent) 20%,var(--card));border-color:var(--accent);color:var(--accent)}
+.fbmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.fbtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.fbt{font-size:15px}
+.fbtype{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid currentColor}
+.fbtype.t-bug{color:#f0565c}.fbtype.t-idea{color:#ffd166}.fbtype.t-change{color:#3fb8ff}
+.fbst{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid}
+.fbtx{color:var(--text);opacity:.9;white-space:pre-wrap;word-break:break-word;font-size:14px}
+.fbmeta{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+.fbreply{background:var(--card);border-left:3px solid var(--accent);border-radius:6px;padding:8px 10px;font-size:13px}.fbreply b{display:inline-flex;align-items:center;gap:3px}
+.fbacts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.fbsel{width:auto;padding:4px 8px;font-size:12px;height:auto}
+.fbhb .btn{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;width:auto}.fbhb .btn.ghost{border:1px solid var(--line)}.fbreply span{margin-left:4px}
 </style>
 </head>
 <body>
@@ -1258,10 +1278,10 @@ const firebaseConfig = {
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.24";
+const APP_VERSION = "2026-11-18.25";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1524,6 +1544,12 @@ function need(...k){ k.forEach(x => dirty.add(x)); if (!raf) raf = requestAnimat
 function flush(){ raf = 0; if (S.routed !== "app"){ dirty.clear(); return; } const d = [...dirty]; dirty.clear();
   for (const k of d){ try{ ({rail:renderRail, side:renderSide, header:renderHeader, msgs:renderMessages, rpanel:renderRPanel, me:renderMe, composer:renderComposer, typing:renderTyping, gifs:renderGifs}[k] || (()=>{}))(); }catch(e){ console.error("render", k, e); } } }
 
+// Looping animations (floating bubbles, rings, shimmer) restart from the beginning whenever the screen redraws,
+// which looked like a jump. Pin every looping animation to the page's clock so a redrawn element picks up mid-motion.
+let animSyncQ = 0;
+function syncLoops(){ animSyncQ = 0; if (!document.getAnimations) return;
+  for (const a of document.getAnimations()){ try{ if (a.startTime === 0 || !a.effect || a.effect.getTiming().iterations !== Infinity) continue; a.startTime = 0; }catch(e){} } }
+new MutationObserver(() => { if (!animSyncQ) animSyncQ = requestAnimationFrame(syncLoops); }).observe(document.documentElement, {childList:true, subtree:true});
 // ---------------------------------------------------------------- boot
 function boot(){
   applyPrefs();
@@ -1548,12 +1574,14 @@ function start(){
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   onSnapshot(collection(db, "members"), snap => {
     const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.members = m; S.membersLoaded = true;
+    if (S.routed === "app" && isOwner()){ clearTimeout(S.hkT); S.hkT = setTimeout(ownerHousekeeping, 3000); }
     route(); need("side","msgs","rpanel","me","header","typing");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   // optional collections (need v3 rules) — fail quietly
   onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; need("side","msgs","rpanel","me","header"); }, () => {});
   onSnapshot(collection(db, "wallet"), snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); S.wallets = w; S.walletsLoaded = true;
-    if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane(); }, () => {});
+    if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane();
+    const mw = w[S.uid]; if (mw && mw.welcomed && prefs.sawWelcome !== mw.welcomed){ prefs.sawWelcome = mw.welcomed; savePrefs(); setTimeout(() => welcomeGiftPopup(), 1200); } }, () => {});
   onSnapshot(collection(db, "perks"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.perks = p; applyPrefs(); need("side","msgs","rpanel","me"); }, () => {});
 }
 
@@ -1618,6 +1646,51 @@ async function doJoin(){
 $("j-go").onclick = doJoin;
 $("j-nick").onkeydown = $("j-code").onkeydown = e => { if (e.key === "Enter") doJoin(); };
 
+// ---- spam filter: slows down floods, repeats and mass pings before they're sent (owner can turn it off in Admin → Overview)
+const SPAM = {times:[], last:[], strikes:[], muteUntil:0};
+function spamCheck(text){
+  if (isOwner() || (S.config && S.config.spamFilter === false)) return null;
+  const now = Date.now();
+  if (SPAM.muteUntil > now) return "🛑 Spam filter: wait " + Math.ceil((SPAM.muteUntil - now) / 1000) + "s before sending again.";
+  const strike = msg => { SPAM.strikes = SPAM.strikes.filter(t => now - t < 60000); SPAM.strikes.push(now);
+    if (SPAM.strikes.length >= 3){ SPAM.muteUntil = now + 30000; SPAM.strikes = []; return "🛑 Spam filter: you're paused for 30 seconds."; } return msg; };
+  SPAM.times = SPAM.times.filter(t => now - t < 10000);
+  if (SPAM.times.length >= 6) return strike("⏳ Slow down! You're sending messages too fast.");
+  const norm = (text || "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (norm){ SPAM.last = SPAM.last.filter(x => now - x.t < 45000);
+    if (SPAM.last.filter(x => x.s === norm).length >= 2) return strike("🔁 You already sent that. Try saying something new.");
+    const pings = (text.match(/@\S+/g) || []).length; if (pings > 5 && !isAdmin()) return strike("📣 That's a lot of @mentions — keep it to 5 or fewer.");
+    if (/(.)\1{39,}/.test(text)) return strike("That message is mostly one repeated character.");
+    if ((text.match(/https?:\/\//g) || []).length > 4 && !isAdmin()) return strike("🔗 That's a lot of links in one message.");
+    const lines = text.split("\n").length; if (lines > 60) return strike("That message has way too many lines.");
+    SPAM.last.push({s:norm, t:now}); }
+  SPAM.times.push(now); return null;
+}
+// Owner's app quietly: marks launch week (for the Early Member badge) and gives every member a one-time welcome gift.
+const WELCOME_SPARKS = 500;
+let housekeeping = false;
+async function ownerHousekeeping(){
+  if (!isOwner() || housekeeping || !S.config) return; housekeeping = true;
+  try{
+    if (!S.config.launchAt) await updateDoc(doc(db, "config/main"), {launchAt:Date.now()});
+    const done = new Set(S.config.welcomed || []);
+    const todo = Object.keys(S.members).filter(u => !isOwnerUid(u) && !done.has(u) && !isBanned(u));
+    if (!S.walletsLoaded) return;
+    for (const u of todo){
+      if (S.wallets[u]) await updateDoc(doc(db, "wallet", u), {earned:increment(WELCOME_SPARKS), welcomed:Date.now()});
+      else await setDoc(doc(db, "wallet", u), Object.assign({}, EMPTY_WALLET, {earned:WELCOME_SPARKS, welcomed:Date.now()}));
+      await updateDoc(doc(db, "config/main"), {welcomed:arrayUnion(u)}); }
+    if (todo.length) toast("🎁 Sent a " + WELCOME_SPARKS + "-Sparks welcome gift to " + todo.map(nickOf).join(", "));
+  }catch(e){ console.warn("housekeeping", e); }
+  finally{ housekeeping = false; }
+}
+function welcomeGiftPopup(){
+  if (window.__ccNoPop) return; if ($("layer").children.length || document.hidden){ setTimeout(welcomeGiftPopup, 4000); return; }
+  modal((m, close) => m.append(h("div",{class:"pfx pfx-confetti"}), h("div",{class:"spbig",style:{margin:"0 auto 10px"}}, ic("spark")),
+    h("h2",{style:{textAlign:"center",margin:"0 0 6px"},text:"🎁 Welcome to CampusCord!"}),
+    h("p",{class:"note",style:{textAlign:"center"}}, "You got ", sparkPill(WELCOME_SPARKS), " as a welcome gift. Spend them on decorations, banners and nameplates in the Shop."),
+    h("div",{class:"foot",style:{justifyContent:"center"}}, h("button",{class:"btn ghost",onclick:close},"Later"), h("button",{class:"btn",onclick:() => { close(); openChat("shop", "featured"); }},"Open the Shop"))), "newbadge");
+}
 // A "👋 X joined" line in the main room so friends see who's new.
 async function announceJoin(){
   const r = S.rooms.find(x => x.name === "general" && !x.readonly && !x.private && !isVoiceRoom(x)) || S.rooms.find(x => !x.readonly && !x.private && !isVoiceRoom(x)); if (!r) return;
@@ -1672,8 +1745,9 @@ function initApp(){
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
     if (isOwner() && !prefs.yy2){ prefs.yy2 = 1; savePrefs(); setMyProfile({deco:"d_yinyang", plate:"p_yinyang"}).catch(()=>{}); }
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
+    if (isOwner()) setTimeout(ownerHousekeeping, 2500);
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet();
+  ensureWallet(); watchFeedback();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -1756,6 +1830,7 @@ function renderSide(){
     nav("shop", "featured", "bag", "Shop", prefs.shopSeen === CAT_V ? null : h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
     const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal);
     nav("quests", "all", "star", "Quests", qready ? h("span",{class:"newdot",title:"Rewards ready"}) : null);
+    nav("feedback", "all", "message", "Feedback", fbUnseen() ? h("span",{class:"ichip new",text:fbUnseen() + " new"}) : null);
     list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
     const box = h("div"); list.appendChild(box); renderDMList(box);
     return;
@@ -2013,7 +2088,7 @@ async function openDM(uid){
   }
   S.mode = "dms"; openChat("dm", id);
 }
-const isPage = k => k === "home" || k === "shop" || k === "quests";
+const isPage = k => k === "home" || k === "shop" || k === "quests" || k === "feedback";
 function goDMs(){
   if (S.kind === "dm" || (isPage(S.kind) && S.kind !== "home")){ openChat("home", "home"); return; }
   if (S.kind === "home") return;
@@ -2080,9 +2155,10 @@ function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
   icon.innerHTML = "";
   $("btnPins").classList.toggle("hidden", isPage(S.kind)); $("search").parentElement.classList.toggle("hidden", isPage(S.kind));
-  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
+  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests" || S.kind === "feedback"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
   if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
   if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn badges"; updateTitle(); return; }
+  if (S.kind === "feedback"){ icon.appendChild(ic("message")); t.textContent = "Feedback"; d.textContent = "Bugs, ideas and vouches"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
@@ -2160,6 +2236,7 @@ function renderMessages(){
   if (S.kind === "home"){ renderHome(box); return; }
   if (S.kind === "shop"){ renderShopPage(box); return; }
   if (S.kind === "quests"){ renderQuestsPage(box); return; }
+  if (S.kind === "feedback"){ renderFeedbackPage(box); return; }
   const atBottom = S.stickBottom !== false;
   const prevTop = box.scrollTop;
   box.innerHTML = "";
@@ -2327,6 +2404,7 @@ function serverMenu(ev){
     isOwner() ? {label:"Add section", icon:"plus", run:() => newCategory()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
+    {label:"Feedback & bugs", icon:"message", run:() => openChat("feedback", "all")},
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
 }
@@ -2415,7 +2493,7 @@ async function loadPins(){
 }
 function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
-  if (S.kind === "shop" || S.kind === "quests"){ p.classList.add("hidden"); return; }
+  if (S.kind === "shop" || S.kind === "quests" || S.kind === "feedback"){ p.classList.add("hidden"); return; }
   const narrow = window.innerWidth < 1100;
   if (S.rpanel === null && prefs.showMembers === false || !S.rpanel || (narrow && S.rpanel === "members" && !S.rpanelForced)){ p.classList.add("hidden"); $("btnMembers").classList.remove("on"); return; }
   p.classList.remove("hidden");
@@ -2664,6 +2742,7 @@ let sending = false;
 async function send(extra){
   if (sending) return;
   let raw = input.value.trim(); const f = S.pending;
+  if ((raw || f) && !extra){ const why = spamCheck(raw); if (why){ toast(why); return; } }
   if (!raw && !f && !extra) return;
   if (!S.cur){ toast("Pick a room or DM first"); return; }
   if (!canPost()){ toast("Only admins can post here"); return; }
@@ -3084,6 +3163,15 @@ function adminOverview(p){
       h("button",{class:"btn small", onclick:async () => { const v = code.value.trim(); if (v.length < 3){ toast("At least 3 characters"); return; } try{ await setDoc(doc(db, "secret/invite"), {code:v}); toast("Invite code updated"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save"),
       h("button",{class:"btn small ghost", onclick:() => copy("Join me on CampusCord! " + LIVE_URL + "  Invite code: " + code.value, "Invite message copied")}, "Copy invite")),
     h("p",{class:"note",text:"Friends type this the first time they join. Changing it doesn't kick anyone."}));
+  if (isOwner()){ let on = !(S.config && S.config.spamFilter === false);
+    const sw = h("button",{class:"sw" + (on ? " on" : ""), onclick:async () => { on = !on; sw.classList.toggle("on", on); try{ await updateDoc(doc(db, "config/main"), {spamFilter:on}); toast(on ? "Spam filter on" : "Spam filter off"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }});
+    p.append(h("div",{class:"toggle",style:{marginTop:"14px"}}, h("div",{class:"tl"}, h("b",{},"Spam filter"), h("span",{text:"Slows down people who flood the chat, repeat the same message, mass-@mention or post walls of links. Repeat offenders get paused for 30 seconds. Doesn't apply to you."})), sw)); }
+  if (isOwner()){ const t = (S.config && S.config.turn) || {};
+    const u1 = h("input",{class:"inp", placeholder:"turn:relay.example.com:3478", value:t.urls || ""}), u2 = h("input",{class:"inp", placeholder:"username", value:t.username || ""}), u3 = h("input",{class:"inp", placeholder:"password / credential", value:t.credential || "", type:"password"});
+    p.append(h("div",{class:"preview-card",style:{marginTop:"14px"}}, h("b",{text:"Voice relay (optional)"}),
+      h("div",{class:"note",style:{margin:"2px 0 8px"},text:"If friends on school Wi-Fi or hotspots can't hear each other, paste a TURN relay from a free Metered or Cloudflare account here. Until then a free public relay is used."}),
+      h("div",{class:"row"}, u1), h("div",{class:"row",style:{marginTop:"6px"}}, u2, u3,
+        h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {turn: u1.value.trim() ? {urls:u1.value.trim(), username:u2.value.trim(), credential:u3.value.trim()} : deleteField()}); toast("Voice relay saved — rejoin voice to use it"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")))); }
   if (isOwner()){ const last = prefs.lastBackup; const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
     const st = h("span",{class:"note",style:{margin:0},text: last ? "Last downloaded " + (days === 0 ? "today" : days === 1 ? "yesterday" : days + " days ago") + "." : "You haven't downloaded a backup yet."});
     p.append(h("div",{class:"preview-card bkcard"}, h("div",{style:{flex:"1"}}, h("b",{text:"Backups"}),
@@ -3167,7 +3255,12 @@ function adminMembers(p){
   const list = h("div",{class:"list"});
   Object.keys(S.members).filter(u => !isBanned(u)).sort((a,b) => nickOf(a).localeCompare(nickOf(b))).forEach(u => {
     const perks = Object.keys(((S.perks[u]||{}).items)||{}).filter(k => perkActive(S.perks[u].items[k]));
-    list.appendChild(h("div",{class:"li"}, avatar(u, "sm", true), h("span",{class:"nm"}, paintName(h("b",{text:nickOf(u)}), u), " ", ...roleTags(u, true), perks.length ? h("span",{class:"s",text:"  ✦ " + perks.join(", ")}) : null),
+    const bl = badgesOf(u); const welcomed = (S.config.welcomed || []).includes(u);
+    list.appendChild(h("div",{class:"li amem"}, avatar(u, "sm", true),
+      h("div",{class:"nm"}, h("div",null, paintName(h("b",{text:nickOf(u)}), u), " ", ...roleTags(u, true)),
+        h("div",{class:"amsub"}, h("span",{class:"ambd", title:bl.map(x => badgeTitle(x.b, x.st)).join(", ")}, ...bl.slice(0, 8).map(x => badgeEl(x.b, x.st, "sm")), bl.length > 8 ? h("small",{text:"+" + (bl.length - 8)}) : null),
+          isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
+          !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null)),
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "✓ DEV" : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
@@ -3626,7 +3719,7 @@ const BADGES = [
   {id:"spender", name:"Sparks Spender", how:"Spend Sparks in the Shop. Evolves from Bronze to Opal.", evolve:SPEND_TIERS, unit:"Sparks spent", state:uid => { if (isOwnerUid(uid)) return null; const t = tierFor(SPEND_TIERS, wal(uid).spent || 0); return t.tier ? t : null; }, val:uid => wal(uid).spent || 0},
   {id:"sup", name:"Supporter", how:"Buy the Supporter badge in Ranks & Sparks.", rarity:"Rare", state:uid => perkActive(((S.perks[uid] || {}).items || {}).supporter) ? {} : null},
   {id:"loyal", name:"Loyal Member", how:"Stick around. Evolves at 7, 30, 90, 180 and 365 days.", evolve:LOYAL_TIERS, unit:"days in CampusCord", state:uid => { const t = tierFor(LOYAL_TIERS, memberDays(uid)); return t.tier ? t : null; }, val:uid => memberDays(uid)},
-  {id:"early", name:"Early Member", how:"Joined during CampusCord's first week.", rarity:"Epic", state:uid => { const m = member(uid) || {}; return S.config && m.joinedAt && m.joinedAt < (S.config.createdAt || 0) + 7 * 864e5 ? {} : null; }},
+  {id:"early", name:"Early Member", how:"Joined during CampusCord's launch week.", rarity:"Epic", state:uid => { const m = member(uid) || {}; return S.config && m.joinedAt && m.joinedAt < Math.max(S.config.createdAt || 0, S.config.launchAt || 0) + 7 * 864e5 ? {} : null; }},
   {id:"quest", name:"Explorer", how:"Complete Quests. Evolves at 1, 5 and every quest.", evolve:QUEST_TIERS, unit:"quests done", state:uid => { const t = tierFor(QUEST_TIERS.map(x => x[1] === "gold" ? [QUESTS.length, "gold"] : x), (wal(uid).quests || []).length); return t.tier ? t : null; }, val:uid => (wal(uid).quests || []).length},
   {id:"collector", name:"Collector", how:"Own 5 or more cosmetics.", rarity:"Rare", state:uid => !isOwnerUid(uid) && ownedCount(uid) >= 5 ? {} : null},
   {id:"photo", name:"Photogenic", how:"Set a real photo as your profile picture.", rarity:"Common", state:uid => isPhotoAvatar(profile(uid).avatar) ? {} : null},
@@ -3731,6 +3824,82 @@ setInterval(() => { try{ checkNewBadges(); }catch(e){} }, 4000);
     const b = el.getBoundingClientRect(); tip.style.top = (b.top - tip.offsetHeight - 8) + "px"; tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, b.left + b.width / 2 - tip.offsetWidth / 2)) + "px"; });
 })();
 
+
+// ---------------------------------------------------------------- Feedback board ("vouches")
+// Anyone can post a bug or an idea; everyone else can vouch for it (one vouch each). The owner and developers
+// mark what's planned or fixed and can reply. Stored in feedback/{id}; rules keep vouches honest.
+const FB_TYPES = [{id:"bug", name:"Bug", icon:"alert"}, {id:"idea", name:"Idea", icon:"zap"}, {id:"change", name:"Change", icon:"refresh"}];
+const FB_STATUS = {open:{name:"Open", c:"#b5bac1"}, planned:{name:"Planned", c:"#3fb8ff"}, working:{name:"In progress", c:"#ffd166"}, done:{name:"Done", c:"#3ecf7a"}, no:{name:"Won't do", c:"#f0565c"}};
+S.feedback = []; S.fbSort = "top"; S.fbFilter = "all";
+let fbUnsub = null;
+function watchFeedback(){ if (fbUnsub) return;
+  fbUnsub = onSnapshot(collection(db, "feedback"), snap => { S.feedback = snap.docs.map(d => Object.assign({id:d.id}, d.data())); if (S.kind === "feedback") need("msgs"); need("side"); }, e => console.warn("feedback", e)); }
+function fbUnseen(){ const seen = prefs.fbSeen || 0; return S.feedback.filter(f => f.ts > seen && f.uid !== S.uid).length; }
+async function vouch(f){
+  const on = (f.votes || []).includes(S.uid);
+  try{ await updateDoc(doc(db, "feedback", f.id), {votes: on ? arrayRemove(S.uid) : arrayUnion(S.uid)}); }
+  catch(e){ toast("Couldn't vouch: " + errMsg(e)); }
+}
+async function setFbStatus(f, st){ try{ await updateDoc(doc(db, "feedback", f.id), {status:st, statusBy:S.uid, statusAt:Date.now()}); }catch(e){ toast("Couldn't update: " + errMsg(e)); } }
+function fbReplyModal(f){
+  modal((m, close) => { const t = h("textarea",{class:"inp", maxlength:"500", rows:"4", placeholder:"Thanks! Fixed in the next update."}); t.value = f.reply || "";
+    m.append(h("h3",{text:"Reply to “" + f.title + "”"}), t, h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"),
+      h("button",{class:"btn small",onclick:async () => { try{ await updateDoc(doc(db, "feedback", f.id), {reply:t.value.trim().slice(0, 500), replyBy:S.uid, replyAt:Date.now()}); close(); }catch(e){ toast("Couldn't reply: " + errMsg(e)); } }},"Post reply"))); });
+}
+function fbNewModal(type){
+  modal((m, close) => {
+    let ty = type || "idea";
+    const seg = h("div",{class:"seg"}); const drawSeg = () => { seg.innerHTML = ""; FB_TYPES.forEach(x => seg.appendChild(h("button",{class: ty === x.id ? "on" : "", onclick:() => { ty = x.id; drawSeg(); }}, ic(x.icon, "sm"), " " + x.name))); }; drawSeg();
+    const title = h("input",{class:"inp", maxlength:"80", placeholder:"Short title, e.g. “Voice cuts out on school Wi-Fi”"});
+    const text = h("textarea",{class:"inp", maxlength:"1000", rows:"5", placeholder:"What happened, or what should change? For bugs: what you clicked and what you expected."});
+    const go = async () => { const tt = title.value.trim(); if (tt.length < 4){ toast("Give it a title (at least 4 characters)"); return; }
+      const why = spamCheck(tt + " " + text.value); if (why){ toast(why); return; }
+      try{ await setDoc(doc(db, "feedback", Date.now().toString(36) + "-" + rid().slice(-4)), {uid:S.uid, nick:nickOf(S.uid), type:ty, title:tt.slice(0, 80), text:text.value.trim().slice(0, 1000), ts:Date.now(), votes:[S.uid], status:"open"});
+        close(); toast("Posted! Friends can vouch for it."); bumpStat("feedback"); }
+      catch(e){ toast("Couldn't post: " + errMsg(e)); } };
+    m.append(h("h3",{text:"Share feedback"}), h("p",{class:"note",text:"Found a bug or have an idea? Post it here. Everyone can vouch for the ones they agree with, so the most-wanted changes rise to the top."}),
+      seg, h("label",{class:"f",text:"Title"}), title, h("label",{class:"f",text:"Details"}), text,
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), h("button",{class:"btn small",onclick:go},"Post")));
+    setTimeout(() => title.focus(), 0);
+  });
+}
+function renderFeedbackPage(box){
+  watchFeedback();
+  if (fbUnseen()){ prefs.fbSeen = Date.now(); savePrefs(); need("side"); }
+  const keep = box.scrollTop; box.innerHTML = "";
+  const wrap = h("div",{class:"shoppage fbpage"});
+  const bar = h("div",{class:"shopbar"}, h("span",{class:"sbic"}, ic("message")),
+    ...[["all","All"],["bug","Bugs"],["idea","Ideas"],["change","Changes"],["done","Done"]].map(([id, name]) => h("button",{class:"stab" + (S.fbFilter === id ? " on" : ""), onclick:() => { S.fbFilter = id; need("msgs"); }}, name)),
+    h("span",{class:"sp"}),
+    h("button",{class:"stab" + (S.fbSort === "top" ? " on" : ""), onclick:() => { S.fbSort = "top"; need("msgs"); }}, "Top"),
+    h("button",{class:"stab" + (S.fbSort === "new" ? " on" : ""), onclick:() => { S.fbSort = "new"; need("msgs"); }}, "New"),
+    h("button",{class:"btn small", style:{marginLeft:"8px"}, onclick:() => fbNewModal()}, ic("plus","sm"), " Post feedback"));
+  wrap.appendChild(bar);
+  const body = h("div",{class:"sbody"}); wrap.appendChild(body);
+  body.appendChild(h("div",{class:"fbhero"}, h("div",null, h("h2",{text:"Feedback & vouches"}),
+    h("p",{text:"Report bugs and suggest changes. Vouch for the posts you agree with — the owner sees what everyone wants most."})),
+    h("div",{class:"fbhb"}, h("button",{class:"btn", onclick:() => fbNewModal("bug")}, ic("alert","sm"), " Report a bug"), h("button",{class:"btn ghost", onclick:() => fbNewModal("idea")}, ic("zap","sm"), " Suggest an idea"))));
+  let list = S.feedback.filter(f => S.fbFilter === "all" ? f.status !== "done" && f.status !== "no" : S.fbFilter === "done" ? (f.status === "done" || f.status === "no") : f.type === S.fbFilter && f.status !== "done" && f.status !== "no");
+  list.sort((a, b) => S.fbSort === "new" ? b.ts - a.ts : ((b.votes || []).length - (a.votes || []).length) || b.ts - a.ts);
+  if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"40px",textAlign:"center"},text: S.feedback.length ? "Nothing here." : "No feedback yet. Be the first — what would make CampusCord better?"}));
+  list.forEach(f => {
+    const n = (f.votes || []).length, mine = (f.votes || []).includes(S.uid), st = FB_STATUS[f.status] || FB_STATUS.open, ty = FB_TYPES.find(x => x.id === f.type) || FB_TYPES[1];
+    const canDel = f.uid === S.uid || isAdmin();
+    body.appendChild(h("div",{class:"fbcard"},
+      h("button",{class:"vouch" + (mine ? " on" : ""), title: mine ? "Remove your vouch" : "Vouch for this", onclick:() => vouch(f)}, ic("chevronup"), h("b",{text:String(n)}), h("small",{text: n === 1 ? "vouch" : "vouches"})),
+      h("div",{class:"fbmain"},
+        h("div",{class:"fbtop"}, h("span",{class:"fbtype t-" + ty.id}, ic(ty.icon, "sm"), " " + ty.name), h("span",{class:"fbst", style:{color:st.c, borderColor:st.c}, text:st.name}), h("b",{class:"fbt",text:f.title})),
+        f.text ? h("div",{class:"fbtx",text:f.text}) : null,
+        h("div",{class:"fbmeta"}, avatar(f.uid, "xs"), paintName(h("span",{text:member(f.uid) ? nickOf(f.uid) : (f.nick || "Someone")}), f.uid), h("span",{text:"· " + fmtDay(f.ts)}),
+          (f.votes || []).filter(u => u !== f.uid).length ? h("span",{class:"fbv", title:(f.votes || []).map(u => nickOf(u)).join(", "), text:"· vouched by " + (f.votes || []).filter(u => u !== f.uid).slice(0, 3).map(u => nickOf(u)).join(", ") + ((f.votes || []).length > 4 ? " +" + ((f.votes || []).length - 4) : "")}) : null),
+        f.reply ? h("div",{class:"fbreply"}, h("b",{}, ic("reply","sm"), " " + nickOf(f.replyBy) + ": "), h("span",{text:f.reply})) : null,
+        isAdmin() || canDel ? h("div",{class:"fbacts"},
+          isAdmin() ? h("select",{class:"inp fbsel", onchange:e => setFbStatus(f, e.target.value)}, Object.entries(FB_STATUS).map(([k, v]) => h("option",{value:k, selected: (f.status || "open") === k ? "" : null, text:v.name}))) : null,
+          isAdmin() ? h("button",{class:"btn small ghost", onclick:() => fbReplyModal(f)}, f.reply ? "Edit reply" : "Reply") : null,
+          canDel ? h("button",{class:"btn small ghost", onclick:() => confirmBox("Delete this post?", "It'll be removed for everyone.", "Delete", () => deleteDoc(doc(db, "feedback", f.id)).catch(e => toast(errMsg(e))))}, "Delete") : null) : null)));
+  });
+  box.appendChild(wrap); box.scrollTop = keep;
+}
 
 // ---------------------------------------------------------------- camera (Photo Booth style) + photo cropper
 // Effects run on every video frame: a distortion (pixel remap table) then a color pass, so the photo matches the preview exactly.
@@ -3921,9 +4090,18 @@ function cameraToChat(){
 // Each person in a voice room connects directly to everyone else in it. Up to 20 people; audio quality steps down a little as rooms fill up so it stays smooth.
 const VOICE_MAX = 20;
 // Firestore only carries the connection setup ("signals") and who is in the room — never the audio.
-const RTC_CFG = {iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun2.l.google.com:19302"]}]};
+// STUN finds each person's public address. A TURN relay passes audio along when two networks can't connect directly
+// (school/work Wi-Fi, some phone hotspots). Audio stays encrypted end-to-end, so a relay can't listen in.
+// The owner can add their own relay in Admin → Overview; until then a free public relay is used as a fallback.
+function rtcConfig(){
+  const ice = [{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]}];
+  const t = S.config && S.config.turn;
+  if (t && t.urls) ice.push({urls:String(t.urls).split(/[\s,]+/).filter(Boolean), username:t.username || "", credential:t.credential || ""});
+  else ice.push({urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"], username:"openrelayproject", credential:"openrelayproject"});
+  return {iceServers:ice};
+}
 const VOICE_STALE = 45000;
-const V = {room:null, stream:null, peers:{}, early:{}, tries:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
+const V = {room:null, stream:null, peers:{}, early:{}, tries:{}, warned:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
 S.voiceParts = {}; S.voiceSubs = {};
 const isVoiceRoom = r => r && r.type === "voice";
 function liveVoice(parts){ return Object.keys(parts || {}).filter(u => Date.now() - (parts[u].lastSeen || 0) < VOICE_STALE && member(u)); }
@@ -3955,6 +4133,7 @@ async function joinVoice(roomId){
   // retry any connection that hasn't come up within 8 seconds
   V.retry = setInterval(() => { Object.keys(V.peers).forEach(u => { const p = V.peers[u]; const st = p.pc.connectionState;
     const wait = Math.min(24000, 8000 + (p.tries || 0) * 4000);
+    if ((p.tries || 0) >= 3 && !V.warned[u]){ V.warned[u] = true; toast("Voice can't reach " + nickOf(u) + " yet. One of your networks may be blocking calls — try another Wi-Fi or a hotspot." + (isOwner() ? " (You can add a voice relay in Admin → Overview.)" : "")); }
     if ((st === "new" || st === "connecting" || st === "disconnected") && Date.now() - p.created > wait && S.uid < u){ V.tries[u] = (p.tries || 0) + 1; closePeer(u); makePeer(u, true); } });
     syncPeers(); }, 3000);
   V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 15000);
@@ -3969,7 +4148,7 @@ function stopStream(){ if (V.stream) V.stream.getTracks().forEach(t => t.stop())
 async function leaveVoice(quiet){
   if (!V.room) return; const roomId = V.room;
   clearInterval(V.hb); clearInterval(V.retry); V.unsubs.forEach(u => u()); V.unsubs = [];
-  Object.keys(V.peers).forEach(closePeer); V.early = {}; V.tries = {};
+  Object.keys(V.peers).forEach(closePeer); V.early = {}; V.tries = {}; V.warned = {};
   Object.keys(V.meters).forEach(u => stopLevel(u));
   stopStream(); V.room = null; V.speaking = {};
   await deleteDoc(doc(db, "rooms", roomId, "voice", S.uid)).catch(() => {});
@@ -3987,7 +4166,7 @@ function sendSignal(to, data){ if (!V.room) return Promise.resolve();
   return setDoc(doc(db, "rooms", V.room, "signals", id), Object.assign({from:S.uid, to, ts:Date.now()}, data)).catch(e => console.warn("send signal", e)); }
 function makePeer(u, initiator){
   const tries = ((V.peers[u] || {}).tries || V.tries[u] || 0);
-  const pc = new RTCPeerConnection(RTC_CFG); const p = {pc, ice:[], created:Date.now(), sid: initiator ? Math.random().toString(36).slice(2, 10) : null, tries}; V.peers[u] = p;
+  const pc = new RTCPeerConnection(rtcConfig()); const p = {pc, ice:[], created:Date.now(), sid: initiator ? Math.random().toString(36).slice(2, 10) : null, tries}; V.peers[u] = p;
   V.stream.getTracks().forEach(t => pc.addTrack(t, V.stream));
   pc.onicecandidate = e => { if (e.candidate && p.sid) sendSignal(u, {type:"ice", sid:p.sid, c:JSON.stringify(e.candidate)}); };
   pc.ontrack = e => { let a = V.audio[u]; if (!a){ a = new Audio(); a.autoplay = true; V.audio[u] = a; }

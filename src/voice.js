@@ -2,9 +2,18 @@
 // Each person in a voice room connects directly to everyone else in it. Up to 20 people; audio quality steps down a little as rooms fill up so it stays smooth.
 const VOICE_MAX = 20;
 // Firestore only carries the connection setup ("signals") and who is in the room — never the audio.
-const RTC_CFG = {iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun2.l.google.com:19302"]}]};
+// STUN finds each person's public address. A TURN relay passes audio along when two networks can't connect directly
+// (school/work Wi-Fi, some phone hotspots). Audio stays encrypted end-to-end, so a relay can't listen in.
+// The owner can add their own relay in Admin → Overview; until then a free public relay is used as a fallback.
+function rtcConfig(){
+  const ice = [{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]}];
+  const t = S.config && S.config.turn;
+  if (t && t.urls) ice.push({urls:String(t.urls).split(/[\s,]+/).filter(Boolean), username:t.username || "", credential:t.credential || ""});
+  else ice.push({urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"], username:"openrelayproject", credential:"openrelayproject"});
+  return {iceServers:ice};
+}
 const VOICE_STALE = 45000;
-const V = {room:null, stream:null, peers:{}, early:{}, tries:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
+const V = {room:null, stream:null, peers:{}, early:{}, tries:{}, warned:{}, audio:{}, unsubs:[], parts:{}, muted:!!store("vmuted"), deaf:!!store("vdeaf"), hb:null, chain:Promise.resolve(), speaking:{}, meters:{}, actx:null, seq:0};
 S.voiceParts = {}; S.voiceSubs = {};
 const isVoiceRoom = r => r && r.type === "voice";
 function liveVoice(parts){ return Object.keys(parts || {}).filter(u => Date.now() - (parts[u].lastSeen || 0) < VOICE_STALE && member(u)); }
@@ -36,6 +45,7 @@ async function joinVoice(roomId){
   // retry any connection that hasn't come up within 8 seconds
   V.retry = setInterval(() => { Object.keys(V.peers).forEach(u => { const p = V.peers[u]; const st = p.pc.connectionState;
     const wait = Math.min(24000, 8000 + (p.tries || 0) * 4000);
+    if ((p.tries || 0) >= 3 && !V.warned[u]){ V.warned[u] = true; toast("Voice can't reach " + nickOf(u) + " yet. One of your networks may be blocking calls — try another Wi-Fi or a hotspot." + (isOwner() ? " (You can add a voice relay in Admin → Overview.)" : "")); }
     if ((st === "new" || st === "connecting" || st === "disconnected") && Date.now() - p.created > wait && S.uid < u){ V.tries[u] = (p.tries || 0) + 1; closePeer(u); makePeer(u, true); } });
     syncPeers(); }, 3000);
   V.hb = setInterval(() => { if (V.room) updateDoc(doc(db, "rooms", V.room, "voice", S.uid), {lastSeen:Date.now()}).catch(() => {}); syncPeers(); }, 15000);
@@ -50,7 +60,7 @@ function stopStream(){ if (V.stream) V.stream.getTracks().forEach(t => t.stop())
 async function leaveVoice(quiet){
   if (!V.room) return; const roomId = V.room;
   clearInterval(V.hb); clearInterval(V.retry); V.unsubs.forEach(u => u()); V.unsubs = [];
-  Object.keys(V.peers).forEach(closePeer); V.early = {}; V.tries = {};
+  Object.keys(V.peers).forEach(closePeer); V.early = {}; V.tries = {}; V.warned = {};
   Object.keys(V.meters).forEach(u => stopLevel(u));
   stopStream(); V.room = null; V.speaking = {};
   await deleteDoc(doc(db, "rooms", roomId, "voice", S.uid)).catch(() => {});
@@ -68,7 +78,7 @@ function sendSignal(to, data){ if (!V.room) return Promise.resolve();
   return setDoc(doc(db, "rooms", V.room, "signals", id), Object.assign({from:S.uid, to, ts:Date.now()}, data)).catch(e => console.warn("send signal", e)); }
 function makePeer(u, initiator){
   const tries = ((V.peers[u] || {}).tries || V.tries[u] || 0);
-  const pc = new RTCPeerConnection(RTC_CFG); const p = {pc, ice:[], created:Date.now(), sid: initiator ? Math.random().toString(36).slice(2, 10) : null, tries}; V.peers[u] = p;
+  const pc = new RTCPeerConnection(rtcConfig()); const p = {pc, ice:[], created:Date.now(), sid: initiator ? Math.random().toString(36).slice(2, 10) : null, tries}; V.peers[u] = p;
   V.stream.getTracks().forEach(t => pc.addTrack(t, V.stream));
   pc.onicecandidate = e => { if (e.candidate && p.sid) sendSignal(u, {type:"ice", sid:p.sid, c:JSON.stringify(e.candidate)}); };
   pc.ontrack = e => { let a = V.audio[u]; if (!a){ a = new Audio(); a.autoplay = true; V.audio[u] = a; }

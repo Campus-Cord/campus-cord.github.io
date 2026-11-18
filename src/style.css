@@ -1134,3 +1134,23 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .ytplay{position:absolute;left:50%;top:50%;width:68px;height:48px;transform:translate(-50%,-50%);background:#f00;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .ytplay::after{content:"";position:absolute;left:28px;top:14px;border-style:solid;border-width:10px 0 10px 17px;border-color:transparent transparent transparent #fff}
 .bkcard{display:flex;align-items:center;gap:14px;margin-top:16px}
+.li.amem{align-items:center}.li.amem .nm{flex:1;min-width:0}
+.amsub{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:3px;font-size:12px}
+.ambd{display:inline-flex;gap:1px;align-items:center}.ambd small{color:var(--muted);margin-left:2px}
+/* v3.17 feedback board */
+.fbhero{display:flex;align-items:center;gap:20px;justify-content:space-between;flex-wrap:wrap;background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 22%,var(--rail)),var(--rail));border:1px solid var(--line);border-radius:16px;padding:20px 24px;margin-bottom:16px}
+.fbhero h2{margin:0 0 4px}.fbhero p{margin:0;color:var(--muted)}.fbhb{display:flex;gap:8px}
+.fbcard{display:flex;gap:14px;background:var(--rail);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.vouch{flex:none;width:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);cursor:pointer;padding:6px 0}
+.vouch b{font-size:18px;color:var(--text);line-height:1.1}.vouch small{font-size:10px}.vouch .i{width:18px;height:18px}
+.vouch:hover{border-color:var(--accent);color:var(--text)}.vouch.on{background:color-mix(in srgb,var(--accent) 20%,var(--card));border-color:var(--accent);color:var(--accent)}
+.fbmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.fbtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.fbt{font-size:15px}
+.fbtype{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid currentColor}
+.fbtype.t-bug{color:#f0565c}.fbtype.t-idea{color:#ffd166}.fbtype.t-change{color:#3fb8ff}
+.fbst{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid}
+.fbtx{color:var(--text);opacity:.9;white-space:pre-wrap;word-break:break-word;font-size:14px}
+.fbmeta{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+.fbreply{background:var(--card);border-left:3px solid var(--accent);border-radius:6px;padding:8px 10px;font-size:13px}.fbreply b{display:inline-flex;align-items:center;gap:3px}
+.fbacts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.fbsel{width:auto;padding:4px 8px;font-size:12px;height:auto}
+.fbhb .btn{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;width:auto}.fbhb .btn.ghost{border:1px solid var(--line)}.fbreply span{margin-left:4px}

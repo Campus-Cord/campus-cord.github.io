@@ -46,6 +46,20 @@ service cloud.firestore {
       allow write: if isOwner();
     }
 
+    // Feedback board: members post bugs/ideas and vouch (one vouch each, only their own). Owner/devs set status + reply.
+    match /feedback/{fid} {
+      allow read: if isMember();
+      allow create: if isMember() && ownsNew() && notTimedOut()
+        && request.resource.data.keys().hasOnly(['uid', 'nick', 'type', 'title', 'text', 'ts', 'votes', 'status'])
+        && request.resource.data.status == 'open' && request.resource.data.votes == [request.auth.uid]
+        && request.resource.data.title is string && request.resource.data.title.size() <= 80
+        && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+      allow update: if isMember() && changed().hasOnly(['votes'])
+        && request.resource.data.votes.toSet().difference(resource.data.votes.toSet()).union(resource.data.votes.toSet().difference(request.resource.data.votes.toSet())) == [request.auth.uid].toSet();
+      allow update: if isAdmin() && changed().hasOnly(['status', 'statusBy', 'statusAt', 'reply', 'replyBy', 'replyAt']);
+      allow delete: if isAdmin() || (isMember() && resource.data.uid == request.auth.uid);
+    }
+
     match /secret/invite {
       allow read, update: if isAdmin();
       allow create: if signedIn()
