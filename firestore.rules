@@ -40,6 +40,17 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isOwner();
     }
+    // Public key for push notifications (written by the Notify GitHub Action).
+    match /config/push {
+      allow read: if signedIn();
+    }
+    // Push subscriptions: each person manages their own devices and notification choices. Only the sender (server) reads them all.
+    match /push/{uid} {
+      allow read, write: if signedIn() && uid == request.auth.uid;
+      match /subs/{sid} {
+        allow read, write: if signedIn() && uid == request.auth.uid;
+      }
+    }
     // Sparks prices + quest rewards (written by the owner's app) so purchases can be checked here.
     match /config/catalog {
       allow read: if signedIn();

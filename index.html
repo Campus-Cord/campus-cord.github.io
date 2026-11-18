@@ -1202,6 +1202,9 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .vrev.no{background:color-mix(in srgb,#f0565c 12%,transparent);color:#f0565c}
 .vrev .sp{flex:1}.vrev .btn{padding:4px 10px}
 .mb.vpend{background:#f5b83d;color:#3a2300}
+.pushcard{margin-bottom:14px}.pushhead{display:flex;align-items:center;gap:12px}
+.pushic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff7ac6,#a78bfa);color:#fff;flex:none}.pushic .i{width:20px;height:20px}
+.pushios{margin-top:10px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,#3fb8ff 12%,transparent);font-size:13px}
 </style>
 </head>
 <body>
@@ -1314,7 +1317,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.29";
+const APP_VERSION = "2026-11-18.30";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1791,7 +1794,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()) setTimeout(ownerHousekeeping, 2500);
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -3060,8 +3063,9 @@ function paneAppearance(p){
   p.append(h("p",{class:"note",text:"Appearance is saved on this device."}));
 }
 function paneNotifications(p){
+  pushPane(p);
   const perm = "Notification" in window ? Notification.permission : "unsupported";
-  p.append(h("label",{class:"f",text:"Desktop notifications"}),
+  p.append(h("label",{class:"f",text:"While CampusCord is open"}),
     perm === "granted" ? h("p",{class:"note",style:{marginTop:0},text:"Allowed in this browser ✓"}) :
     perm === "unsupported" ? h("p",{class:"note",style:{marginTop:0},text:"This browser doesn't support notifications."}) :
     h("button",{class:"btn small", onclick:() => Notification.requestPermission().then(refreshOpenPane)}, "Allow notifications"),
@@ -3878,6 +3882,61 @@ setInterval(() => { try{ checkNewBadges(); }catch(e){} }, 4000);
     const b = el.getBoundingClientRect(); tip.style.top = (b.top - tip.offsetHeight - 8) + "px"; tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, b.left + b.width / 2 - tip.offsetWidth / 2)) + "px"; });
 })();
 
+
+// ---------------------------------------------------------------- phone & desktop push notifications
+// Each device that turns this on saves a push "subscription" in push/{uid}/subs/{id}. The Notify GitHub Action checks
+// every few minutes for new DMs, @mentions (and, for the owner, vouches and feedback) and sends a real notification.
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function pushSupported(){ return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window; }
+function b64ToBytes(s){ const pad = "=".repeat((4 - s.length % 4) % 4); const b = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+async function subHash(endpoint){ const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint)); return [...new Uint8Array(d)].slice(0, 12).map(x => x.toString(16).padStart(2, "0")).join(""); }
+async function pushKey(){ return S.pushKey || null; }
+async function enablePush(){
+  if (!pushSupported()){ toast(isIOS && !isStandalone() ? "On iPhone: tap Share → Add to Home Screen, open CampusCord from there, then turn this on." : "This browser can't do push notifications."); return false; }
+  if (isIOS && !isStandalone()){ toast("On iPhone: tap Share → Add to Home Screen, open CampusCord from there, then turn this on."); return false; }
+  const key = S.pushKey || await pushKey(); if (!key){ toast("Notifications are still being set up — try again in a few minutes."); return false; }
+  const perm = await Notification.requestPermission(); if (perm !== "granted"){ toast("Notifications are blocked. Allow them in your browser or phone settings."); return false; }
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(key)});
+    const j = sub.toJSON(); const id = await subHash(j.endpoint);
+    await setDoc(doc(db, "push", S.uid, "subs", id), {endpoint:j.endpoint, keys:j.keys, ua:navigator.userAgent.slice(0, 120), device: isIOS ? "iPhone/iPad" : /Android/.test(navigator.userAgent) ? "Android" : "Computer", ts:Date.now()});
+    prefs.pushOn = id; savePrefs(); toast("🔔 Notifications are on for this device"); return true;
+  }catch(e){ toast("Couldn't turn on notifications: " + errMsg(e)); return false; }
+}
+async function disablePush(){
+  try{ const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
+    if (sub){ const id = await subHash(sub.endpoint); await deleteDoc(doc(db, "push", S.uid, "subs", id)).catch(() => {}); await sub.unsubscribe(); } }catch(e){}
+  prefs.pushOn = null; savePrefs(); toast("Notifications turned off for this device");
+}
+async function savePushPrefs(p){ try{ await setDoc(doc(db, "push", S.uid), p, {merge:true}); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }
+function pushPane(p){
+  const on = !!prefs.pushOn && "Notification" in window && Notification.permission === "granted";
+  const box = h("div",{class:"preview-card pushcard"},
+    h("div",{class:"pushhead"}, h("span",{class:"pushic"}, ic("bell")), h("div",{style:{flex:"1"}}, h("b",{text:"Phone & push notifications"}),
+      h("div",{class:"note",style:{margin:0},text: on ? "On for this device ✓ — you'll get notified even when CampusCord is closed." : "Get notified on your phone or computer even when CampusCord is closed."})),
+      on ? h("button",{class:"btn small ghost", onclick:async () => { await disablePush(); refreshOpenPane(); }}, "Turn off") : h("button",{class:"btn small", onclick:async () => { await enablePush(); refreshOpenPane(); }}, "Turn on")),
+    isIOS && !isStandalone() ? h("div",{class:"pushios"}, h("b",{text:"iPhone setup: "}), "tap the ", h("b",{text:"Share"}), " button in Safari → ", h("b",{text:"Add to Home Screen"}), ", open CampusCord from your home screen, then come back here and tap Turn on.") : null,
+    h("div",{class:"note",style:{margin:"8px 0 0"},text:"Notifications arrive within a few minutes. Turn it on separately on each phone or computer you use."}));
+  p.append(box);
+  // what to get notified about (saved on the server so the sender knows)
+  const pp = (S.pushPrefs || {});
+  const row = (key, label, desc, def) => toggleRow(label, desc, pp[key] === undefined ? def : !!pp[key], v => { S.pushPrefs = Object.assign({}, S.pushPrefs || {}, {[key]:v}); savePushPrefs({[key]:v}); });
+  p.append(h("label",{class:"f",text:"Send me push notifications for"}),
+    row("dms", "Direct messages", "When someone DMs you", true),
+    row("mentions", "@mentions", "When someone @mentions you or uses @everyone", true),
+    isAdmin() ? row("vouches", "New vouches to review", "When someone posts a vouch that needs your review", true) : null,
+    isAdmin() ? row("feedback", "New feedback", "When someone posts a bug or idea", true) : null,
+    row("rewards", "Sparks & rewards", "When your vouch or feedback is approved", true));
+}
+// load my push prefs once
+function watchPushPrefs(){ onSnapshot(doc(db, "push", S.uid), s => { S.pushPrefs = s.exists() ? s.data() : {}; }, () => {});
+  onSnapshot(doc(db, "config/push"), s => { S.pushKey = s.exists() ? s.data().publicKey : null; }, () => {}); }
+// tapping a notification opens the right chat
+if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { const d = e.data || {}; if (d.type === "open" && d.url){ try{ const u = new URL(d.url); const k = u.searchParams.get("open"); if (k){ const [kind, id] = k.split(":"); openChat(kind, id); } }catch(err){} } });
+function openFromUrl(){ try{ const k = new URLSearchParams(location.search).get("open"); if (!k) return; history.replaceState(null, "", location.pathname); const [kind, id] = k.split(":"); setTimeout(() => openChat(kind, id), 800); }catch(e){} }
 
 // ---------------------------------------------------------------- #vouches channel (Discord vouch-bot style)
 // A text room with type "vouches". People run /vouch (or the Write a vouch button): pick who it's for — a person or

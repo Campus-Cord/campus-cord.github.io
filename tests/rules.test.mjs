@@ -105,6 +105,13 @@ e0 = (await aw()).earned;
 await t("feedback author gets 200 once it's planned", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 200, fbPaid: ["f1"], lastFb: "f1" })));
 await t("can't claim the same feedback twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 400, fbPaid: ["f1", "f1x"], lastFb: "f1" })));
 
+console.log("Push");
+await t("save your own push device", assertSucceeds(setDoc(doc(as("alice"), "push/alice/subs/d1"), { endpoint: "https://push.example/1", keys: { p256dh: "x", auth: "y" }, ts: now })));
+await t("can't read someone else's push devices", assertFails(getDoc(doc(as("bob"), "push/alice/subs/d1"))));
+await t("can't add a device for someone else", assertFails(setDoc(doc(as("bob"), "push/alice/subs/d2"), { endpoint: "https://evil", keys: {}, ts: now })));
+await t("can't read the push private key", assertFails(getDoc(doc(as("alice"), "secret/vapid"))));
+await t("anyone signed in can read the push public key", assertSucceeds(getDoc(doc(as("alice"), "config/push"))));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

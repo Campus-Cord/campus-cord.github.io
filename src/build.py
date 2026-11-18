@@ -4,6 +4,7 @@ d = "/home/claude/v3/"
 css = open(d+"style.css").read(); body = open(d+"body.html").read(); js = open(d+"app.js").read()
 js = js.replace("// __COSMETICS__", open(d+"cosmetics.js").read())
 js = js.replace("// __BADGES__", open(d+"badges.js").read())
+js = js.replace("// __PUSH__", open(d+"push.js").read())
 js = js.replace("// __VOUCHES__", open(d+"vouches.js").read())
 js = js.replace("// __FEEDBACK__", open(d+"feedback.js").read())
 js = js.replace("// __CAMERA__", open(d+"camera.js").read())

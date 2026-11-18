@@ -485,7 +485,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()) setTimeout(ownerHousekeeping, 2500);
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -1754,8 +1754,9 @@ function paneAppearance(p){
   p.append(h("p",{class:"note",text:"Appearance is saved on this device."}));
 }
 function paneNotifications(p){
+  pushPane(p);
   const perm = "Notification" in window ? Notification.permission : "unsupported";
-  p.append(h("label",{class:"f",text:"Desktop notifications"}),
+  p.append(h("label",{class:"f",text:"While CampusCord is open"}),
     perm === "granted" ? h("p",{class:"note",style:{marginTop:0},text:"Allowed in this browser ✓"}) :
     perm === "unsupported" ? h("p",{class:"note",style:{marginTop:0},text:"This browser doesn't support notifications."}) :
     h("button",{class:"btn small", onclick:() => Notification.requestPermission().then(refreshOpenPane)}, "Allow notifications"),
@@ -2115,6 +2116,7 @@ function installApp(){
 }
 
 // __COSMETICS__
+// __PUSH__
 // __VOUCHES__
 // __FEEDBACK__
 // __CAMERA__

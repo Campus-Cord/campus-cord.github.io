@@ -1187,3 +1187,6 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .vrev.no{background:color-mix(in srgb,#f0565c 12%,transparent);color:#f0565c}
 .vrev .sp{flex:1}.vrev .btn{padding:4px 10px}
 .mb.vpend{background:#f5b83d;color:#3a2300}
+.pushcard{margin-bottom:14px}.pushhead{display:flex;align-items:center;gap:12px}
+.pushic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff7ac6,#a78bfa);color:#fff;flex:none}.pushic .i{width:20px;height:20px}
+.pushios{margin-top:10px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,#3fb8ff 12%,transparent);font-size:13px}
