@@ -519,3 +519,8 @@ html.compact .msg .gut{width:24px}
 .avface:hover{background:var(--hover)}
 .avface.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent)}
 .avface.ini{font-size:13px;font-weight:800;color:var(--text)}
+
+/* unread green dots */
+.newdot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none;margin-right:2px;box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 22%,transparent);animation:newpulse 2s ease-in-out infinite}
+@keyframes newpulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--green) 10%,transparent)}}
+.rail .ri .gdot{position:absolute;right:-2px;bottom:-2px;width:16px;height:16px;border-radius:50%;background:var(--green);border:3px solid var(--rail)}

@@ -407,6 +407,7 @@ function renderRail(){
   const icon = (S.config && S.config.serverIcon) || "CC";
   const srv = h("button",{class:"ri srv" + (S.mode === "server" ? " on" : ""), title:(S.config && S.config.serverName) || "CampusCord", onclick:() => { S.mode = "server"; need("rail","side"); }}, icon);
   const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0); if (mc) srv.appendChild(h("span",{class:"bdg",text:String(mc)}));
+  else if (S.rooms.some(roomUnread)) srv.appendChild(h("span",{class:"gdot",title:"New messages"}));
   r.appendChild(srv);
   r.appendChild(h("div",{class:"sp"}));
   r.appendChild(h("button",{class:"ri shopri", title:"Campus+ Shop", onclick:() => openShop()}, ic("bag")));
@@ -441,7 +442,7 @@ function renderSide(){
       const typ = !on && typersIn("room", r.id).length;
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : ""), onclick:() => openChat("room", r.id)},
         h("span",{class:"ic"}, ic(r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
-        typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : null));
+        typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : (un ? h("span",{class:"newdot",title:"New messages"}) : null)));
     });
   });
 }
@@ -457,7 +458,7 @@ function renderDMList(box){
     box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : ""), onclick:() => openChat("dm", d.id)},
       avatar(o, "sm", true),
       h("div",{class:"meta"}, paintName(h("span",{class:"nm",text:nickOf(o)}), o), cs ? h("span",{class:"sub",text:cs}) : (typersIn("dm", d.id).length ? h("span",{class:"sub",text:"typing…"}) : null)),
-      un ? h("span",{class:"mb",text:"•"}) : null));
+      un ? h("span",{class:"newdot",title:"New message"}) : null));
   });
 }
 function renderMe(){
