@@ -575,3 +575,22 @@ html.compact .msg .gut{width:24px}
 .hsug{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .hsug button{background:var(--rail);border:1px solid var(--line);border-radius:14px;padding:5px 10px;font-size:12px;color:var(--muted)}
 .hsug button:hover{color:var(--text);border-color:var(--dim)}
+
+/* DM home (Friends) */
+.dmhome{padding:24px 28px;max-width:900px}
+.dmhome .dhh h2{margin:0 0 4px;font-size:24px}
+.dmhome .dhh p{margin:0 0 14px;color:var(--muted)}
+.dmhome .cat{padding:20px 0 8px;cursor:default}
+.dmcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.dmcard{display:flex;align-items:center;gap:12px;background:var(--side);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;min-width:0}
+.dmcard:hover{background:var(--hover)}
+.dmcard .dmc{flex:1;min-width:0;display:flex;flex-direction:column}
+.dmcard .dmc span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dmcard.unread .dmc span{color:var(--text);font-weight:600}
+.friends{display:flex;flex-direction:column;border-top:1px solid var(--active)}
+.friend{display:flex;align-items:center;gap:12px;padding:10px 8px;border-bottom:1px solid var(--active);border-radius:8px;cursor:pointer}
+.friend:hover{background:var(--hover)}
+.friend.off{opacity:.55}
+.friend .fi{flex:1;min-width:0;display:flex;flex-direction:column}
+.friend .fi span{font-size:13px;color:var(--muted)}
+.friend .ib{background:var(--side);border-radius:50%}

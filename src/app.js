@@ -340,7 +340,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
-    if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
+    if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && saved.kind === "home") openChat("home", "home"); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
     need("side","header","composer");
   }, ()=>{}));
   S.unsubApp.push(onSnapshot(collection(db, "meta"), snap => {
@@ -364,14 +364,14 @@ function initApp(){
         if (!viewing){ notify(nickOf(d.lastUid), d.lastPreview || "sent you a message", "dm", id, true); if (document.hidden){ S.hiddenCount++; updateTitle(); } }
       } });
     S.dms = snap.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => (b.lastTs||b.createdAt||0) - (a.lastTs||a.createdAt||0));
-    need("side","rail","header");
+    need("side","rail","header"); if (S.kind === "home") need("msgs");
   }, e => console.warn("DMs unavailable", e)));
   S.unsubApp.push(onSnapshot(query(collection(db, "gifs"), orderBy("ts","desc"), limit(60)), snap => { S.gifs = snap.docs.map(d => Object.assign({id:d.id}, d.data())); need("gifs"); }, ()=>{}));
   S.unsubApp.push(onSnapshot(doc(db, "config/shop"), s => { S.shop = s.exists() ? s.data() : {}; refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => { S.myOrders = s.docs.map(d => Object.assign({id:d.id}, d.data())); refreshOpenPane(); }, ()=>{}));
   if (isOwner()) S.unsubApp.push(onSnapshot(collection(db, "orders"), s => { S.orders = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => b.ts - a.ts); need("rail"); refreshOpenPane(); }, ()=>{}));
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS);
-  setInterval(() => need("rpanel","typing","side","header","composer"), 15000);
+  setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home") need("msgs"); }, 15000);
   buildEmojiGrid();
   need("rail","side","header","msgs","rpanel","me","composer","gifs");
   $("input").focus();
@@ -404,12 +404,12 @@ function roomUnread(r){ const m = S.meta[r.id]; return !isMuted(r.id) && !(S.kin
 function renderRail(){
   const r = $("rail"); r.innerHTML = "";
   const dmU = unreadDMs().length;
-  const home = h("button",{class:"ri" + (S.mode === "dms" ? " on" : ""), title:"Direct messages", onclick:() => { S.mode = "dms"; need("rail","side"); }}, ic("message"));
+  const home = h("button",{class:"ri" + (S.mode === "dms" ? " on" : ""), title:"Direct messages", onclick:() => goDMs()}, ic("message"));
   if (dmU) home.appendChild(h("span",{class:"bdg",text:String(dmU)}));
   r.appendChild(home);
   r.appendChild(h("div",{class:"sep"}));
   const icon = (S.config && S.config.serverIcon) || "CC";
-  const srv = h("button",{oncontextmenu:e => serverMenu(e), class:"ri srv" + (S.mode === "server" ? " on" : ""), title:(S.config && S.config.serverName) || "CampusCord", onclick:() => { S.mode = "server"; need("rail","side"); }}, icon);
+  const srv = h("button",{oncontextmenu:e => serverMenu(e), class:"ri srv" + (S.mode === "server" ? " on" : ""), title:(S.config && S.config.serverName) || "CampusCord", onclick:() => goServer()}, icon);
   const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0); if (mc) srv.appendChild(h("span",{class:"bdg",text:String(mc)}));
   else if (S.rooms.some(roomUnread)) srv.appendChild(h("span",{class:"gdot",title:"New messages"}));
   r.appendChild(srv);
@@ -424,7 +424,10 @@ function renderSide(){
     hdr.onclick = null; hdr.style.cursor = "default";
     hdr.append(h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
     const f = h("input",{class:"dmsearch", placeholder:"Find a conversation", value:S.dmFilter||"", oninput:e => { S.dmFilter = e.target.value; renderDMList(box); }});
-    list.appendChild(f); const box = h("div"); list.appendChild(box); renderDMList(box);
+    list.appendChild(f);
+    list.appendChild(h("div",{class:"ch" + (S.kind === "home" ? " on" : ""), onclick:() => openChat("home", "home")}, h("span",{class:"ic"}, ic("users")), h("span",{class:"nm",text:"Friends"})));
+    list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
+    const box = h("div"); list.appendChild(box); renderDMList(box);
     return;
   }
   hdr.style.cursor = isAdmin() ? "pointer" : "default";
@@ -557,8 +560,25 @@ async function openDM(uid){
   }
   S.mode = "dms"; openChat("dm", id);
 }
+function goDMs(){
+  if (S.kind === "dm" || S.kind === "home"){ if (S.kind === "dm") openChat("home", "home"); return; }
+  const last = store("lastDM");
+  if (last && S.dms.find(d => d.id === last)) openChat("dm", last); else openChat("home", "home");
+}
+function goServer(){
+  if (S.kind === "room"){ need("rail","side"); return; }
+  const last = store("room"); const r = S.rooms.find(x => x.id === last) || S.rooms[0];
+  if (r) openChat("room", r.id); else { S.mode = "server"; need("rail","side"); }
+}
 function openChat(kind, id){
   closeNav();
+  if (kind === "home"){
+    if (S.cur) saveDraft(); stopTyping(); S.unsubRoom.forEach(u => u()); S.unsubRoom = []; if (S.pending) setPending(null);
+    Object.assign(S, {kind:"home", cur:null, mode:"dms", msgs:[], reacts:[], typing:[], roomLoaded:true, hasMore:false, replyTo:null, editing:null, pins:null});
+    if (S.rpanel === "pins" || S.rpanel === "search") S.rpanel = prefs.showMembers === false ? null : "members";
+    store("chat", {kind:"home", id:"home"});
+    need("rail","side","header","msgs","rpanel","composer","typing"); return;
+  }
   if (S.cur === id && S.kind === kind && S.unsubRoom.length){ need("side","rail"); return; }
   if (S.cur) saveDraft();
   stopTyping();
@@ -566,7 +586,7 @@ function openChat(kind, id){
   if (S.pending) setPending(null);
   Object.assign(S, {kind, cur:id, msgs:[], reacts:[], typing:[], roomLoaded:false, msgLimit:PAGE, hasMore:false, replyTo:null, editing:null, pins:null});
   if (kind === "dm") S.mode = "dms"; else S.mode = "server";
-  store("chat", {kind, id});
+  store("chat", {kind, id}); if (kind === "dm") store("lastDM", id); else store("room", id);
   if (S.rpanel === "pins") S.rpanel = "members";
   subscribeMsgs(true);
   const b = base();
@@ -602,6 +622,8 @@ function subscribeMsgs(first){
 function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
   icon.innerHTML = "";
+  $("btnPins").classList.toggle("hidden", S.kind === "home"); $("search").parentElement.classList.toggle("hidden", S.kind === "home");
+  if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
     const st = statusOf(o); d.textContent = profile(o).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st]);
@@ -650,8 +672,32 @@ $("msgs").addEventListener("scroll", () => {
 });
 $("jump").onclick = () => { const b = $("msgs"); b.scrollTop = b.scrollHeight; $("jump").classList.add("hidden"); };
 
+function renderHome(box){
+  box.innerHTML = "";
+  const wrap = h("div",{class:"dmhome"});
+  const people = Object.keys(S.members).filter(u => u !== S.uid && !isBanned(u)).sort((a,b) => (isOn(b) - isOn(a)) || nickOf(a).localeCompare(nickOf(b)));
+  const on = people.filter(isOn);
+  wrap.append(h("div",{class:"dhh"}, h("h2",{text:"Direct Messages"}), h("p",{text:"Private chats between you and one other person. Nobody else can read them — not even admins."}),
+    h("button",{class:"btn small", onclick:() => newDMModal()}, ic("plus"), " New message")));
+  const recent = S.dms.filter(d => member(dmOther(d)) && d.lastTs).slice(0, 6);
+  if (recent.length){
+    wrap.appendChild(h("div",{class:"cat",text:"Recent conversations"}));
+    wrap.appendChild(h("div",{class:"dmcards"}, recent.map(d => { const o = dmOther(d); const un = d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
+      return h("button",{class:"dmcard" + (un ? " unread" : ""), onclick:() => openChat("dm", d.id)}, avatar(o, null, true),
+        h("div",{class:"dmc"}, paintName(h("b",{text:nickOf(o)}), o), h("span",{text:(d.lastUid === S.uid ? "You: " : "") + (d.lastPreview || "")})), un ? h("span",{class:"newdot"}) : null); })));
+  }
+  wrap.appendChild(h("div",{class:"cat",text:"Online — " + on.length}));
+  const list = h("div",{class:"friends"});
+  if (!people.length) list.appendChild(h("div",{class:"empty-note",text:"Nobody else has joined yet. Share the invite link!"}));
+  people.forEach(u => list.appendChild(h("div",{class:"friend" + (isOn(u) ? "" : " off"), onclick:() => openDM(u)},
+    avatar(u, null, true), h("div",{class:"fi"}, paintName(h("b",{text:nickOf(u)}), u), h("span",{text: profile(u).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(u)])})),
+    h("button",{class:"ib", title:"Message " + nickOf(u), onclick:e => { e.stopPropagation(); openDM(u); }}, ic("message")))));
+  wrap.appendChild(list);
+  box.appendChild(wrap);
+}
 function renderMessages(){
   const box = $("msgs");
+  if (S.kind === "home"){ renderHome(box); return; }
   const atBottom = S.stickBottom !== false;
   const prevTop = box.scrollTop;
   box.innerHTML = "";
@@ -999,6 +1045,7 @@ setInterval(() => need("typing"), 2000);
 const input = $("input");
 function renderComposer(){
   const bars = $("cbars"); bars.innerHTML = "";
+  $("composer").classList.toggle("hidden", S.kind === "home"); if (S.kind === "home") return;
   const ok = canPost();
   $("cbox").classList.toggle("hidden", !ok); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
