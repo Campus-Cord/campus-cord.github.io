@@ -1630,8 +1630,8 @@ function sparkPacksEl(){
   const packs = CATALOG.filter(c => c.coins && (shopItem(c.id).enabled || isOwner())); if (!packs.length) return null;
   const grid = h("div",{class:"shop spacks"});
   packs.forEach((c, i) => { const it = shopItem(c.id); const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
-    grid.appendChild(h("div",{class:"item spackitem sp" + i}, i === 2 ? h("span",{class:"ichip best",text:"BEST VALUE"}) : i === 1 ? h("span",{class:"ichip pop",text:"POPULAR"}) : null,
-      h("div",{class:"spkart"}, Array.from({length:i + 1}, (_, k) => h("span",{class:"spk3 k" + k}, ic("spark")))),
+    grid.appendChild(h("div",{class:"item spackitem sp" + i}, i === packs.length - 1 ? h("span",{class:"ichip best",text:"BEST VALUE"}) : i === 2 ? h("span",{class:"ichip pop",text:"POPULAR"}) : null,
+      h("div",{class:"spkart"}, Array.from({length:Math.min(3, i + 1)}, (_, k) => h("span",{class:"spk3 k" + k}, ic("spark"))), i >= 3 ? h("span",{class:"spkx",text:"×" + (i === 3 ? 2 : 5)}) : null),
       h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}),
       pend ? h("div",{class:"pending"}, ic("hourglass"), " Payment pending") : !it.link ? h("button",{class:"btn buy",disabled:true}, isOwner() ? "Add a Stripe link in Admin → Shop" : "Coming soon") : h("button",{class:"btn buy", onclick:() => buy(c.id)}, "Buy for " + it.price))); });
   return grid;

@@ -1074,6 +1074,14 @@ html,body{overflow:hidden}
 .ch.dm:hover .dmx{display:inline-flex}
 .ch.dm:hover .newdot{display:none}
 .ch.dm .dmx:hover{color:var(--text);background:rgba(255,255,255,.08)}
+.sparksmodal{width:min(860px,95vw);max-height:90vh;overflow:auto}
+.spacks{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important;width:100%}
+.spacks .spackitem{width:auto!important;min-width:0;display:flex;flex-direction:column;padding:16px 12px}
+.spacks .spackitem .id{flex:1}
+.spacks .spackitem .btn.buy{width:100%}
+.spkx{font-weight:900;font-size:18px;color:#ffd166;margin-left:6px;text-shadow:0 0 10px rgba(255,209,102,.6)}
+.spacks .spackitem.sp4{border-color:#f5a52488;box-shadow:0 0 24px -8px #f5a524}
+.modal.sparksmodal{width:min(900px,95vw)!important;max-width:95vw!important}.modal.sparksmodal .spacks{grid-template-columns:repeat(5,1fr)!important}@media (max-width:900px){.modal.sparksmodal .spacks{grid-template-columns:repeat(2,1fr)!important}}
 </style>
 </head>
 <body>
@@ -1186,7 +1194,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.14";
+const APP_VERSION = "2026-11-18.15";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2808,8 +2816,8 @@ function sparkPacksEl(){
   const packs = CATALOG.filter(c => c.coins && (shopItem(c.id).enabled || isOwner())); if (!packs.length) return null;
   const grid = h("div",{class:"shop spacks"});
   packs.forEach((c, i) => { const it = shopItem(c.id); const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
-    grid.appendChild(h("div",{class:"item spackitem sp" + i}, i === 2 ? h("span",{class:"ichip best",text:"BEST VALUE"}) : i === 1 ? h("span",{class:"ichip pop",text:"POPULAR"}) : null,
-      h("div",{class:"spkart"}, Array.from({length:i + 1}, (_, k) => h("span",{class:"spk3 k" + k}, ic("spark")))),
+    grid.appendChild(h("div",{class:"item spackitem sp" + i}, i === packs.length - 1 ? h("span",{class:"ichip best",text:"BEST VALUE"}) : i === 2 ? h("span",{class:"ichip pop",text:"POPULAR"}) : null,
+      h("div",{class:"spkart"}, Array.from({length:Math.min(3, i + 1)}, (_, k) => h("span",{class:"spk3 k" + k}, ic("spark"))), i >= 3 ? h("span",{class:"spkx",text:"×" + (i === 3 ? 2 : 5)}) : null),
       h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}),
       pend ? h("div",{class:"pending"}, ic("hourglass"), " Payment pending") : !it.link ? h("button",{class:"btn buy",disabled:true}, isOwner() ? "Add a Stripe link in Admin → Shop" : "Coming soon") : h("button",{class:"btn buy", onclick:() => buy(c.id)}, "Buy for " + it.price))); });
   return grid;
