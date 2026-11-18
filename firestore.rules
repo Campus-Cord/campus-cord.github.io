@@ -1,5 +1,5 @@
 rules_version = '2';
-// CampusCord security rules (v3.4: private rooms, timeouts). Published automatically by GitHub Actions when this file changes.
+// CampusCord security rules (v3.6: Sparks shop, private rooms, timeouts). Published automatically by GitHub Actions when this file changes.
 // Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -40,6 +40,11 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isOwner();
     }
+    // Sparks prices + quest rewards (written by the owner's app) so purchases can be checked here.
+    match /config/catalog {
+      allow read: if signedIn();
+      allow write: if isOwner();
+    }
 
     match /secret/invite {
       allow read, update: if isAdmin();
@@ -66,7 +71,7 @@ service cloud.firestore {
     match /profiles/{uid} {
       allow read: if signedIn();
       allow create, update: if isMember() && uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['bio', 'status', 'customStatus', 'nameFx', 'banner', 'avatar'])
+        && request.resource.data.keys().hasOnly(['bio', 'status', 'customStatus', 'nameFx', 'banner', 'avatar', 'deco', 'pfx', 'plate'])
         && request.resource.data.get('avatar', '').size() <= 120000
         && request.resource.data.get('bio', '').size() <= 190
         && request.resource.data.get('customStatus', '').size() <= 60;
@@ -76,6 +81,40 @@ service cloud.firestore {
     match /perks/{uid} {
       allow read: if signedIn();
       allow write: if isOwner();
+    }
+    // Sparks wallet. Each person can only: start empty, buy at the catalog price with Sparks they have,
+    // claim each quest once for its listed reward, and claim the daily reward once every 20 hours.
+    // The owner can adjust any wallet (gifts, Spark packs bought with real money).
+    match /wallet/{uid} {
+      function cat() { return get(/databases/$(database)/documents/config/catalog).data; }
+      function nw() { return request.resource.data; }
+      function ow() { return resource.data; }
+      function mine() { return isMember() && uid == request.auth.uid; }
+      allow read: if signedIn();
+      allow write: if isOwner();
+      allow create: if mine()
+        && nw().keys().hasOnly(['earned', 'spent', 'items', 'quests', 'lastDaily', 'lastItem', 'lastQuest'])
+        && nw().earned == 0 && nw().spent == 0 && nw().items.size() == 0 && nw().quests.size() == 0 && nw().lastDaily == 0;
+      // buy one item
+      allow update: if mine()
+        && changed().hasOnly(['spent', 'items', 'lastItem'])
+        && nw().items.size() == ow().items.size() + 1
+        && nw().items.toSet().difference(ow().items.toSet()) == [nw().lastItem].toSet()
+        && nw().spent == ow().spent + cat().prices[nw().lastItem]
+        && nw().spent <= ow().earned;
+      // claim one quest
+      allow update: if mine()
+        && changed().hasOnly(['earned', 'quests', 'lastQuest'])
+        && nw().quests.size() == ow().quests.size() + 1
+        && nw().quests.toSet().difference(ow().quests.toSet()) == [nw().lastQuest].toSet()
+        && nw().earned == ow().earned + cat().quests[nw().lastQuest];
+      // daily reward
+      allow update: if mine()
+        && changed().hasOnly(['earned', 'lastDaily'])
+        && nw().lastDaily >= ow().lastDaily + 72000000
+        && nw().lastDaily <= request.time.toMillis() + 300000
+        && nw().lastDaily >= request.time.toMillis() - 300000
+        && nw().earned == ow().earned + cat().daily;
     }
     // Shop orders. Buyers create their own pending order; only the owner approves.
     match /orders/{orderId} {
