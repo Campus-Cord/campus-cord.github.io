@@ -2,7 +2,7 @@
 // before firestore.rules is published; if any check fails, nothing is deployed.
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, setDoc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc, getDoc, deleteDoc, getDocs, collection, query, where } from "firebase/firestore";
 
 const env = await initializeTestEnvironment({ projectId: "demo-campuscord", firestore: { rules: readFileSync("firestore.rules", "utf8") } });
 const now = Date.now();
@@ -14,6 +14,8 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, "config/catalog"), { v: 1, prices: { d_bubble: 0, d_cosmic: 700, b_cosmic: 1360 }, quests: { q_first: 100, q_react: 150 }, daily: 50 });
   await setDoc(doc(db, "rooms/general"), { name: "general" });
   await setDoc(doc(db, "rooms/secret"), { name: "secret", private: true, allowed: ["alice"] });
+  await setDoc(doc(db, "rooms/lounge"), { name: "lounge", type: "voice" });
+  await setDoc(doc(db, "rooms/lounge/signals/s1"), { from: "alice", to: "bob", type: "offer", sdp: "x", ts: now });
 });
 const as = u => env.authenticatedContext(u).firestore();
 let pass = 0, fail = 0;
@@ -28,6 +30,20 @@ await t("member posts in a public room", assertSucceeds(setDoc(doc(as("alice"), 
 await t("timed-out member can't post", assertFails(setDoc(doc(as("timed"), "rooms/general/msgs/m2"), { uid: "timed", text: "hi", ts: now })));
 await t("invited member reads private room", assertSucceeds(getDoc(doc(as("alice"), "rooms/secret/msgs/x"))));
 await t("uninvited member can't read private room", assertFails(getDoc(doc(as("bob"), "rooms/secret/msgs/x"))));
+
+console.log("Presence & voice");
+await t("set yourself as away", assertSucceeds(updateDoc(doc(as("alice"), "members/alice"), { away: true, lastSeen: now })));
+await t("can't set someone else away", assertFails(updateDoc(doc(as("bob"), "members/alice"), { away: true })));
+await t("join a voice channel", assertSucceeds(setDoc(doc(as("alice"), "rooms/lounge/voice/alice"), { joinedAt: now, lastSeen: now, muted: false, deaf: false })));
+await t("can't put someone else in voice", assertFails(setDoc(doc(as("bob"), "rooms/lounge/voice/alice"), { joinedAt: now, lastSeen: now })));
+await t("timed-out member can't join voice", assertFails(setDoc(doc(as("timed"), "rooms/lounge/voice/timed"), { joinedAt: now, lastSeen: now })));
+await t("can't join voice in a private room you're not in", assertFails(setDoc(doc(as("bob"), "rooms/secret/voice/bob"), { joinedAt: now, lastSeen: now })));
+await t("send a voice signal as yourself", assertSucceeds(setDoc(doc(as("bob"), "rooms/lounge/signals/s2"), { from: "bob", to: "alice", type: "answer", sdp: "y", ts: now })));
+await t("can't send a signal pretending to be someone else", assertFails(setDoc(doc(as("bob"), "rooms/lounge/signals/s3"), { from: "alice", to: "carol", type: "offer", ts: now })));
+await t("receiver can list their signals", assertSucceeds(getDocs(query(collection(as("bob"), "rooms/lounge/signals"), where("to", "==", "bob")))));
+await t("others can't read your signals", assertFails(getDoc(doc(as("carol"), "rooms/lounge/signals/s1"))));
+await t("receiver can delete a used signal", assertSucceeds(deleteDoc(doc(as("bob"), "rooms/lounge/signals/s1"))));
+await t("leave voice", assertSucceeds(deleteDoc(doc(as("alice"), "rooms/lounge/voice/alice"))));
 
 console.log("Wallet");
 const W = { earned: 0, spent: 0, items: [], quests: [], lastDaily: 0, lastItem: "", lastQuest: "" };
@@ -48,7 +64,7 @@ await t("buy at the catalog price", assertSucceeds(updateDoc(doc(as("alice"), "w
 await t("others can't touch your wallet", assertFails(updateDoc(doc(as("bob"), "wallet/alice"), { spent: 0 })));
 
 console.log("Profiles");
-await t("equip cosmetics on your profile", assertSucceeds(setDoc(doc(as("alice"), "profiles/alice"), { deco: "d_cosmic", pfx: "", plate: "" }, { merge: true })));
+await t("equip cosmetics on your profile", assertSucceeds(setDoc(doc(as("alice"), "profiles/alice"), { deco: "d_cosmic", pfx: "", plate: "", pban: "n_galaxy" }, { merge: true })));
 await t("can't edit someone else's profile", assertFails(setDoc(doc(as("bob"), "profiles/alice"), { bio: "hacked" }, { merge: true })));
 
 console.log("Shop");
