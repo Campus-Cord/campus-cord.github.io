@@ -96,12 +96,6 @@ async function claimQuest(q){
   try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + q.reward, quests:[...(w2.quests || []), q.id], lastQuest:q.id}); toast("Quest complete — " + q.name + " ✦ Explorer badge progress!"); }
   catch(e){ toast("Couldn't claim: " + econError(e)); }
 }
-async function claimDaily(){
-  const w = wal(S.uid); if (Date.now() - (w.lastDaily || 0) < DAILY_MS) return;
-  await ensureWallet(); const w2 = wal(S.uid);
-  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + DAILY_SPARKS, lastDaily:Date.now()}); bumpStat("dailies"); toast("+" + DAILY_SPARKS + " Sparks ✦ — see you tomorrow!"); }
-  catch(e){ toast("Couldn't claim: " + econError(e)); }
-}
 async function giveSparks(uid, n){ const w = wal(uid);
   try{ await setDoc(doc(db, "wallet", uid), Object.assign({}, EMPTY_WALLET, S.wallets[uid] || {}, {earned:(w.earned || 0) + n})); toast("Gave " + n + " Sparks to " + nickOf(uid)); }
   catch(e){ toast("Couldn't give Sparks: " + errMsg(e)); } }
@@ -218,7 +212,6 @@ function renderShopPage(box){
 }
 
 // ---- Quests page
-function fmtLeft(ms){ const hh = Math.floor(ms / 3600000), mm = Math.ceil((ms % 3600000) / 60000); return hh ? hh + "h " + mm + "m" : mm + "m"; }
 function renderQuestsPage(box){
   const keep = box.scrollTop; box.innerHTML = "";
   const tab = S.page === "claimed" ? "claimed" : "all";

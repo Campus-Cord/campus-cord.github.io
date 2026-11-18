@@ -990,6 +990,90 @@ html,body{overflow:hidden}
 .plate-yinyang{--plate:linear-gradient(100deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.9) 48%,rgba(255,255,255,.55) 64%,rgba(255,255,255,.3) 100%)}
 .plate-yinyang::after{animation:none!important;background-size:100% 100%!important}
 .b-owner svg{animation:none!important}
+.tnote{font-size:11px;color:var(--muted);margin:-2px 0 8px}.yearbtn{width:100%;margin-top:8px}
+
+/* v3.11 photo avatars + camera */
+.av.photo{background-size:cover!important;background-position:center!important;color:transparent}
+.avphoto{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.avphoto .btn .i{margin-right:2px}
+.cammodal{width:min(760px,96vw);padding:20px 22px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.camh{margin:0;font-size:20px}
+.camstage{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.camstage.sq{width:min(440px,90vw);aspect-ratio:1/1}
+.camvid{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+.camvid.still{transform:none}
+.camflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.camflash.go{animation:camflash .45s ease-out}
+@keyframes camflash{0%{opacity:.95}100%{opacity:0}}
+.camcount{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:900;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.6);pointer-events:none}
+.camcount.go{animation:campop .9s ease-out}
+@keyframes campop{0%{transform:scale(1.6);opacity:0}30%{transform:scale(1);opacity:1}100%{opacity:.2}}
+.camerr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:#ddd;font-weight:600}
+.camfx{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:2px 2px 6px;scrollbar-width:none}
+.camfx::-webkit-scrollbar{display:none}
+.camfxb{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px;border-radius:10px;flex:none}
+.camfxb .sw{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#ff7ac6,#ffd166 40%,#3fb8ff 70%,#3ecf7a);border:2px solid transparent}
+.camfxb.on{color:var(--text)}.camfxb.on .sw{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
+.camfxb small{font-size:11px;font-weight:600;white-space:nowrap}
+.camacts{display:flex;align-items:center;justify-content:center;gap:14px;width:100%}
+.camsnap{width:66px;height:66px;border-radius:50%;border:4px solid #fff;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.camsnap span{width:50px;height:50px;border-radius:50%;background:#ff3b30;transition:transform .12s}
+.camsnap:hover span{transform:scale(.92)}.camsnap:disabled{opacity:.4;cursor:default}
+.camtimer.on{background:var(--accent);color:var(--on-accent,#fff)}
+.cropmodal{width:min(380px,94vw);padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.cropview{position:relative;width:280px;height:280px;overflow:hidden;border-radius:14px;background:#000;cursor:grab;touch-action:none}
+.cropview:active{cursor:grabbing}
+.cropimg{position:absolute;left:0;top:0;max-width:none;user-select:none;pointer-events:none;transform-origin:0 0}
+.cropring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 400px rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.8);pointer-events:none}
+.cropbar{display:flex;align-items:center;gap:8px;width:280px;color:var(--muted)}
+.cropzoom{flex:1;accent-color:var(--accent)}
+
+/* v3.11 badges upgrade */
+.bdmodal{width:min(720px,95vw)}
+.bdhead{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:6px}
+.bdhero{display:flex;gap:6px;justify-content:center;min-height:44px;margin-bottom:4px}
+.bdhero .pbadge{animation:bdfloat 3s ease-in-out infinite}.bdhero .pbadge:nth-child(2){animation-delay:.3s}.bdhero .pbadge:nth-child(3){animation-delay:.6s}.bdhero .pbadge:nth-child(4){animation-delay:.9s}.bdhero .pbadge:nth-child(5){animation-delay:1.2s}
+@keyframes bdfloat{50%{transform:translateY(-4px)}}
+.bdbar{width:min(320px,80%);height:6px;border-radius:99px;background:var(--active);overflow:hidden;margin-top:6px}
+.bdbar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#3fb8ff,#c084fc,#ffb84d)}
+.bdbar.sm{width:100%;height:5px;margin:4px 0 2px}
+.bdsec{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:16px 2px 8px;display:flex;align-items:center;gap:8px}
+.bdsec::after{content:"";flex:1;height:1px;background:currentColor;opacity:.25}
+.bdcard.have.r-mythic{border-color:#ffb84d66;box-shadow:0 0 0 1px #ffb84d22,0 0 22px -6px #ffb84d88;background:linear-gradient(135deg,color-mix(in srgb,#ffb84d 9%,var(--rail)),var(--rail) 60%)}
+.bdcard.have.r-epic{border-color:#c084fc55;box-shadow:0 0 18px -8px #c084fc99}
+.bdcard.have.r-rare{border-color:#3fb8ff44}
+.bdcard.have .pbadge.lg{animation:bdfloat 3.5s ease-in-out infinite}
+.bdcard.blk{opacity:1;background:color-mix(in srgb,var(--rail) 70%,transparent)}
+.bdevo{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.bdacts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.bdpin{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+.bdpin.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
+/* hover shine on profile badges */
+.bdgrow .pbadge{overflow:hidden;position:relative}
+.bdgrow .pbadge::after{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.75) 50%,transparent 60%);transform:translateX(-80%);pointer-events:none}
+.bdgrow .pbadge:hover::after{transition:transform .55s ease;transform:translateX(80%)}
+/* new badge celebration */
+.newbadge{width:min(400px,92vw);padding:30px 26px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;position:relative}
+.newbadge h2{margin:6px 0 0}.newbadge .rar{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.nbglow{position:relative;width:140px;height:140px;display:flex;align-items:center;justify-content:center;animation:nbpop .7s cubic-bezier(.2,1.6,.4,1)}
+.nbglow::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent,currentColor,transparent 30%,currentColor 50%,transparent 70%,currentColor 85%,transparent);opacity:.35;animation:spin 6s linear infinite;filter:blur(6px)}
+.nbglow.r-mythic{color:#ffb84d}.nbglow.r-epic{color:#c084fc}.nbglow.r-rare{color:#3fb8ff}.nbglow.r-common{color:#b5bac1}
+@keyframes nbpop{0%{transform:scale(.2) rotate(-20deg);opacity:0}100%{transform:none;opacity:1}}
+/* owner badge giver + settings */
+.spbadges{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.spb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:var(--rail);color:var(--muted);cursor:pointer}
+.spb.on{border-color:var(--accent);color:var(--text);box-shadow:0 0 0 1px var(--accent)}
+.spb:not(.on) svg{filter:grayscale(1) brightness(.7)}
+.spb small{font-size:11px;font-weight:700}
+.bdset{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.bdset .bdgrow{cursor:default}
+.newbadge .pfx{z-index:0;pointer-events:none}.newbadge > :not(.pfx){position:relative;z-index:1}
+/* close DM */
+.ch.dm{position:relative}
+.ch.dm .dmx{margin-left:auto;width:22px;height:22px;border-radius:6px;border:0;background:none;color:var(--muted);display:none;align-items:center;justify-content:center;cursor:pointer;flex:none;position:relative;z-index:2}
+.ch.dm:hover .dmx{display:inline-flex}
+.ch.dm:hover .newdot{display:none}
+.ch.dm .dmx:hover{color:var(--text);background:rgba(255,255,255,.08)}
 </style>
 </head>
 <body>
@@ -1062,6 +1146,7 @@ html,body{overflow:hidden}
       <div class="cbox" id="cbox">
         <button class="cb" id="attBtn" title="Upload an image" data-ic="pluscircle"></button>
         <textarea id="input" rows="1" placeholder="Message"></textarea>
+        <button class="cb" id="camBtn" title="Take a photo" data-ic="camera"></button>
         <button class="cb gif" id="gifBtn" title="GIFs">GIF</button>
         <button class="cb" id="emoBtn" title="Emoji" data-ic="smile"></button>
       </div>
@@ -1101,7 +1186,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.13";
+const APP_VERSION = "2026-11-18.14";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1175,6 +1260,7 @@ const ICONS = {
   grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   keyboard:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>',
   alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/>',
+  refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
   star:'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
   spark:'<path d="M12 2.5l2.3 6.2 6.2 2.3-6.2 2.3L12 19.5l-2.3-6.2L3.5 11l6.2-2.3z"/><path d="M19 17.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
@@ -1192,10 +1278,15 @@ const CATALOG = [
   {id:"name_fx", icon:"wand", name:"Animated Name", price:"$1.99", desc:"Rainbow, Gold, Fire, Ocean or Neon — your name shimmers everywhere."},
   {id:"themes", icon:"palette", name:"Theme Pack", price:"$0.99", desc:"Unlock Midnight, Ocean, Sunset, Forest and Sakura."},
   {id:"banner", icon:"image", name:"Profile Banner", price:"$0.99", desc:"Pick a custom banner color for your profile card."},
-  {id:"sparks_1000", icon:"spark", name:"1,000 Sparks", price:"$0.99", coins:1000, desc:"Spend them on decorations, effects and nameplates."},
-  {id:"sparks_3000", icon:"spark", name:"3,000 Sparks", price:"$2.49", coins:3000, desc:"Best for a bundle or two. 15% bonus value."},
-  {id:"sparks_7500", icon:"spark", name:"7,500 Sparks", price:"$4.99", coins:7500, desc:"Basically the whole shop. 50% bonus value."},
-  {id:"supporter", icon:"gem", name:"Supporter Badge", price:"$0.99", desc:"A gem badge next to your name to show you back CampusCord."},
+  {id:"plus_year", icon:"sparkles", name:"Campus+ · 1 year", price:"$24.99", months:12, perk:"plus", desc:"Twelve months of Campus+ for the price of about eight."},
+  {id:"plusplus_year", icon:"zap", name:"Campus++ · 1 year", price:"$49.99", months:12, perk:"plusplus", desc:"Twelve months of Campus++. Best deal on the top rank."},
+  {id:"founder", icon:"crown", name:"Founder Badge", price:"$4.99", desc:"A Mythic Founder badge on your profile, for the people who backed CampusCord first."},
+  {id:"sparks_1000", icon:"spark", name:"1,000 Sparks", price:"$0.99", coins:1000, desc:"A little top-up for one decoration or nameplate."},
+  {id:"sparks_3000", icon:"spark", name:"3,000 Sparks", price:"$2.49", coins:3000, desc:"Enough for a bundle. 20% bonus value."},
+  {id:"sparks_7500", icon:"spark", name:"7,500 Sparks", price:"$4.99", coins:7500, desc:"A whole new look. 50% bonus value."},
+  {id:"sparks_15000", icon:"spark", name:"15,000 Sparks", price:"$8.99", coins:15000, desc:"Most of the shop. 67% bonus value."},
+  {id:"sparks_40000", icon:"spark", name:"40,000 Sparks", price:"$19.99", coins:40000, desc:"Everything, plus extra for new drops. 100% bonus value."},
+  {id:"supporter", icon:"gem", name:"Supporter Badge", price:"$0.99", desc:"A heart badge on your profile to show you back CampusCord."},
 ];
 const PLUS_INCLUDES = ["name_fx","themes","banner","big_uploads","supporter"];
 const PLUSPLUS_INCLUDES = [...PLUS_INCLUDES, "plus", "fx_exclusive", "ring", "banner_gradient"];
@@ -1318,12 +1409,15 @@ const AV_BGS = [
 const AV_FACES = "😎 🤠 🥳 🤓 😈 👻 👽 🤖 💀 🤡 🐸 🐱 🐶 🦊 🐼 🐨 🐯 🦁 🐵 🐧 🦄 🐙 🦖 🐢 🐝 🦋 🍕 🍩 🍉 🌮 ⚡ 🔥 ⭐ 🌙 🌈 ❄️ 🎮 🎧 ⚽ 🏀 🎨 🚀 💎 👑 🍀 🌸".split(" ");
 // The avatar look is stored in the profile's "avatar" field as "look:<bg>|<face>" so it fits the published rules.
 function lookOf(uid){ const a = profile(uid).avatar; if (typeof a === "string" && a.startsWith("look:")){ const [bg, face] = a.slice(5).split("|"); return {bg:bg || "", face:face || ""}; } return {}; }
+function isPhotoAvatar(a){ return typeof a === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(a); }
 function avatar(uid, size, withDot){
   const look = lookOf(uid);
+  const photo = isPhotoAvatar(profile(uid).avatar) ? profile(uid).avatar : null;
   const face = look.face && AV_FACES.includes(look.face) ? look.face : null;
   const a = h("div",{class:"av" + (size ? " "+size : "") + (face ? " emo" : "")}, face || initials(nickOf(uid)));
   const bg = AV_BGS.find(b => b.id === look.bg);
-  if (bg) a.style.background = bg.g;
+  if (photo){ a.classList.add("photo"); a.textContent = ""; a.style.backgroundImage = 'url("' + photo + '")'; }
+  else if (bg) a.style.background = bg.g;
   else { a.style.background = (look.bg && /^#[0-9a-f]{6}$/i.test(look.bg)) ? look.bg : colorOf(uid); a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))"; }
   if (hasPerk(uid, "ring")) a.classList.add("ring");
   const dc = size !== "xs" && equipped(uid, "deco"); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
@@ -1489,7 +1583,7 @@ function initApp(){
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
   ensureWallet();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
-  setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
+  clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
   need("rail","side","header","msgs","rpanel","me","composer","gifs");
   $("input").focus();
@@ -1602,20 +1696,33 @@ function renderSide(){
     });
   });
 }
+function dmHidden(d){ const t = (prefs.hiddenDMs || {})[d.id]; return !!t && (d.lastTs || d.createdAt || 0) <= t && !(S.kind === "dm" && S.cur === d.id); }
+function closeDM(d){
+  prefs.hiddenDMs = prefs.hiddenDMs || {}; prefs.hiddenDMs[d.id] = Math.max(Date.now(), d.lastTs || 0); savePrefs();
+  S.lastRead["dm:" + d.id] = Math.max(Date.now(), d.lastTs || 0); store("lastRead", S.lastRead);
+  if (S.kind === "dm" && S.cur === d.id) openChat("home", "home");
+  need("side", "rail", "msgs"); toast("Closed your DM with " + nickOf(dmOther(d)) + " — it comes back if they message you");
+}
+function dmMenu(e, d){ const o = dmOther(d), anchor = e.currentTarget;
+  ctxMenu(e, [
+    {label:"Profile", icon:"user", run:() => openProfile(o, anchor)},
+    {label:"Mark as read", icon:"check", run:() => { S.lastRead["dm:" + d.id] = Date.now(); store("lastRead", S.lastRead); need("side", "rail"); }},
+    {label:"Close DM", icon:"x", danger:true, run:() => closeDM(d)}]); }
 function renderDMList(box){
   box.innerHTML = "";
   const q = (S.dmFilter||"").toLowerCase();
-  const rows = S.dms.filter(d => { const o = dmOther(d); return member(o) || d.lastTs; }).filter(d => !q || nickOf(dmOther(d)).toLowerCase().includes(q));
+  const rows = S.dms.filter(d => { const o = dmOther(d); return member(o) || d.lastTs; }).filter(d => q ? nickOf(dmOther(d)).toLowerCase().includes(q) : !dmHidden(d));
   if (!rows.length){ box.appendChild(h("div",{class:"empty-note",text: q ? "No matches." : "No DMs yet. Click ＋ above, or click anyone's name and choose Message."})); return; }
   rows.forEach(d => {
     const o = dmOther(d); const on = S.kind === "dm" && S.cur === d.id;
     const un = !on && d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
     const cs = profile(o).customStatus;
     const pl = equipped(o, "plate");
-    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : "") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:() => openChat("dm", d.id)},
+    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : "") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:() => openChat("dm", d.id), oncontextmenu:e => dmMenu(e, d)},
       avatar(o, "sm", true),
       h("div",{class:"meta"}, paintName(h("span",{class:"nm",text:nickOf(o)}), o), cs ? h("span",{class:"sub",text:cs}) : (typersIn("dm", d.id).length ? h("span",{class:"sub",text:"typing…"}) : null)),
-      un ? h("span",{class:"newdot",title:"New message"}) : null));
+      un ? h("span",{class:"newdot",title:"New message"}) : null,
+      h("button",{class:"dmx", title:"Close DM", onclick:e => { e.stopPropagation(); closeDM(d); }}, ic("x","sm"))));
   });
 }
 function renderMe(){
@@ -1714,6 +1821,7 @@ function markRead(){ if (!S.cur) return; S.lastRead[readKey(S.kind, S.cur)] = Da
 async function openDM(uid){
   if (!uid || uid === S.uid) return;
   const id = dmIdWith(uid);
+  if (prefs.hiddenDMs && prefs.hiddenDMs[id]){ delete prefs.hiddenDMs[id]; savePrefs(); }
   if (!S.dms.find(d => d.id === id)){
     try{ await setDoc(doc(db, "dms", id), {users:id.split("_"), createdAt:Date.now()}, {merge:true}); }
     catch(e){ toast("Couldn't start DM: " + errMsg(e)); return; }
@@ -1736,6 +1844,7 @@ function openChat(kind, id){
   closeNav();
   if (isPage(kind)){
     if (S.cur) saveDraft(); stopTyping(); S.unsubRoom.forEach(u => u()); S.unsubRoom = []; if (S.pending) setPending(null);
+    if (S.unsubMsgs){ S.unsubMsgs(); S.unsubMsgs = null; }
     if (S.kind !== kind) $("msgs").scrollTop = 0;
     Object.assign(S, {kind, page:id, cur:null, mode:"dms", msgs:[], reacts:[], typing:[], roomLoaded:true, hasMore:false, replyTo:null, editing:null, pins:null});
     if (S.rpanel === "pins" || S.rpanel === "search") S.rpanel = prefs.showMembers === false ? null : "members";
@@ -1845,7 +1954,7 @@ function renderHome(box){
   const on = people.filter(isOn);
   wrap.append(h("div",{class:"dhh"}, h("h2",{text:"Direct Messages"}), h("p",{text:"Private chats between you and one other person. Nobody else can read them — not even admins."}),
     h("button",{class:"btn small", onclick:() => newDMModal()}, ic("plus"), " New message")));
-  const recent = S.dms.filter(d => member(dmOther(d)) && d.lastTs).slice(0, 6);
+  const recent = S.dms.filter(d => member(dmOther(d)) && d.lastTs && !dmHidden(d)).slice(0, 6);
   if (recent.length){
     wrap.appendChild(h("div",{class:"cat",text:"Recent conversations"}));
     wrap.appendChild(h("div",{class:"dmcards"}, recent.map(d => { const o = dmOther(d); const un = d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
@@ -2315,12 +2424,6 @@ function avatarMaker(){
     AV_FACES.map(f => h("button",{class:"avface" + (look.face === f ? " on" : ""), onclick:() => save({face:f})}, f)));
   return h("div",null, h("label",{class:"f",text:"Avatar background"}), bgs, h("label",{class:"f",text:"Avatar face"}), faces);
 }
-function squareAvatar(file){
-  return new Promise((res, rej) => { const img = new Image(); img.onload = () => {
-    const size = 192, c = document.createElement("canvas"); c.width = c.height = size; const s = Math.min(img.width, img.height);
-    c.getContext("2d").drawImage(img, (img.width - s)/2, (img.height - s)/2, s, s, 0, 0, size, size);
-    res(c.toDataURL("image/jpeg", 0.82)); }; img.onerror = () => rej(new Error("not an image")); img.src = URL.createObjectURL(file); });
-}
 function readDataURL(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
 async function imageToData(file){
   const max = hasPerk(S.uid, "big_uploads") ? 900 : 700;
@@ -2416,6 +2519,7 @@ function insertAt(t){ const s = input.selectionStart ?? input.value.length; inpu
 function openEmoji(cb){ closePops(); emoCb = cb || null; buildEmojiGrid(); $("emoPop").classList.remove("hidden"); }
 function closePops(){ $("emoPop").classList.add("hidden"); $("gifPop").classList.add("hidden"); emoCb = null; }
 $("emoBtn").onclick = e => { e.stopPropagation(); const open = !$("emoPop").classList.contains("hidden"); closePops(); if (!open) openEmoji(); };
+$("camBtn").onclick = () => cameraToChat();
 $("gifBtn").onclick = e => { e.stopPropagation(); const open = !$("gifPop").classList.contains("hidden"); closePops(); if (!open) $("gifPop").classList.remove("hidden"); };
 document.addEventListener("click", e => { if (!e.target.closest(".pop") && !e.target.closest("#emoBtn") && !e.target.closest("#gifBtn") && !e.target.closest(".quick")) closePops(); });
 document.addEventListener("keydown", e => {
@@ -2450,7 +2554,7 @@ function closeNav(){ document.body.classList.remove("nav-open"); }
 // ---------------------------------------------------------------- modals
 function modal(build, cls){
   const bg = h("div",{class:"modalbg"}); const m = h("div",{class:"modal" + (cls ? " " + cls : "")}); bg.appendChild(m);
-  const close = () => { bg.remove(); if (S.paneRefresh && S.paneRefresh.bg === bg) S.paneRefresh = null; };
+  const close = () => { if (m._onClose){ try{ m._onClose(); }catch(e){} } bg.remove(); if (S.paneRefresh && S.paneRefresh.bg === bg) S.paneRefresh = null; };
   bg.addEventListener("mousedown", e => { if (e.target === bg) close(); });
   bg._close = close;
   build(m, close, bg); $("layer").appendChild(bg); const f = m.querySelector("input:not([type=color])"); if (f && !cls) f.focus(); return close;
@@ -2569,7 +2673,8 @@ function paneAccount(p){
   const n = h("input",{class:"inp", value:me.nick, maxlength:"24"});
   const cs = h("div",{class:"colors"}, COLORS.map(c => { const b = h("button",{class: c === color ? "on" : "", style:{background:c}, onclick:() => { color = c; [...cs.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); return b; }));
   const av = avatar(S.uid, "xl", true);
-  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "👑 Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "☯ Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+    h("label",{class:"f",text:"Profile picture"}), avatarPhotoControls(),
     avatarMaker(),
     h("label",{class:"f",text:"Display name"}), n, h("label",{class:"f",text:"Name color"}), cs,
     h("button",{class:"btn small", style:{marginTop:"16px"}, onclick:async () => { const v = n.value.trim(); if (v.length < 2){ toast("Name needs at least 2 characters"); return; }
@@ -2579,6 +2684,7 @@ function paneAccount(p){
 }
 function paneProfile(p){
   const pr = profile(S.uid);
+  { const row = badgeRow(S.uid); p.append(h("div",{class:"preview-card bdset"}, h("div",{style:{flex:"1"}}, h("b",{text:"Badges"}), h("div",{class:"note",style:{margin:0},text: badgesOf(S.uid).length + " collected · pin your favorites to show them on your profile"})), row, h("button",{class:"btn small", onclick:() => { closeTopModal(); badgeDirectory(S.uid); }}, "Manage badges"))); }
   const bio = h("textarea",{class:"inp", maxlength:"190", placeholder:"Tell people a bit about yourself"}); bio.value = pr.bio || "";
   const cst = h("input",{class:"inp", maxlength:"60", placeholder:"e.g. 📚 studying for finals", value:pr.customStatus || ""});
   const st = h("div",{class:"seg"}, STATUSES.map(s => h("button",{class: (pr.status || "online") === s.id ? "on" : "", title:s.d, onclick:async () => { await setMyProfile({status:s.id}).catch(()=>{}); S.sentInvisible = false; heartbeat(); refreshOpenPane(); }}, s.name)));
@@ -2642,7 +2748,8 @@ function paneAbout(p){
 }
 
 // ---------------------------------------------------------------- shop
-function shopItem(id){ const base = CATALOG.find(c => c.id === id); const o = ((S.shop||{}).items||{})[id] || {}; return Object.assign({}, base, {price:o.price || base.price, link:o.link || "", enabled:o.enabled !== false}); }
+const STRIPE_LINKS = {"sparks_1000": "https://buy.stripe.com/9B6eVd2tSaCzfH99mB4ow1I", "sparks_3000": "https://buy.stripe.com/5kQ6oH8SgcKH2Un6ap4ow1J", "sparks_7500": "https://buy.stripe.com/7sY8wPb0o4ebgLd9mB4ow1K", "sparks_15000": "https://buy.stripe.com/3cI14ngkIaCz1Qj8ix4ow1L", "sparks_40000": "https://buy.stripe.com/aFa28recAaCzgLd42h4ow1M", "plus": "https://buy.stripe.com/4gM7sL8SgeSPfH9dCR4ow1N", "plusplus": "https://buy.stripe.com/14A00jecAcKH2UndCR4ow1O", "plus_year": "https://buy.stripe.com/8x2bJ1b0o5if0MfaqF4ow1P", "plusplus_year": "https://buy.stripe.com/5kQ00jb0oeSP52veGV4ow1Q", "name_fx": "https://buy.stripe.com/cNidR9ecA7qn8eH8ix4ow1R", "themes": "https://buy.stripe.com/8x25kD2tS4eb66z0Q54ow1S", "banner": "https://buy.stripe.com/5kQ00j1pObGDcuX2Yd4ow1T", "supporter": "https://buy.stripe.com/00w28r6K826352v8ix4ow1U", "founder": "https://buy.stripe.com/eVqfZh1pOaCzeD5eGV4ow1V"};
+function shopItem(id){ const base = CATALOG.find(c => c.id === id); const o = ((S.shop||{}).items||{})[id] || {}; return Object.assign({}, base, {price:o.price || base.price, link:o.link || STRIPE_LINKS[id] || "", enabled:o.enabled !== false}); }
 function shopButton(c){
   const it = shopItem(c.id);
   const owned = hasPerk(S.uid, c.id);
@@ -2671,8 +2778,10 @@ function drawRanks(m, draw){
           h("div",{class:"th"}, c.tier === 2 ? chip("pp","zap","PLUS+") : chip("plus","sparkles","PLUS")),
           h("div",{class:"tn",text:c.name}), h("div",{class:"td",text:c.desc}),
           h("div",{class:"tp"}, h("b",{text:it.price.split("/")[0].trim()}), it.price.includes("/") ? h("span",{text:" / " + it.price.split("/")[1].trim()}) : null),
+          h("div",{class:"tnote",text:"One-time payment · no auto-renew"}),
           h("ul",{class:"feat"}, c.list.map(x => h("li",null, ic("check"), h("span",{text:x})))),
-          shopButton(c)));
+          shopButton(c),
+          (() => { const y = CATALOG.find(x => x.perk === c.id); const yi = y && shopItem(y.id); return yi && yi.enabled && yi.link ? h("button",{class:"btn ghost small yearbtn", onclick:() => buy(y.id)}, "Or 1 year for " + yi.price) : null; })()));
       });
       m.appendChild(tiers);
       // name effect preview
@@ -2717,10 +2826,12 @@ function openSparks(){
 async function buy(itemId){
   const it = shopItem(itemId); if (!it.link) return;
   const orderId = "cc_" + rid();
-  try{ await setDoc(doc(db, "orders", orderId), {uid:S.uid, nick:nickOf(S.uid), item:itemId, price:it.price, ts:Date.now(), status:"pending"}); }
-  catch(e){ toast("Couldn't start checkout: " + errMsg(e)); return; }
+  // Open Stripe right away (before any await) so Safari/Chrome don't block it as a pop-up.
   const url = it.link + (it.link.includes("?") ? "&" : "?") + "client_reference_id=" + encodeURIComponent(orderId);
-  window.open(url, "_blank", "noopener");
+  const w = window.open(url, "_blank"); if (w){ try{ w.opener = null; }catch(e){} }
+  try{ await setDoc(doc(db, "orders", orderId), {uid:S.uid, nick:nickOf(S.uid), item:itemId, price:it.price, ts:Date.now(), status:"pending"}); }
+  catch(e){ toast("Couldn't record your order: " + errMsg(e) + " — tell the admin your order ID " + orderId); return; }
+  if (!w) location.href = url; // pop-up blocked: go to checkout in this tab instead
   toast("Opening Stripe checkout… after you pay, an admin activates your perk.");
 }
 async function cancelOrder(o){ try{ await deleteDoc(doc(db, "orders", o.id)); }catch(e){ toast("Couldn't cancel: " + errMsg(e)); } }
@@ -2838,10 +2949,12 @@ function grantModal(uid){
   modal((m, close) => {
     m.append(h("h3",{text:"Perks for " + nickOf(uid)}), h("p",{class:"note",text:"Grant or remove perks by hand (gifts, giveaways, refunds)."}));
     const list = h("div",{class:"list"});
-    CATALOG.filter(c => !c.coins).forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
+    CATALOG.filter(c => !c.coins && !c.perk).forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
       list.appendChild(h("div",{class:"li"}, ic(c.icon), h("span",{class:"nm",text:c.name + (on && items[c.id].until ? " (until " + new Date(items[c.id].until).toLocaleDateString() + ")" : "")}),
         on ? h("button",{class:"btn small danger", onclick:async () => { await revokePerk(uid, c.id); close(); }}, "Remove") : h("button",{class:"btn small", onclick:async () => { await grantPerk(uid, c.id); close(); }}, "Grant"))); });
-    m.append(list, h("label",{class:"f",text:"Give Sparks (" + sparks(uid).toLocaleString() + " now)"}),
+    const sb = h("div",{class:"spbadges"}, SPECIAL_BADGES.map(b => { const on = specialOf(uid).includes(b.id); const el = badgeEl(BADGES.find(x => x.id === b.id), {}, "sm");
+      return h("button",{class:"spb" + (on ? " on" : ""), title:(on ? "Remove " : "Give ") + b.name, onclick:async () => { await setSpecial(uid, b.id, !on); close(); }}, el, h("small",{text:b.name})); }));
+    m.append(list, h("label",{class:"f",text:"Special badges (click to give or remove)"}), sb, h("label",{class:"f",text:"Give Sparks (" + sparks(uid).toLocaleString() + " now)"}),
       h("div",{class:"row"}, [100, 500, 1000, 5000].map(n => h("button",{class:"btn small ghost", onclick:async () => { await giveSparks(uid, n); close(); }}, "+" + n.toLocaleString()))),
       h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
   });
@@ -2849,6 +2962,7 @@ function grantModal(uid){
 async function grantPerk(uid, item){
   const c = CATALOG.find(x => x.id === item) || {};
   if (c.coins){ await giveSparks(uid, c.coins); return; }
+  if (c.perk) item = c.perk;
   const prev = (((S.perks[uid]||{}).items||{})[item]) || {};
   const entry = {since:Date.now()};
   if (c.months){ const startAt = Math.max(Date.now(), prev.until || 0); entry.until = startAt + c.months * 31 * 864e5; }
@@ -3018,12 +3132,6 @@ async function claimQuest(q){
   try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + q.reward, quests:[...(w2.quests || []), q.id], lastQuest:q.id}); toast("Quest complete — " + q.name + " ✦ Explorer badge progress!"); }
   catch(e){ toast("Couldn't claim: " + econError(e)); }
 }
-async function claimDaily(){
-  const w = wal(S.uid); if (Date.now() - (w.lastDaily || 0) < DAILY_MS) return;
-  await ensureWallet(); const w2 = wal(S.uid);
-  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + DAILY_SPARKS, lastDaily:Date.now()}); bumpStat("dailies"); toast("+" + DAILY_SPARKS + " Sparks ✦ — see you tomorrow!"); }
-  catch(e){ toast("Couldn't claim: " + econError(e)); }
-}
 async function giveSparks(uid, n){ const w = wal(uid);
   try{ await setDoc(doc(db, "wallet", uid), Object.assign({}, EMPTY_WALLET, S.wallets[uid] || {}, {earned:(w.earned || 0) + n})); toast("Gave " + n + " Sparks to " + nickOf(uid)); }
   catch(e){ toast("Couldn't give Sparks: " + errMsg(e)); } }
@@ -3140,7 +3248,6 @@ function renderShopPage(box){
 }
 
 // ---- Quests page
-function fmtLeft(ms){ const hh = Math.floor(ms / 3600000), mm = Math.ceil((ms % 3600000) / 60000); return hh ? hh + "h " + mm + "m" : mm + "m"; }
 function renderQuestsPage(box){
   const keep = box.scrollTop; box.innerHTML = "";
   const tab = S.page === "claimed" ? "claimed" : "all";
@@ -3226,7 +3333,39 @@ const BADGE_ART = {
     + '<path d="M12 5.4l1.3 2.7 3 .4-2.2 2.1.5 3L12 12.2l-2.6 1.4.5-3-2.2-2.1 3-.4z" fill="#fff"/>',
   voice: () => grad("bv-g", ["#a5f3fc","#06b6d4","#155e75"]) + '<rect x="1.5" y="1.5" width="21" height="21" rx="6.5" fill="url(#bv-g)" stroke="#164e63" stroke-width=".8"/>'
     + '<rect x="9" y="4.8" width="6" height="9.6" rx="3" fill="#fff"/><path d="M6.6 11.2a5.4 5.4 0 0 0 10.8 0M12 16.6v2.6M9.2 19.2h5.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/>' + SHINE,
+  founder: () => '<defs><linearGradient id="bf-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b0764"/><stop offset="1" stop-color="#0f0524"/></linearGradient><linearGradient id="bf-au" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c2"/><stop offset=".5" stop-color="#f6c033"/><stop offset="1" stop-color="#a15c00"/></linearGradient></defs>'
+    + '<circle cx="12" cy="12" r="10.8" fill="url(#bf-g)" stroke="url(#bf-au)" stroke-width="1.5"/>'
+    + '<path d="M5.2 15.5c-1.4-2.6-1-5.6.8-7.8M18.8 15.5c1.4-2.6 1-5.6-.8-7.8" stroke="url(#bf-au)" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M5 12.4l1.6.3M5.6 10l1.5.6M19 12.4l-1.6.3M18.4 10l-1.5.6" stroke="#f6c033" stroke-width="1.1" stroke-linecap="round"/>'
+    + '<path d="M7.8 15.2 7 9.4l2.8 2.2L12 7.6l2.2 4 2.8-2.2-.8 5.8z" fill="url(#bf-au)" stroke="#7c4a03" stroke-width=".5" stroke-linejoin="round"/><path d="M7.9 16.6h8.2" stroke="url(#bf-au)" stroke-width="1.3" stroke-linecap="round"/><circle cx="12" cy="7.3" r=".9" fill="#fff6c2"/>',
+  photo: () => grad("bph-g", ["#ffd6ec","#ff4fa3","#9d174d"]) + '<rect x="1.8" y="5" width="20.4" height="15" rx="4" fill="url(#bph-g)" stroke="#831843" stroke-width=".8"/><path d="M8 5l1.4-2.4h5.2L16 5" fill="#ff7ac6" stroke="#831843" stroke-width=".8" stroke-linejoin="round"/>'
+    + '<circle cx="12" cy="12.4" r="4.6" fill="#1f1020" stroke="#fff" stroke-width="1.4"/><circle cx="12" cy="12.4" r="2.2" fill="#6ee7ff"/><circle cx="11.1" cy="11.5" r=".8" fill="#fff"/><circle cx="18.4" cy="8.2" r="1" fill="#fff6c2"/>',
+  bughunter: () => grad("bb-g", ["#d9f99d","#65a30d","#1a2e05"]) + '<circle cx="12" cy="12" r="10.8" fill="url(#bb-g)" stroke="#1a2e05" stroke-width=".8"/>'
+    + '<ellipse cx="12" cy="13.4" rx="3.8" ry="4.8" fill="#1a2e05"/><circle cx="12" cy="8" r="2.2" fill="#1a2e05"/><path d="M12 9.6v8.4" stroke="#bef264" stroke-width=".9"/><path d="M8.2 11.2 5.4 9.6M8 14l-3 .2M8.6 16.8l-2.4 2M15.8 11.2l2.8-1.6M16 14l3 .2M15.4 16.8l2.4 2M10.8 6.2 9.6 4.4M13.2 6.2l1.2-1.8" stroke="#1a2e05" stroke-width="1.2" stroke-linecap="round"/>' + SHINE,
+  helper: () => grad("bh-g", ["#bae6fd","#0ea5e9","#0c4a6e"]) + '<circle cx="12" cy="12" r="10.6" fill="#fff" stroke="#0c4a6e" stroke-width=".8"/><circle cx="12" cy="12" r="10.6" fill="none" stroke="url(#bh-g)" stroke-width="5" stroke-dasharray="8.3 8.3" transform="rotate(-22 12 12)"/>'
+    + '<circle cx="12" cy="12" r="4.6" fill="#0c1a2a" stroke="#0c4a6e" stroke-width=".8"/><path d="M12 9.6v4.8M9.6 12h4.8" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>',
+  mvp: () => grad("bm-g", ["#fff6c2","#f6c033","#a15c00"], true) + '<path d="M7 3h10v5.5a5 5 0 0 1-10 0z" fill="url(#bm-g)" stroke="#7c4a03" stroke-width=".8"/><path d="M7 4.6H4.2c0 3 1.2 4.6 3.4 5M17 4.6h2.8c0 3-1.2 4.6-3.4 5" stroke="#f6c033" stroke-width="1.4" fill="none"/>'
+    + '<path d="M10.4 13.2h3.2l.6 3.6h-4.4z" fill="#d99a14"/><rect x="7.4" y="16.8" width="9.2" height="4.2" rx="1" fill="#5b3a0a" stroke="#f6c033" stroke-width=".8"/><path d="M12 5l.9 1.9 2 .3-1.4 1.4.3 2L12 9.7l-1.8.9.3-2-1.4-1.4 2-.3z" fill="#fff"/>',
+  artist: () => grad("ba-g", ["#fde7c7","#f5c08a","#9a5b20"]) + '<path d="M12 2.2c5.6 0 9.8 3.8 9.8 8.6 0 3.3-2.6 4.4-4.6 4.4-1.6 0-2.4 1-2 2.4.5 1.6-.4 4.2-3.4 4.2-5.4 0-9.6-4.4-9.6-9.8S6.3 2.2 12 2.2z" fill="url(#ba-g)" stroke="#7c4a1a" stroke-width=".8"/>'
+    + '<circle cx="7" cy="10" r="1.7" fill="#ef4444"/><circle cx="9.8" cy="6.2" r="1.7" fill="#facc15"/><circle cx="14.6" cy="6" r="1.7" fill="#22c55e"/><circle cx="17.6" cy="9.6" r="1.7" fill="#3b82f6"/><circle cx="8.4" cy="15" r="1.9" fill="#fde7c7" stroke="#9a5b20" stroke-width=".6"/>',
+  og: () => grad("bog-g", ["#e9d5ff","#7c3aed","#2e1065"]) + '<rect x="1.6" y="4.2" width="20.8" height="15.6" rx="5" fill="url(#bog-g)" stroke="#2e1065" stroke-width=".8"/>'
+    + '<text x="12" y="15.9" text-anchor="middle" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="9.4" fill="#fff" stroke="#2e1065" stroke-width=".5" paint-order="stroke">OG</text><path d="M4.8 7c1.6-1.2 3.6-1.4 5.4-1" stroke="#fff" stroke-opacity=".7" stroke-width="1" stroke-linecap="round" fill="none"/>',
+  hype: () => '<defs><linearGradient id="bhy-g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#b91c1c"/><stop offset=".5" stop-color="#f97316"/><stop offset="1" stop-color="#fde047"/></linearGradient></defs>'
+    + '<path d="M12 1.6c.6 3.4 4.2 5 5.6 8.6 1.6 4.2-.8 10.2-5.6 10.2S4.6 15.6 6 11.6c.6-1.8 1.8-2.6 2.6-3.4.2 1.6.8 2.6 1.8 3.2C10.2 7.6 11 4.4 12 1.6z" fill="url(#bhy-g)" stroke="#7f1d1d" stroke-width=".8" stroke-linejoin="round"/>'
+    + '<path d="M12 11c.4 2 2.6 3 2.6 5.2a2.6 2.6 0 0 1-5.2 0c0-1.4.8-2 1.4-2.6.2.8.6 1.2 1 1.4-.2-1.4-.2-2.6.2-4z" fill="#fef08a"/>',
+  event: () => grad("bev-g", ["#fbcfe8","#ec4899","#831843"]) + '<path d="M3 21l4.6-12.4 7.8 7.8z" fill="url(#bev-g)" stroke="#831843" stroke-width=".8" stroke-linejoin="round"/><path d="M5.2 15.2l3.6 3.6M6.6 11.4l6 6" stroke="#fff" stroke-opacity=".6" stroke-width="1"/>'
+    + '<path d="M13 6.8c.8-1.8 2.6-2.6 4.4-2.2M15.6 10.2c1.6-.8 3.6-.4 4.8.8M11.6 4.2l.6-2" stroke="#facc15" stroke-width="1.4" stroke-linecap="round" fill="none"/><circle cx="19.4" cy="4.4" r="1.2" fill="#22d3ee"/><circle cx="20.6" cy="14.6" r="1" fill="#a78bfa"/><circle cx="9" cy="3.4" r=".9" fill="#4ade80"/>',
 };
+// Badges only the owner can hand out (stored in config/main.badges = {uid: [ids]}).
+const SPECIAL_BADGES = [
+  {id:"mvp", name:"MVP", how:"Given by the owner to the server's most valuable player.", rarity:"Mythic"},
+  {id:"og", name:"OG", how:"Given by the owner to the originals.", rarity:"Epic"},
+  {id:"bughunter", name:"Bug Hunter", how:"Given by the owner for finding and reporting bugs.", rarity:"Epic"},
+  {id:"helper", name:"Helper", how:"Given by the owner for helping others out.", rarity:"Rare"},
+  {id:"artist", name:"Artist", how:"Given by the owner for great art, memes or emotes.", rarity:"Rare"},
+  {id:"hype", name:"Hype Squad", how:"Given by the owner to the people who keep chat alive.", rarity:"Rare"},
+  {id:"event", name:"Event Winner", how:"Given by the owner to whoever won a server event.", rarity:"Epic"},
+];
+function specialOf(uid){ return ((S.config && S.config.badges) || {})[uid] || []; }
 // Evolving badges: [threshold, tier]
 const SPEND_TIERS = [[500,"bronze"],[1500,"silver"],[3000,"gold"],[6000,"platinum"],[10000,"diamond"],[20000,"emerald"],[35000,"ruby"],[60000,"opal"]];
 const LOYAL_TIERS = [[7,"bronze"],[30,"silver"],[90,"gold"],[180,"platinum"],[365,"diamond"]];
@@ -3240,46 +3379,102 @@ const BADGES = [
   {id:"dev", name:"Developer", how:"Helps build CampusCord. Given by the owner.", rarity:"Epic", state:uid => isDev(uid) ? {} : null},
   {id:"pp", name:"Campus++", how:"Subscribe to Campus++.", rarity:"Epic", state:uid => rankOf(uid) === "plusplus" ? {} : null},
   {id:"plus", name:"Campus+", how:"Subscribe to Campus+.", rarity:"Rare", state:uid => rankOf(uid) === "plus" ? {} : null},
+  {id:"founder", name:"Founder", how:"Buy the Founder badge in Ranks & Sparks. One of the first backers.", rarity:"Mythic", state:uid => perkActive(((S.perks[uid] || {}).items || {}).founder) ? {} : null},
+  ...SPECIAL_BADGES.map(b => Object.assign({special:true, state:uid => specialOf(uid).includes(b.id) ? {} : null}, b)),
   {id:"spender", name:"Sparks Spender", how:"Spend Sparks in the Shop. Evolves from Bronze to Opal.", evolve:SPEND_TIERS, unit:"Sparks spent", state:uid => { if (isOwnerUid(uid)) return null; const t = tierFor(SPEND_TIERS, wal(uid).spent || 0); return t.tier ? t : null; }, val:uid => wal(uid).spent || 0},
   {id:"sup", name:"Supporter", how:"Buy the Supporter badge in Ranks & Sparks.", rarity:"Rare", state:uid => perkActive(((S.perks[uid] || {}).items || {}).supporter) ? {} : null},
   {id:"loyal", name:"Loyal Member", how:"Stick around. Evolves at 7, 30, 90, 180 and 365 days.", evolve:LOYAL_TIERS, unit:"days in CampusCord", state:uid => { const t = tierFor(LOYAL_TIERS, memberDays(uid)); return t.tier ? t : null; }, val:uid => memberDays(uid)},
   {id:"early", name:"Early Member", how:"Joined during CampusCord's first week.", rarity:"Epic", state:uid => { const m = member(uid) || {}; return S.config && m.joinedAt && m.joinedAt < (S.config.createdAt || 0) + 7 * 864e5 ? {} : null; }},
   {id:"quest", name:"Explorer", how:"Complete Quests. Evolves at 1, 5 and every quest.", evolve:QUEST_TIERS, unit:"quests done", state:uid => { const t = tierFor(QUEST_TIERS.map(x => x[1] === "gold" ? [QUESTS.length, "gold"] : x), (wal(uid).quests || []).length); return t.tier ? t : null; }, val:uid => (wal(uid).quests || []).length},
   {id:"collector", name:"Collector", how:"Own 5 or more cosmetics.", rarity:"Rare", state:uid => !isOwnerUid(uid) && ownedCount(uid) >= 5 ? {} : null},
+  {id:"photo", name:"Photogenic", how:"Set a real photo as your profile picture.", rarity:"Common", state:uid => isPhotoAvatar(profile(uid).avatar) ? {} : null},
   {id:"voice", name:"Voice Regular", how:"Finish the Hop in voice quest.", rarity:"Common", state:uid => (wal(uid).quests || []).includes("q_voice") ? {} : null},
 ];
 function badgeSvg(id, tier){ return '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' + BADGE_ART[id](tier) + '</svg>'; }
 function badgeEl(b, st, size){ const s = h("span",{class:"pbadge b-" + b.id + (st && st.tier ? " t-" + st.tier : "") + (size ? " " + size : "")}); s.innerHTML = badgeSvg(b.id, (st && st.tier) || (b.evolve ? b.evolve[0][1] : null)); return s; }
 function badgesOf(uid){ return BADGES.map(b => ({b, st:b.state(uid)})).filter(x => x.st); }
+function showcaseOf(uid){ const sc = profile(uid).showcase; return Array.isArray(sc) ? sc : null; }
+function displayBadges(uid){ const all = badgesOf(uid), sc = showcaseOf(uid); if (!sc || !sc.length) return all;
+  const pinned = sc.map(id => all.find(x => x.b.id === id)).filter(Boolean); return pinned.length ? pinned : all; }
+async function toggleBadgePin(id){ const all = badgesOf(S.uid).map(x => x.b.id); let sc = (showcaseOf(S.uid) || []).filter(x => all.includes(x));
+  if (sc.includes(id)) sc = sc.filter(x => x !== id); else { if (sc.length >= 6){ toast("You can pin up to 6 badges"); return; } sc.push(id); }
+  try{ await setMyProfile({showcase:sc}); toast(sc.includes(id) ? "Pinned to your profile" : "Unpinned"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }
 function badgeTitle(b, st){ return b.name + (st && st.tier ? " · " + TIERS[st.tier].name : ""); }
-function badgeRarity(b, st){ return st && st.tier ? TIERS[st.tier].r : b.rarity; }
+function badgeRarity(b, st){ return st && st.tier ? TIERS[st.tier].r : b.rarity || (b.evolve ? TIERS[b.evolve[0][1]].r : "Common"); }
 function badgeRow(uid){
-  const list = badgesOf(uid); if (!list.length) return null;
+  const list = displayBadges(uid); if (!list.length) return null;
   const shown = list.slice(0, 6);
   const row = h("div",{class:"bdgrow", title:"", onclick:e => { e.stopPropagation(); badgeDirectory(uid); }},
     shown.map(({b, st}) => { const el = badgeEl(b, st); el.dataset.tipT = badgeTitle(b, st); el.dataset.tipR = badgeRarity(b, st); el.dataset.tipD = b.how; return el; }),
     list.length > 6 ? h("span",{class:"bmore",text:"+" + (list.length - 6)}) : null);
   return row;
 }
+function evolveList(b){ return b.id === "quest" ? QUEST_TIERS.map(x => x[1] === "gold" ? [QUESTS.length, "gold"] : x) : b.evolve; }
+async function setSpecial(uid, id, on){
+  try{ await updateDoc(doc(db, "config/main"), {["badges." + uid]: on ? arrayUnion(id) : arrayRemove(id)}); toast((on ? "Gave " : "Removed ") + BADGES.find(x => x.id === id).name + (on ? " to " : " from ") + nickOf(uid)); }
+  catch(e){ toast("Couldn't update badge: " + errMsg(e)); }
+}
 function badgeDirectory(uid){
   closeLayer("profile");
-  modal((m, close) => {
-    const mine = uid === S.uid, have = badgesOf(uid).length;
-    m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
-      h("div",{class:"bdhead"}, h("h2",{text: mine ? "Your badges" : nickOf(uid) + "'s badges"}), h("p",{class:"note",style:{margin:0},text: have + " of " + BADGES.length + " collected · hover a badge to see its rarity"})));
-    const grid = h("div",{class:"bdgrid"});
-    BADGES.forEach(b => { const st = b.state(uid); const r = badgeRarity(b, st);
-      let prog = null;
-      if (b.evolve && b.val){ const v = b.val(uid); const list = b.id === "quest" ? QUEST_TIERS.map(x => x[1] === "gold" ? [QUESTS.length, "gold"] : x) : b.evolve; const t = tierFor(list, v);
-        prog = h("div",{class:"bdtiers"}, list.map(([n, tn]) => { const e = badgeEl(b, {tier:tn}, "sm"); if (v < n) e.classList.add("blk"); e.dataset.tipT = TIERS[tn].name; e.dataset.tipR = TIERS[tn].r; e.dataset.tipD = n.toLocaleString() + " " + b.unit; return e; }),
-          h("span",{class:"note",style:{margin:"0 0 0 6px"},text: t.next ? v.toLocaleString() + " / " + t.next[0].toLocaleString() + " " + b.unit : "Max tier!"})); }
-      grid.appendChild(h("div",{class:"bdcard" + (st ? "" : " blk")},
-        (() => { const e = badgeEl(b, st, "lg"); if (!st) e.classList.add("blk"); return e; })(),
-        h("div",{class:"bdtxt"}, h("b",{text: badgeTitle(b, st)}), h("span",{class:"rar",style:{color:RARITY_COLOR[r]},text:r}), h("span",{class:"note",style:{margin:0},text:b.how}), prog),
-        st ? h("span",{class:"owned"}, ic("check","sm")) : h("span",{class:"lockic"}, ic("lock","sm")))); });
-    m.append(grid);
+  modal((m, close, bg) => {
+    const draw = () => {
+      m.innerHTML = "";
+      const mine = uid === S.uid, have = badgesOf(uid), sc = showcaseOf(S.uid) || [];
+      const shown = mine ? BADGES : BADGES.filter(b => !b.special || b.state(uid) || isOwner());
+      m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
+        h("div",{class:"bdhead"}, h("div",{class:"bdhero"}, ...have.slice(0, 5).map(({b, st}) => badgeEl(b, st, "lg"))),
+          h("h2",{text: mine ? "Your badges" : nickOf(uid) + "'s badges"}),
+          h("p",{class:"note",style:{margin:0},text: have.length + " of " + BADGES.length + " collected" + (mine ? " · pin up to 6 to show on your profile" : "")}),
+          h("div",{class:"bdbar"}, h("i",{style:{width: Math.round(have.length / BADGES.length * 100) + "%"}}))));
+      ["Mythic","Epic","Rare","Common"].forEach(rar => {
+        const group = shown.filter(b => (b.evolve ? "Evolving" : b.rarity) === rar); if (!group.length) return;
+        m.append(h("div",{class:"bdsec", style:{color:RARITY_COLOR[rar]}, text:rar}));
+        m.append(bdGrid(group));
+      });
+      const evo = shown.filter(b => b.evolve); if (evo.length){ m.append(h("div",{class:"bdsec", style:{color:"#7ef0e6"}, text:"Evolving"})); m.append(bdGrid(evo)); }
+      function bdGrid(list){
+        const grid = h("div",{class:"bdgrid"});
+        list.forEach(b => { const st = b.state(uid); const r = badgeRarity(b, st);
+          let prog = null;
+          if (b.evolve && b.val){ const v = b.val(uid); const tl = evolveList(b); const t = tierFor(tl, v);
+            const prevAt = t.at || 0, nextAt = t.next ? t.next[0] : prevAt; const pct = t.next ? Math.max(0, Math.min(100, (v - prevAt) / (nextAt - prevAt) * 100)) : 100;
+            prog = h("div",{class:"bdevo"},
+              h("div",{class:"bdtiers"}, tl.map(([n, tn]) => { const e = badgeEl(b, {tier:tn}, "sm"); if (v < n) e.classList.add("blk"); e.dataset.tipT = TIERS[tn].name; e.dataset.tipR = TIERS[tn].r; e.dataset.tipD = n.toLocaleString() + " " + b.unit; return e; })),
+              h("div",{class:"bdbar sm"}, h("i",{style:{width:pct + "%"}})),
+              h("span",{class:"note",style:{margin:0,fontSize:"11px"},text: t.next ? v.toLocaleString() + " / " + nextAt.toLocaleString() + " " + b.unit + " to " + TIERS[t.next[1]].name : "Max tier reached!"})); }
+          const pinned = mine && sc.includes(b.id);
+          const actions = h("div",{class:"bdacts"},
+            mine && st ? h("button",{class:"bdpin" + (pinned ? " on" : ""), title: pinned ? "Unpin from profile" : "Pin to profile", onclick:async () => { await toggleBadgePin(b.id); setTimeout(draw, 250); }}, ic("pin","sm"), pinned ? " Pinned" : " Pin") : null,
+            b.special && isOwner() && !mine ? h("button",{class:"btn small" + (st ? " ghost" : ""), onclick:async () => { await setSpecial(uid, b.id, !st); setTimeout(draw, 250); }}, st ? "Remove" : "Give") : null);
+          grid.appendChild(h("div",{class:"bdcard r-" + r.toLowerCase() + (st ? " have" : " blk")},
+            (() => { const e = badgeEl(b, st, "lg"); if (!st) e.classList.add("blk"); return e; })(),
+            h("div",{class:"bdtxt"}, h("b",{text: badgeTitle(b, st)}), h("span",{class:"rar",style:{color:RARITY_COLOR[r]},text:r + (b.special ? " · Owner-given" : "")}), h("span",{class:"note",style:{margin:0},text:b.how}), prog, actions),
+            st ? h("span",{class:"owned"}, ic("check","sm")) : h("span",{class:"lockic"}, ic("lock","sm")))); });
+        return grid;
+      }
+    };
+    S.paneRefresh = {bg, draw}; draw();
   }, "bdmodal");
 }
+// New badge / tier unlocked → celebrate once.
+function badgeKeys(uid){ return badgesOf(uid).map(({b, st}) => b.id + (st.tier ? ":" + st.tier : "")); }
+function checkNewBadges(){
+  if (!S.uid || !S.walletsLoaded || !member(S.uid) || window.__ccNoPop || document.hidden || $("layer").children.length) return;
+  const now = badgeKeys(S.uid);
+  if (!Array.isArray(prefs.seenBadges)){ prefs.seenBadges = now; savePrefs(); return; }
+  const fresh = now.filter(k => !prefs.seenBadges.includes(k)); if (!fresh.length) return;
+  prefs.seenBadges = [...new Set([...prefs.seenBadges, ...now])]; savePrefs();
+  const [id, tier] = fresh[fresh.length - 1].split(":"); const b = BADGES.find(x => x.id === id); if (!b) return;
+  const st = tier ? {tier} : {}; const r = badgeRarity(b, st);
+  modal((m, close) => {
+    m.append(h("div",{class:"pfx pfx-confetti"}), h("div",{class:"nbglow r-" + r.toLowerCase()}, badgeEl(b, st, "xl")),
+      h("span",{class:"ichip",style:{background:RARITY_COLOR[r],color:"#111"}}, tier ? "BADGE EVOLVED" : "NEW BADGE"),
+      h("h2",{text: badgeTitle(b, st)}), h("span",{class:"rar",style:{color:RARITY_COLOR[r]},text:r}), h("p",{class:"note",text:b.how}),
+      h("div",{class:"foot",style:{justifyContent:"center"}}, h("button",{class:"btn ghost", onclick:() => { close(); badgeDirectory(S.uid); }}, "See all badges"), h("button",{class:"btn", onclick:close}, "Nice!")));
+    try{ tone(true); }catch(e){}
+  }, "newbadge");
+}
+setInterval(() => { try{ checkNewBadges(); }catch(e){} }, 4000);
 // rich hover tooltips for badges
 (() => { let tip = null;
   document.addEventListener("mouseover", e => { const el = e.target.closest && e.target.closest(".pbadge[data-tip-t]"); if (!el){ if (tip){ tip.remove(); tip = null; } return; }
@@ -3288,6 +3483,130 @@ function badgeDirectory(uid){
     const b = el.getBoundingClientRect(); tip.style.top = (b.top - tip.offsetHeight - 8) + "px"; tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, b.left + b.width / 2 - tip.offsetWidth / 2)) + "px"; });
 })();
 
+
+// ---------------------------------------------------------------- camera (Photo Booth style) + photo cropper
+const CAM_FX = [
+  {id:"normal", name:"Normal", css:"none"},
+  {id:"mono", name:"Black & White", css:"grayscale(1)"},
+  {id:"noir", name:"Noir", css:"grayscale(1) contrast(1.6) brightness(.95)"},
+  {id:"sepia", name:"Sepia", css:"sepia(.9) contrast(1.05)"},
+  {id:"vivid", name:"Vivid", css:"saturate(1.8) contrast(1.1)"},
+  {id:"cool", name:"Cool", css:"hue-rotate(-12deg) saturate(1.2) brightness(1.04)"},
+  {id:"warm", name:"Warm", css:"sepia(.25) saturate(1.4) hue-rotate(-8deg)"},
+  {id:"pop", name:"Pop Art", css:"saturate(3) contrast(1.8)"},
+  {id:"invert", name:"X-Ray", css:"invert(1) grayscale(.3)"},
+];
+// Pixel versions of the filters so the saved photo matches the preview in every browser (Safari ignores canvas filters).
+function camApplyFx(ctx, w, hgt, fx){
+  if (fx === "normal") return;
+  const d = ctx.getImageData(0, 0, w, hgt), p = d.data;
+  const sat = (r, g, b, k) => { const l = .299*r + .587*g + .114*b; return [l + (r - l)*k, l + (g - l)*k, l + (b - l)*k]; };
+  const con = (v, k) => (v - 128) * k + 128;
+  for (let i = 0; i < p.length; i += 4){
+    let r = p[i], g = p[i+1], b = p[i+2];
+    if (fx === "mono"){ const l = .299*r + .587*g + .114*b; r = g = b = l; }
+    else if (fx === "noir"){ let l = .299*r + .587*g + .114*b; l = con(l, 1.6) * .95; r = g = b = l; }
+    else if (fx === "sepia"){ const nr = .393*r + .769*g + .189*b, ng = .349*r + .686*g + .168*b, nb = .272*r + .534*g + .131*b; r = con(nr, 1.05); g = con(ng, 1.05); b = con(nb, 1.05); }
+    else if (fx === "vivid"){ [r, g, b] = sat(r, g, b, 1.8); r = con(r, 1.1); g = con(g, 1.1); b = con(b, 1.1); }
+    else if (fx === "cool"){ [r, g, b] = sat(r * .94, g * 1.02, b * 1.12, 1.2); }
+    else if (fx === "warm"){ [r, g, b] = sat(r * 1.1, g * 1.02, b * .86, 1.35); }
+    else if (fx === "pop"){ [r, g, b] = sat(r, g, b, 3); r = con(r, 1.8); g = con(g, 1.8); b = con(b, 1.8); }
+    else if (fx === "invert"){ [r, g, b] = sat(255 - r, 255 - g, 255 - b, .7); }
+    p[i] = r < 0 ? 0 : r > 255 ? 255 : r; p[i+1] = g < 0 ? 0 : g > 255 ? 255 : g; p[i+2] = b < 0 ? 0 : b > 255 ? 255 : b;
+  }
+  ctx.putImageData(d, 0, 0);
+}
+function dataURLtoFile(url, name){ const [head, b64] = url.split(","); const mime = (head.match(/data:(.*?);/) || [])[1] || "image/jpeg"; const bin = atob(b64); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new File([a], name, {type:mime}); }
+
+// openCamera({title, square, onShot(dataURL)})
+function openCamera(opts){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ toast("Your browser can't use the camera here."); return; }
+  let stream = null, fx = "normal", shot = null, counting = false;
+  modal((m, close) => {
+    const video = h("video",{class:"camvid", autoplay:"", playsinline:"", muted:""}); video.muted = true;
+    const still = h("img",{class:"camvid still hidden", alt:""});
+    const flash = h("div",{class:"camflash"}), count = h("div",{class:"camcount"});
+    const stage = h("div",{class:"camstage" + (opts.square ? " sq" : "")}, video, still, flash, count, h("div",{class:"camerr hidden"}));
+    const fxRow = h("div",{class:"camfx"});
+    const drawFx = () => { fxRow.innerHTML = ""; CAM_FX.forEach(f => fxRow.appendChild(h("button",{class:"camfxb" + (fx === f.id ? " on" : ""), onclick:() => { fx = f.id; video.style.filter = f.css; drawFx(); }},
+      h("span",{class:"sw", style:{filter:f.css}}), h("small",{text:f.name})))); };
+    const snap = h("button",{class:"camsnap", title:"Take photo (Space)", onclick:() => takeShot()}, h("span"));
+    const timerBtn = h("button",{class:"btn ghost small camtimer", title:"3-second timer", onclick:() => { timerBtn.classList.toggle("on"); }}, ic("hourglass","sm"), " 3s");
+    const retake = h("button",{class:"btn ghost hidden", onclick:() => { shot = null; still.classList.add("hidden"); video.classList.remove("hidden"); retake.classList.add("hidden"); use.classList.add("hidden"); snap.classList.remove("hidden"); fxRow.classList.remove("hidden"); timerBtn.classList.remove("hidden"); }}, ic("refresh","sm"), " Retake");
+    const use = h("button",{class:"btn hidden", onclick:() => { const u = shot; stop(); close(); opts.onShot(u); }}, ic("check","sm"), " " + (opts.useLabel || "Use photo"));
+    m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:() => { stop(); close(); }}, ic("x")),
+      h("h2",{class:"camh",text:opts.title || "Take a photo"}), stage, fxRow,
+      h("div",{class:"camacts"}, timerBtn, snap, retake, use));
+    drawFx();
+    const stop = () => { if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; } document.removeEventListener("keydown", key); };
+    const key = e => { if (e.code === "Space" && !shot && !counting && document.activeElement.tagName !== "INPUT"){ e.preventDefault(); takeShot(); } };
+    document.addEventListener("keydown", key);
+    m._onClose = stop;
+    navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280}, height:{ideal:720}, facingMode:"user"}, audio:false}).then(s => { stream = s; video.srcObject = s; })
+      .catch(e => { const er = stage.querySelector(".camerr"); er.classList.remove("hidden"); er.textContent = e && e.name === "NotAllowedError" ? "Camera access was blocked. Allow the camera for this site in your browser settings, then try again." : "No camera found."; snap.disabled = true; });
+    async function takeShot(){
+      if (!stream || counting) return;
+      if (timerBtn.classList.contains("on")){ counting = true; for (const n of [3, 2, 1]){ count.textContent = n; count.classList.remove("go"); void count.offsetWidth; count.classList.add("go"); await new Promise(r => setTimeout(r, 900)); } count.textContent = ""; counting = false; }
+      const vw = video.videoWidth || 640, vh = video.videoHeight || 480;
+      let sx = 0, sy = 0, sw = vw, sh = vh; if (opts.square){ const s = Math.min(vw, vh); sx = (vw - s) / 2; sy = (vh - s) / 2; sw = sh = s; }
+      const scale = Math.min(1, (opts.square ? 512 : 1280) / Math.max(sw, sh));
+      const c = document.createElement("canvas"); c.width = Math.round(sw * scale); c.height = Math.round(sh * scale);
+      const ctx = c.getContext("2d"); ctx.translate(c.width, 0); ctx.scale(-1, 1); // mirror like Photo Booth
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, c.width, c.height); ctx.setTransform(1, 0, 0, 1, 0, 0);
+      camApplyFx(ctx, c.width, c.height, fx);
+      shot = c.toDataURL("image/jpeg", .86);
+      flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go"); camClick();
+      still.src = shot; still.classList.remove("hidden"); video.classList.add("hidden");
+      snap.classList.add("hidden"); fxRow.classList.add("hidden"); timerBtn.classList.add("hidden"); retake.classList.remove("hidden"); use.classList.remove("hidden");
+    }
+  }, "cammodal");
+}
+function camClick(){ try{ const a = new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(), g = a.createGain(); o.type = "square"; o.frequency.value = 1800; g.gain.setValueAtTime(.08, a.currentTime); g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + .08); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + .09); setTimeout(() => a.close(), 300); }catch(e){} }
+
+// openCropper(src, onDone(dataURL)) — drag to move, slider/wheel to zoom, outputs a 256px square JPEG
+function openCropper(src, onDone){
+  const img = new Image();
+  img.onload = () => modal((m, close) => {
+    const V = 280; let z = 1, x = 0, y = 0;
+    const base = Math.max(V / img.width, V / img.height);
+    const pic = h("img",{src, class:"cropimg", draggable:"false"});
+    const view = h("div",{class:"cropview"}, pic, h("div",{class:"cropring"}));
+    const clamp = () => { const w = img.width * base * z, hh = img.height * base * z; x = Math.min(0, Math.max(V - w, x)); y = Math.min(0, Math.max(V - hh, y)); };
+    const draw = () => { clamp(); pic.style.width = img.width * base * z + "px"; pic.style.transform = "translate(" + x + "px," + y + "px)"; };
+    const center = () => { x = (V - img.width * base * z) / 2; y = (V - img.height * base * z) / 2; };
+    center(); draw();
+    const zoomTo = nz => { const cx = V / 2, cy = V / 2; const k = nz / z; x = cx - (cx - x) * k; y = cy - (cy - y) * k; z = nz; draw(); };
+    const slider = h("input",{type:"range", min:"1", max:"4", step:"0.01", value:"1", class:"cropzoom", oninput:e => zoomTo(+e.target.value)});
+    let drag = null;
+    view.addEventListener("pointerdown", e => { drag = {px:e.clientX, py:e.clientY, x, y}; view.setPointerCapture(e.pointerId); });
+    view.addEventListener("pointermove", e => { if (!drag) return; x = drag.x + e.clientX - drag.px; y = drag.y + e.clientY - drag.py; draw(); });
+    view.addEventListener("pointerup", () => { drag = null; });
+    view.addEventListener("wheel", e => { e.preventDefault(); const nz = Math.min(4, Math.max(1, z * (e.deltaY < 0 ? 1.08 : 0.93))); slider.value = nz; zoomTo(nz); }, {passive:false});
+    const save = () => { const out = 256, c = document.createElement("canvas"); c.width = c.height = out; const k = out / V;
+      c.getContext("2d").drawImage(img, x * k, y * k, img.width * base * z * k, img.height * base * z * k);
+      let d = c.toDataURL("image/jpeg", .86); if (d.length > 110000) d = c.toDataURL("image/jpeg", .7); close(); onDone(d); };
+    m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")), h("h2",{class:"camh",text:"Position your photo"}),
+      h("p",{class:"note",style:{marginTop:0,textAlign:"center"},text:"Drag to move · scroll or use the slider to zoom"}), view,
+      h("div",{class:"cropbar"}, ic("image","sm"), slider, ic("image")),
+      h("div",{class:"camacts"}, h("button",{class:"btn ghost", onclick:close}, "Cancel"), h("button",{class:"btn", onclick:save}, ic("check","sm"), " Save")));
+  }, "cropmodal");
+  img.onerror = () => toast("That file isn't an image we can open.");
+  img.src = src;
+}
+async function setPhotoAvatar(d){ try{ await setMyProfile({avatar:d}); toast("Profile picture updated"); refreshOpenPane(); need("side", "msgs", "members", "me"); bumpStat("photo"); }catch(e){ toast("Couldn't save photo: " + errMsg(e)); } }
+function pickPhotoFile(cb){ const i = h("input",{type:"file", accept:"image/*", style:{display:"none"}}); i.onchange = () => { const f = i.files[0]; i.remove(); if (f) cb(f); }; document.body.appendChild(i); i.click(); }
+function avatarPhotoControls(){
+  const has = isPhotoAvatar(profile(S.uid).avatar);
+  return h("div",{class:"avphoto"},
+    h("button",{class:"btn small", onclick:() => pickPhotoFile(f => { const u = URL.createObjectURL(f); openCropper(u, setPhotoAvatar); })}, ic("image","sm"), " Upload photo"),
+    h("button",{class:"btn small", onclick:() => openCamera({title:"Smile! 📸", square:true, onShot:d => openCropper(d, setPhotoAvatar)})}, ic("camera","sm"), " Take photo"),
+    has ? h("button",{class:"btn small ghost", onclick:() => { setMyProfile({avatar:""}).then(() => { toast("Photo removed"); refreshOpenPane(); need("side", "msgs", "members", "me"); }).catch(()=>{}); }}, "Remove photo") : null);
+}
+function cameraToChat(){
+  if (!S.cur){ toast("Pick a room or DM first"); return; }
+  if (!canPost()){ toast("You can't post here"); return; }
+  openCamera({title:"Snap a photo", useLabel:"Add to message", onShot:d => setPending(dataURLtoFile(d, "photo-" + Date.now() + ".jpg"))});
+}
 
 // ---------------------------------------------------------------- voice channels (WebRTC mesh, Firestore signaling)
 // Each person in a voice room connects directly to everyone else in it (fine for up to ~8 people).

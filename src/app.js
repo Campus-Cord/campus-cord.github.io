@@ -82,6 +82,7 @@ const ICONS = {
   grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
   keyboard:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>',
   alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/>',
+  refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
   star:'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
   spark:'<path d="M12 2.5l2.3 6.2 6.2 2.3-6.2 2.3L12 19.5l-2.3-6.2L3.5 11l6.2-2.3z"/><path d="M19 17.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
@@ -99,10 +100,15 @@ const CATALOG = [
   {id:"name_fx", icon:"wand", name:"Animated Name", price:"$1.99", desc:"Rainbow, Gold, Fire, Ocean or Neon — your name shimmers everywhere."},
   {id:"themes", icon:"palette", name:"Theme Pack", price:"$0.99", desc:"Unlock Midnight, Ocean, Sunset, Forest and Sakura."},
   {id:"banner", icon:"image", name:"Profile Banner", price:"$0.99", desc:"Pick a custom banner color for your profile card."},
-  {id:"sparks_1000", icon:"spark", name:"1,000 Sparks", price:"$0.99", coins:1000, desc:"Spend them on decorations, effects and nameplates."},
-  {id:"sparks_3000", icon:"spark", name:"3,000 Sparks", price:"$2.49", coins:3000, desc:"Best for a bundle or two. 15% bonus value."},
-  {id:"sparks_7500", icon:"spark", name:"7,500 Sparks", price:"$4.99", coins:7500, desc:"Basically the whole shop. 50% bonus value."},
-  {id:"supporter", icon:"gem", name:"Supporter Badge", price:"$0.99", desc:"A gem badge next to your name to show you back CampusCord."},
+  {id:"plus_year", icon:"sparkles", name:"Campus+ · 1 year", price:"$24.99", months:12, perk:"plus", desc:"Twelve months of Campus+ for the price of about eight."},
+  {id:"plusplus_year", icon:"zap", name:"Campus++ · 1 year", price:"$49.99", months:12, perk:"plusplus", desc:"Twelve months of Campus++. Best deal on the top rank."},
+  {id:"founder", icon:"crown", name:"Founder Badge", price:"$4.99", desc:"A Mythic Founder badge on your profile, for the people who backed CampusCord first."},
+  {id:"sparks_1000", icon:"spark", name:"1,000 Sparks", price:"$0.99", coins:1000, desc:"A little top-up for one decoration or nameplate."},
+  {id:"sparks_3000", icon:"spark", name:"3,000 Sparks", price:"$2.49", coins:3000, desc:"Enough for a bundle. 20% bonus value."},
+  {id:"sparks_7500", icon:"spark", name:"7,500 Sparks", price:"$4.99", coins:7500, desc:"A whole new look. 50% bonus value."},
+  {id:"sparks_15000", icon:"spark", name:"15,000 Sparks", price:"$8.99", coins:15000, desc:"Most of the shop. 67% bonus value."},
+  {id:"sparks_40000", icon:"spark", name:"40,000 Sparks", price:"$19.99", coins:40000, desc:"Everything, plus extra for new drops. 100% bonus value."},
+  {id:"supporter", icon:"gem", name:"Supporter Badge", price:"$0.99", desc:"A heart badge on your profile to show you back CampusCord."},
 ];
 const PLUS_INCLUDES = ["name_fx","themes","banner","big_uploads","supporter"];
 const PLUSPLUS_INCLUDES = [...PLUS_INCLUDES, "plus", "fx_exclusive", "ring", "banner_gradient"];
@@ -225,12 +231,15 @@ const AV_BGS = [
 const AV_FACES = "😎 🤠 🥳 🤓 😈 👻 👽 🤖 💀 🤡 🐸 🐱 🐶 🦊 🐼 🐨 🐯 🦁 🐵 🐧 🦄 🐙 🦖 🐢 🐝 🦋 🍕 🍩 🍉 🌮 ⚡ 🔥 ⭐ 🌙 🌈 ❄️ 🎮 🎧 ⚽ 🏀 🎨 🚀 💎 👑 🍀 🌸".split(" ");
 // The avatar look is stored in the profile's "avatar" field as "look:<bg>|<face>" so it fits the published rules.
 function lookOf(uid){ const a = profile(uid).avatar; if (typeof a === "string" && a.startsWith("look:")){ const [bg, face] = a.slice(5).split("|"); return {bg:bg || "", face:face || ""}; } return {}; }
+function isPhotoAvatar(a){ return typeof a === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(a); }
 function avatar(uid, size, withDot){
   const look = lookOf(uid);
+  const photo = isPhotoAvatar(profile(uid).avatar) ? profile(uid).avatar : null;
   const face = look.face && AV_FACES.includes(look.face) ? look.face : null;
   const a = h("div",{class:"av" + (size ? " "+size : "") + (face ? " emo" : "")}, face || initials(nickOf(uid)));
   const bg = AV_BGS.find(b => b.id === look.bg);
-  if (bg) a.style.background = bg.g;
+  if (photo){ a.classList.add("photo"); a.textContent = ""; a.style.backgroundImage = 'url("' + photo + '")'; }
+  else if (bg) a.style.background = bg.g;
   else { a.style.background = (look.bg && /^#[0-9a-f]{6}$/i.test(look.bg)) ? look.bg : colorOf(uid); a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))"; }
   if (hasPerk(uid, "ring")) a.classList.add("ring");
   const dc = size !== "xs" && equipped(uid, "deco"); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
@@ -396,7 +405,7 @@ function initApp(){
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
   ensureWallet();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
-  setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
+  clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
   need("rail","side","header","msgs","rpanel","me","composer","gifs");
   $("input").focus();
@@ -509,20 +518,33 @@ function renderSide(){
     });
   });
 }
+function dmHidden(d){ const t = (prefs.hiddenDMs || {})[d.id]; return !!t && (d.lastTs || d.createdAt || 0) <= t && !(S.kind === "dm" && S.cur === d.id); }
+function closeDM(d){
+  prefs.hiddenDMs = prefs.hiddenDMs || {}; prefs.hiddenDMs[d.id] = Math.max(Date.now(), d.lastTs || 0); savePrefs();
+  S.lastRead["dm:" + d.id] = Math.max(Date.now(), d.lastTs || 0); store("lastRead", S.lastRead);
+  if (S.kind === "dm" && S.cur === d.id) openChat("home", "home");
+  need("side", "rail", "msgs"); toast("Closed your DM with " + nickOf(dmOther(d)) + " — it comes back if they message you");
+}
+function dmMenu(e, d){ const o = dmOther(d), anchor = e.currentTarget;
+  ctxMenu(e, [
+    {label:"Profile", icon:"user", run:() => openProfile(o, anchor)},
+    {label:"Mark as read", icon:"check", run:() => { S.lastRead["dm:" + d.id] = Date.now(); store("lastRead", S.lastRead); need("side", "rail"); }},
+    {label:"Close DM", icon:"x", danger:true, run:() => closeDM(d)}]); }
 function renderDMList(box){
   box.innerHTML = "";
   const q = (S.dmFilter||"").toLowerCase();
-  const rows = S.dms.filter(d => { const o = dmOther(d); return member(o) || d.lastTs; }).filter(d => !q || nickOf(dmOther(d)).toLowerCase().includes(q));
+  const rows = S.dms.filter(d => { const o = dmOther(d); return member(o) || d.lastTs; }).filter(d => q ? nickOf(dmOther(d)).toLowerCase().includes(q) : !dmHidden(d));
   if (!rows.length){ box.appendChild(h("div",{class:"empty-note",text: q ? "No matches." : "No DMs yet. Click ＋ above, or click anyone's name and choose Message."})); return; }
   rows.forEach(d => {
     const o = dmOther(d); const on = S.kind === "dm" && S.cur === d.id;
     const un = !on && d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
     const cs = profile(o).customStatus;
     const pl = equipped(o, "plate");
-    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : "") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:() => openChat("dm", d.id)},
+    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : "") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:() => openChat("dm", d.id), oncontextmenu:e => dmMenu(e, d)},
       avatar(o, "sm", true),
       h("div",{class:"meta"}, paintName(h("span",{class:"nm",text:nickOf(o)}), o), cs ? h("span",{class:"sub",text:cs}) : (typersIn("dm", d.id).length ? h("span",{class:"sub",text:"typing…"}) : null)),
-      un ? h("span",{class:"newdot",title:"New message"}) : null));
+      un ? h("span",{class:"newdot",title:"New message"}) : null,
+      h("button",{class:"dmx", title:"Close DM", onclick:e => { e.stopPropagation(); closeDM(d); }}, ic("x","sm"))));
   });
 }
 function renderMe(){
@@ -621,6 +643,7 @@ function markRead(){ if (!S.cur) return; S.lastRead[readKey(S.kind, S.cur)] = Da
 async function openDM(uid){
   if (!uid || uid === S.uid) return;
   const id = dmIdWith(uid);
+  if (prefs.hiddenDMs && prefs.hiddenDMs[id]){ delete prefs.hiddenDMs[id]; savePrefs(); }
   if (!S.dms.find(d => d.id === id)){
     try{ await setDoc(doc(db, "dms", id), {users:id.split("_"), createdAt:Date.now()}, {merge:true}); }
     catch(e){ toast("Couldn't start DM: " + errMsg(e)); return; }
@@ -643,6 +666,7 @@ function openChat(kind, id){
   closeNav();
   if (isPage(kind)){
     if (S.cur) saveDraft(); stopTyping(); S.unsubRoom.forEach(u => u()); S.unsubRoom = []; if (S.pending) setPending(null);
+    if (S.unsubMsgs){ S.unsubMsgs(); S.unsubMsgs = null; }
     if (S.kind !== kind) $("msgs").scrollTop = 0;
     Object.assign(S, {kind, page:id, cur:null, mode:"dms", msgs:[], reacts:[], typing:[], roomLoaded:true, hasMore:false, replyTo:null, editing:null, pins:null});
     if (S.rpanel === "pins" || S.rpanel === "search") S.rpanel = prefs.showMembers === false ? null : "members";
@@ -752,7 +776,7 @@ function renderHome(box){
   const on = people.filter(isOn);
   wrap.append(h("div",{class:"dhh"}, h("h2",{text:"Direct Messages"}), h("p",{text:"Private chats between you and one other person. Nobody else can read them — not even admins."}),
     h("button",{class:"btn small", onclick:() => newDMModal()}, ic("plus"), " New message")));
-  const recent = S.dms.filter(d => member(dmOther(d)) && d.lastTs).slice(0, 6);
+  const recent = S.dms.filter(d => member(dmOther(d)) && d.lastTs && !dmHidden(d)).slice(0, 6);
   if (recent.length){
     wrap.appendChild(h("div",{class:"cat",text:"Recent conversations"}));
     wrap.appendChild(h("div",{class:"dmcards"}, recent.map(d => { const o = dmOther(d); const un = d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
@@ -1222,12 +1246,6 @@ function avatarMaker(){
     AV_FACES.map(f => h("button",{class:"avface" + (look.face === f ? " on" : ""), onclick:() => save({face:f})}, f)));
   return h("div",null, h("label",{class:"f",text:"Avatar background"}), bgs, h("label",{class:"f",text:"Avatar face"}), faces);
 }
-function squareAvatar(file){
-  return new Promise((res, rej) => { const img = new Image(); img.onload = () => {
-    const size = 192, c = document.createElement("canvas"); c.width = c.height = size; const s = Math.min(img.width, img.height);
-    c.getContext("2d").drawImage(img, (img.width - s)/2, (img.height - s)/2, s, s, 0, 0, size, size);
-    res(c.toDataURL("image/jpeg", 0.82)); }; img.onerror = () => rej(new Error("not an image")); img.src = URL.createObjectURL(file); });
-}
 function readDataURL(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
 async function imageToData(file){
   const max = hasPerk(S.uid, "big_uploads") ? 900 : 700;
@@ -1323,6 +1341,7 @@ function insertAt(t){ const s = input.selectionStart ?? input.value.length; inpu
 function openEmoji(cb){ closePops(); emoCb = cb || null; buildEmojiGrid(); $("emoPop").classList.remove("hidden"); }
 function closePops(){ $("emoPop").classList.add("hidden"); $("gifPop").classList.add("hidden"); emoCb = null; }
 $("emoBtn").onclick = e => { e.stopPropagation(); const open = !$("emoPop").classList.contains("hidden"); closePops(); if (!open) openEmoji(); };
+$("camBtn").onclick = () => cameraToChat();
 $("gifBtn").onclick = e => { e.stopPropagation(); const open = !$("gifPop").classList.contains("hidden"); closePops(); if (!open) $("gifPop").classList.remove("hidden"); };
 document.addEventListener("click", e => { if (!e.target.closest(".pop") && !e.target.closest("#emoBtn") && !e.target.closest("#gifBtn") && !e.target.closest(".quick")) closePops(); });
 document.addEventListener("keydown", e => {
@@ -1357,7 +1376,7 @@ function closeNav(){ document.body.classList.remove("nav-open"); }
 // ---------------------------------------------------------------- modals
 function modal(build, cls){
   const bg = h("div",{class:"modalbg"}); const m = h("div",{class:"modal" + (cls ? " " + cls : "")}); bg.appendChild(m);
-  const close = () => { bg.remove(); if (S.paneRefresh && S.paneRefresh.bg === bg) S.paneRefresh = null; };
+  const close = () => { if (m._onClose){ try{ m._onClose(); }catch(e){} } bg.remove(); if (S.paneRefresh && S.paneRefresh.bg === bg) S.paneRefresh = null; };
   bg.addEventListener("mousedown", e => { if (e.target === bg) close(); });
   bg._close = close;
   build(m, close, bg); $("layer").appendChild(bg); const f = m.querySelector("input:not([type=color])"); if (f && !cls) f.focus(); return close;
@@ -1476,7 +1495,8 @@ function paneAccount(p){
   const n = h("input",{class:"inp", value:me.nick, maxlength:"24"});
   const cs = h("div",{class:"colors"}, COLORS.map(c => { const b = h("button",{class: c === color ? "on" : "", style:{background:c}, onclick:() => { color = c; [...cs.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); return b; }));
   const av = avatar(S.uid, "xl", true);
-  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "👑 Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+  p.append(h("div",{class:"preview-card", style:{display:"flex",gap:"14px",alignItems:"center"}}, av, h("div",null, paintName(h("div",{style:{fontSize:"20px",fontWeight:"800"},text:nickOf(S.uid)}), S.uid), h("div",{class:"note",text: isOwner() ? "☯ Server admin" : isDev(S.uid) ? "💻 Developer" : "Member"}))),
+    h("label",{class:"f",text:"Profile picture"}), avatarPhotoControls(),
     avatarMaker(),
     h("label",{class:"f",text:"Display name"}), n, h("label",{class:"f",text:"Name color"}), cs,
     h("button",{class:"btn small", style:{marginTop:"16px"}, onclick:async () => { const v = n.value.trim(); if (v.length < 2){ toast("Name needs at least 2 characters"); return; }
@@ -1486,6 +1506,7 @@ function paneAccount(p){
 }
 function paneProfile(p){
   const pr = profile(S.uid);
+  { const row = badgeRow(S.uid); p.append(h("div",{class:"preview-card bdset"}, h("div",{style:{flex:"1"}}, h("b",{text:"Badges"}), h("div",{class:"note",style:{margin:0},text: badgesOf(S.uid).length + " collected · pin your favorites to show them on your profile"})), row, h("button",{class:"btn small", onclick:() => { closeTopModal(); badgeDirectory(S.uid); }}, "Manage badges"))); }
   const bio = h("textarea",{class:"inp", maxlength:"190", placeholder:"Tell people a bit about yourself"}); bio.value = pr.bio || "";
   const cst = h("input",{class:"inp", maxlength:"60", placeholder:"e.g. 📚 studying for finals", value:pr.customStatus || ""});
   const st = h("div",{class:"seg"}, STATUSES.map(s => h("button",{class: (pr.status || "online") === s.id ? "on" : "", title:s.d, onclick:async () => { await setMyProfile({status:s.id}).catch(()=>{}); S.sentInvisible = false; heartbeat(); refreshOpenPane(); }}, s.name)));
@@ -1549,7 +1570,8 @@ function paneAbout(p){
 }
 
 // ---------------------------------------------------------------- shop
-function shopItem(id){ const base = CATALOG.find(c => c.id === id); const o = ((S.shop||{}).items||{})[id] || {}; return Object.assign({}, base, {price:o.price || base.price, link:o.link || "", enabled:o.enabled !== false}); }
+const STRIPE_LINKS = {"sparks_1000": "https://buy.stripe.com/9B6eVd2tSaCzfH99mB4ow1I", "sparks_3000": "https://buy.stripe.com/5kQ6oH8SgcKH2Un6ap4ow1J", "sparks_7500": "https://buy.stripe.com/7sY8wPb0o4ebgLd9mB4ow1K", "sparks_15000": "https://buy.stripe.com/3cI14ngkIaCz1Qj8ix4ow1L", "sparks_40000": "https://buy.stripe.com/aFa28recAaCzgLd42h4ow1M", "plus": "https://buy.stripe.com/4gM7sL8SgeSPfH9dCR4ow1N", "plusplus": "https://buy.stripe.com/14A00jecAcKH2UndCR4ow1O", "plus_year": "https://buy.stripe.com/8x2bJ1b0o5if0MfaqF4ow1P", "plusplus_year": "https://buy.stripe.com/5kQ00jb0oeSP52veGV4ow1Q", "name_fx": "https://buy.stripe.com/cNidR9ecA7qn8eH8ix4ow1R", "themes": "https://buy.stripe.com/8x25kD2tS4eb66z0Q54ow1S", "banner": "https://buy.stripe.com/5kQ00j1pObGDcuX2Yd4ow1T", "supporter": "https://buy.stripe.com/00w28r6K826352v8ix4ow1U", "founder": "https://buy.stripe.com/eVqfZh1pOaCzeD5eGV4ow1V"};
+function shopItem(id){ const base = CATALOG.find(c => c.id === id); const o = ((S.shop||{}).items||{})[id] || {}; return Object.assign({}, base, {price:o.price || base.price, link:o.link || STRIPE_LINKS[id] || "", enabled:o.enabled !== false}); }
 function shopButton(c){
   const it = shopItem(c.id);
   const owned = hasPerk(S.uid, c.id);
@@ -1578,8 +1600,10 @@ function drawRanks(m, draw){
           h("div",{class:"th"}, c.tier === 2 ? chip("pp","zap","PLUS+") : chip("plus","sparkles","PLUS")),
           h("div",{class:"tn",text:c.name}), h("div",{class:"td",text:c.desc}),
           h("div",{class:"tp"}, h("b",{text:it.price.split("/")[0].trim()}), it.price.includes("/") ? h("span",{text:" / " + it.price.split("/")[1].trim()}) : null),
+          h("div",{class:"tnote",text:"One-time payment · no auto-renew"}),
           h("ul",{class:"feat"}, c.list.map(x => h("li",null, ic("check"), h("span",{text:x})))),
-          shopButton(c)));
+          shopButton(c),
+          (() => { const y = CATALOG.find(x => x.perk === c.id); const yi = y && shopItem(y.id); return yi && yi.enabled && yi.link ? h("button",{class:"btn ghost small yearbtn", onclick:() => buy(y.id)}, "Or 1 year for " + yi.price) : null; })()));
       });
       m.appendChild(tiers);
       // name effect preview
@@ -1624,10 +1648,12 @@ function openSparks(){
 async function buy(itemId){
   const it = shopItem(itemId); if (!it.link) return;
   const orderId = "cc_" + rid();
-  try{ await setDoc(doc(db, "orders", orderId), {uid:S.uid, nick:nickOf(S.uid), item:itemId, price:it.price, ts:Date.now(), status:"pending"}); }
-  catch(e){ toast("Couldn't start checkout: " + errMsg(e)); return; }
+  // Open Stripe right away (before any await) so Safari/Chrome don't block it as a pop-up.
   const url = it.link + (it.link.includes("?") ? "&" : "?") + "client_reference_id=" + encodeURIComponent(orderId);
-  window.open(url, "_blank", "noopener");
+  const w = window.open(url, "_blank"); if (w){ try{ w.opener = null; }catch(e){} }
+  try{ await setDoc(doc(db, "orders", orderId), {uid:S.uid, nick:nickOf(S.uid), item:itemId, price:it.price, ts:Date.now(), status:"pending"}); }
+  catch(e){ toast("Couldn't record your order: " + errMsg(e) + " — tell the admin your order ID " + orderId); return; }
+  if (!w) location.href = url; // pop-up blocked: go to checkout in this tab instead
   toast("Opening Stripe checkout… after you pay, an admin activates your perk.");
 }
 async function cancelOrder(o){ try{ await deleteDoc(doc(db, "orders", o.id)); }catch(e){ toast("Couldn't cancel: " + errMsg(e)); } }
@@ -1745,10 +1771,12 @@ function grantModal(uid){
   modal((m, close) => {
     m.append(h("h3",{text:"Perks for " + nickOf(uid)}), h("p",{class:"note",text:"Grant or remove perks by hand (gifts, giveaways, refunds)."}));
     const list = h("div",{class:"list"});
-    CATALOG.filter(c => !c.coins).forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
+    CATALOG.filter(c => !c.coins && !c.perk).forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
       list.appendChild(h("div",{class:"li"}, ic(c.icon), h("span",{class:"nm",text:c.name + (on && items[c.id].until ? " (until " + new Date(items[c.id].until).toLocaleDateString() + ")" : "")}),
         on ? h("button",{class:"btn small danger", onclick:async () => { await revokePerk(uid, c.id); close(); }}, "Remove") : h("button",{class:"btn small", onclick:async () => { await grantPerk(uid, c.id); close(); }}, "Grant"))); });
-    m.append(list, h("label",{class:"f",text:"Give Sparks (" + sparks(uid).toLocaleString() + " now)"}),
+    const sb = h("div",{class:"spbadges"}, SPECIAL_BADGES.map(b => { const on = specialOf(uid).includes(b.id); const el = badgeEl(BADGES.find(x => x.id === b.id), {}, "sm");
+      return h("button",{class:"spb" + (on ? " on" : ""), title:(on ? "Remove " : "Give ") + b.name, onclick:async () => { await setSpecial(uid, b.id, !on); close(); }}, el, h("small",{text:b.name})); }));
+    m.append(list, h("label",{class:"f",text:"Special badges (click to give or remove)"}), sb, h("label",{class:"f",text:"Give Sparks (" + sparks(uid).toLocaleString() + " now)"}),
       h("div",{class:"row"}, [100, 500, 1000, 5000].map(n => h("button",{class:"btn small ghost", onclick:async () => { await giveSparks(uid, n); close(); }}, "+" + n.toLocaleString()))),
       h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
   });
@@ -1756,6 +1784,7 @@ function grantModal(uid){
 async function grantPerk(uid, item){
   const c = CATALOG.find(x => x.id === item) || {};
   if (c.coins){ await giveSparks(uid, c.coins); return; }
+  if (c.perk) item = c.perk;
   const prev = (((S.perks[uid]||{}).items||{})[item]) || {};
   const entry = {since:Date.now()};
   if (c.months){ const startAt = Math.max(Date.now(), prev.until || 0); entry.until = startAt + c.months * 31 * 864e5; }
@@ -1828,6 +1857,7 @@ function installApp(){
 }
 
 // __COSMETICS__
+// __CAMERA__
 // __VOICE__
 // ---------------------------------------------------------------- updates
 function updBar(nodes){ const b = $("updbar"); b.innerHTML = ""; b.append(...nodes, h("button",{class:"x",onclick:() => b.classList.add("hidden")}, ic("x"))); b.classList.remove("hidden"); }

@@ -4,6 +4,7 @@ d = "/home/claude/v3/"
 css = open(d+"style.css").read(); body = open(d+"body.html").read(); js = open(d+"app.js").read()
 js = js.replace("// __COSMETICS__", open(d+"cosmetics.js").read())
 js = js.replace("// __BADGES__", open(d+"badges.js").read())
+js = js.replace("// __CAMERA__", open(d+"camera.js").read())
 js = js.replace("// __VOICE__", open(d+"voice.js").read())
 cfg = re.search(r'const firebaseConfig = (\{[^}]*\});', open("/home/claude/campus-cord.github.io/index.html").read()).group(1)
 js = js.replace("__FIREBASE_CONFIG__", cfg).replace("__APP_VERSION__", V)

@@ -65,6 +65,10 @@ await t("others can't touch your wallet", assertFails(updateDoc(doc(as("bob"), "
 
 console.log("Profiles");
 await t("equip cosmetics on your profile", assertSucceeds(setDoc(doc(as("alice"), "profiles/alice"), { deco: "d_cosmic", pfx: "", plate: "", pban: "n_galaxy" }, { merge: true })));
+await t("pin up to 6 badges", assertSucceeds(setDoc(doc(as("alice"), "profiles/alice"), { showcase: ["early", "photo"] }, { merge: true })));
+await t("can't pin more than 6 badges", assertFails(setDoc(doc(as("alice"), "profiles/alice"), { showcase: ["a", "b", "c", "d", "e", "f", "g"] }, { merge: true })));
+await t("photo profile picture fits", assertSucceeds(setDoc(doc(as("alice"), "profiles/alice"), { avatar: "data:image/jpeg;base64," + "A".repeat(60000) }, { merge: true })));
+await t("huge profile picture is refused", assertFails(setDoc(doc(as("alice"), "profiles/alice"), { avatar: "data:image/jpeg;base64," + "A".repeat(130000) }, { merge: true })));
 await t("can't edit someone else's profile", assertFails(setDoc(doc(as("bob"), "profiles/alice"), { bio: "hacked" }, { merge: true })));
 
 console.log("Shop");

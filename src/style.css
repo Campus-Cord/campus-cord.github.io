@@ -975,3 +975,87 @@ html,body{overflow:hidden}
 .plate-yinyang{--plate:linear-gradient(100deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.9) 48%,rgba(255,255,255,.55) 64%,rgba(255,255,255,.3) 100%)}
 .plate-yinyang::after{animation:none!important;background-size:100% 100%!important}
 .b-owner svg{animation:none!important}
+.tnote{font-size:11px;color:var(--muted);margin:-2px 0 8px}.yearbtn{width:100%;margin-top:8px}
+
+/* v3.11 photo avatars + camera */
+.av.photo{background-size:cover!important;background-position:center!important;color:transparent}
+.avphoto{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.avphoto .btn .i{margin-right:2px}
+.cammodal{width:min(760px,96vw);padding:20px 22px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.camh{margin:0;font-size:20px}
+.camstage{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.camstage.sq{width:min(440px,90vw);aspect-ratio:1/1}
+.camvid{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+.camvid.still{transform:none}
+.camflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.camflash.go{animation:camflash .45s ease-out}
+@keyframes camflash{0%{opacity:.95}100%{opacity:0}}
+.camcount{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:120px;font-weight:900;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.6);pointer-events:none}
+.camcount.go{animation:campop .9s ease-out}
+@keyframes campop{0%{transform:scale(1.6);opacity:0}30%{transform:scale(1);opacity:1}100%{opacity:.2}}
+.camerr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px;color:#ddd;font-weight:600}
+.camfx{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:2px 2px 6px;scrollbar-width:none}
+.camfx::-webkit-scrollbar{display:none}
+.camfxb{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:var(--muted);cursor:pointer;padding:4px;border-radius:10px;flex:none}
+.camfxb .sw{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#ff7ac6,#ffd166 40%,#3fb8ff 70%,#3ecf7a);border:2px solid transparent}
+.camfxb.on{color:var(--text)}.camfxb.on .sw{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 40%,transparent)}
+.camfxb small{font-size:11px;font-weight:600;white-space:nowrap}
+.camacts{display:flex;align-items:center;justify-content:center;gap:14px;width:100%}
+.camsnap{width:66px;height:66px;border-radius:50%;border:4px solid #fff;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.camsnap span{width:50px;height:50px;border-radius:50%;background:#ff3b30;transition:transform .12s}
+.camsnap:hover span{transform:scale(.92)}.camsnap:disabled{opacity:.4;cursor:default}
+.camtimer.on{background:var(--accent);color:var(--on-accent,#fff)}
+.cropmodal{width:min(380px,94vw);padding:20px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.cropview{position:relative;width:280px;height:280px;overflow:hidden;border-radius:14px;background:#000;cursor:grab;touch-action:none}
+.cropview:active{cursor:grabbing}
+.cropimg{position:absolute;left:0;top:0;max-width:none;user-select:none;pointer-events:none;transform-origin:0 0}
+.cropring{position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 400px rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.8);pointer-events:none}
+.cropbar{display:flex;align-items:center;gap:8px;width:280px;color:var(--muted)}
+.cropzoom{flex:1;accent-color:var(--accent)}
+
+/* v3.11 badges upgrade */
+.bdmodal{width:min(720px,95vw)}
+.bdhead{text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;margin-bottom:6px}
+.bdhero{display:flex;gap:6px;justify-content:center;min-height:44px;margin-bottom:4px}
+.bdhero .pbadge{animation:bdfloat 3s ease-in-out infinite}.bdhero .pbadge:nth-child(2){animation-delay:.3s}.bdhero .pbadge:nth-child(3){animation-delay:.6s}.bdhero .pbadge:nth-child(4){animation-delay:.9s}.bdhero .pbadge:nth-child(5){animation-delay:1.2s}
+@keyframes bdfloat{50%{transform:translateY(-4px)}}
+.bdbar{width:min(320px,80%);height:6px;border-radius:99px;background:var(--active);overflow:hidden;margin-top:6px}
+.bdbar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#3fb8ff,#c084fc,#ffb84d)}
+.bdbar.sm{width:100%;height:5px;margin:4px 0 2px}
+.bdsec{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:16px 2px 8px;display:flex;align-items:center;gap:8px}
+.bdsec::after{content:"";flex:1;height:1px;background:currentColor;opacity:.25}
+.bdcard.have.r-mythic{border-color:#ffb84d66;box-shadow:0 0 0 1px #ffb84d22,0 0 22px -6px #ffb84d88;background:linear-gradient(135deg,color-mix(in srgb,#ffb84d 9%,var(--rail)),var(--rail) 60%)}
+.bdcard.have.r-epic{border-color:#c084fc55;box-shadow:0 0 18px -8px #c084fc99}
+.bdcard.have.r-rare{border-color:#3fb8ff44}
+.bdcard.have .pbadge.lg{animation:bdfloat 3.5s ease-in-out infinite}
+.bdcard.blk{opacity:1;background:color-mix(in srgb,var(--rail) 70%,transparent)}
+.bdevo{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.bdacts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.bdpin{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer}
+.bdpin.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent,#fff)}
+/* hover shine on profile badges */
+.bdgrow .pbadge{overflow:hidden;position:relative}
+.bdgrow .pbadge::after{content:"";position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.75) 50%,transparent 60%);transform:translateX(-80%);pointer-events:none}
+.bdgrow .pbadge:hover::after{transition:transform .55s ease;transform:translateX(80%)}
+/* new badge celebration */
+.newbadge{width:min(400px,92vw);padding:30px 26px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;overflow:hidden;position:relative}
+.newbadge h2{margin:6px 0 0}.newbadge .rar{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.nbglow{position:relative;width:140px;height:140px;display:flex;align-items:center;justify-content:center;animation:nbpop .7s cubic-bezier(.2,1.6,.4,1)}
+.nbglow::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent,currentColor,transparent 30%,currentColor 50%,transparent 70%,currentColor 85%,transparent);opacity:.35;animation:spin 6s linear infinite;filter:blur(6px)}
+.nbglow.r-mythic{color:#ffb84d}.nbglow.r-epic{color:#c084fc}.nbglow.r-rare{color:#3fb8ff}.nbglow.r-common{color:#b5bac1}
+@keyframes nbpop{0%{transform:scale(.2) rotate(-20deg);opacity:0}100%{transform:none;opacity:1}}
+/* owner badge giver + settings */
+.spbadges{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px}
+.spb{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:var(--rail);color:var(--muted);cursor:pointer}
+.spb.on{border-color:var(--accent);color:var(--text);box-shadow:0 0 0 1px var(--accent)}
+.spb:not(.on) svg{filter:grayscale(1) brightness(.7)}
+.spb small{font-size:11px;font-weight:700}
+.bdset{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.bdset .bdgrow{cursor:default}
+.newbadge .pfx{z-index:0;pointer-events:none}.newbadge > :not(.pfx){position:relative;z-index:1}
+/* close DM */
+.ch.dm{position:relative}
+.ch.dm .dmx{margin-left:auto;width:22px;height:22px;border-radius:6px;border:0;background:none;color:var(--muted);display:none;align-items:center;justify-content:center;cursor:pointer;flex:none;position:relative;z-index:2}
+.ch.dm:hover .dmx{display:inline-flex}
+.ch.dm:hover .newdot{display:none}
+.ch.dm .dmx:hover{color:var(--text);background:rgba(255,255,255,.08)}

@@ -1,5 +1,5 @@
 rules_version = '2';
-// CampusCord security rules (v3.7: voice channels, Sparks shop, private rooms, timeouts). Published automatically by GitHub Actions when this file changes.
+// CampusCord security rules (v3.11: photo avatars, badge showcase, voice channels, Sparks shop, private rooms, timeouts). Published automatically by GitHub Actions when this file changes.
 // Paste all of this into Firebase console -> Firestore Database -> Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -71,7 +71,8 @@ service cloud.firestore {
     match /profiles/{uid} {
       allow read: if signedIn();
       allow create, update: if isMember() && uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['bio', 'status', 'customStatus', 'nameFx', 'banner', 'avatar', 'deco', 'pfx', 'plate', 'pban'])
+        && request.resource.data.keys().hasOnly(['bio', 'status', 'customStatus', 'nameFx', 'banner', 'avatar', 'deco', 'pfx', 'plate', 'pban', 'showcase'])
+        && (!('showcase' in request.resource.data) || (request.resource.data.showcase is list && request.resource.data.showcase.size() <= 6))
         && request.resource.data.get('avatar', '').size() <= 120000
         && request.resource.data.get('bio', '').size() <= 190
         && request.resource.data.get('customStatus', '').size() <= 60;
