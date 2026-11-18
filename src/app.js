@@ -511,7 +511,7 @@ function renderSide(){
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : "") + (vr ? " voice" : "") + (inV ? " invoice" : ""),
           onclick:() => { if (vr){ joinVoice(r.id); bumpStat("voice"); } openChat("room", r.id); }, oncontextmenu:e => roomMenu(e, r), title: vr ? (inV ? "You're in this voice channel" : "Click to join voice") : null},
         h("span",{class:"ic"}, ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
-        vr && vn ? h("span",{class:"vcount",text:vn + "/8"}) : null,
+        vr && vn ? h("span",{class:"vcount",text:vn + "/" + VOICE_MAX}) : null,
         isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
         typ ? h("span",{class:"typ",text:"•••"}) : null, mc ? h("span",{class:"mb",text:String(mc)}) : (un ? h("span",{class:"newdot",title:"New messages"}) : null)));
       if (vr){ const pl = voiceParticipantsEl(r); if (pl) list.appendChild(pl); }
@@ -1426,7 +1426,7 @@ function roomModal(room, cat){
     const sw = h("button",{class:"sw" + (ro ? " on" : ""), onclick:() => { ro = !ro; sw.classList.toggle("on", ro); }});
     const vsw = h("button",{class:"sw" + (vc ? " on" : ""), onclick:() => { vc = !vc; vsw.classList.toggle("on", vc); if (vc && !room && (c.value === "Text rooms" || !c.value)) c.value = "Voice rooms"; }});
     m.append(h("label",{class:"f",text:"Room name"}), n, h("label",{class:"f",text:"Topic"}), t, h("label",{class:"f",text:"Category"}), c, dl,
-      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 8). It also has a text chat."})), vsw),
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 20). It also has a text chat."})), vsw),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
     let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
     const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
