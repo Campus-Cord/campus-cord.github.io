@@ -43,6 +43,8 @@ const BADGE_ART = {
     + '<path d="M12 5.4l1.3 2.7 3 .4-2.2 2.1.5 3L12 12.2l-2.6 1.4.5-3-2.2-2.1 3-.4z" fill="#fff"/>',
   voice: () => grad("bv-g", ["#a5f3fc","#06b6d4","#155e75"]) + '<rect x="1.5" y="1.5" width="21" height="21" rx="6.5" fill="url(#bv-g)" stroke="#164e63" stroke-width=".8"/>'
     + '<rect x="9" y="4.8" width="6" height="9.6" rx="3" fill="#fff"/><path d="M6.6 11.2a5.4 5.4 0 0 0 10.8 0M12 16.6v2.6M9.2 19.2h5.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/>' + SHINE,
+  designer: () => grad("bds-g", ["#ffe4f3","#ff7ac6","#9d174d"]) + '<circle cx="12" cy="12" r="10.8" fill="#16111a" stroke="url(#bds-g)" stroke-width="1.6"/>'
+    + '<path d="M7 17l1.2-4.4L15.6 5.2a1.6 1.6 0 0 1 2.2 0l1 1a1.6 1.6 0 0 1 0 2.2L11.4 15.8z" fill="url(#bds-g)"/><path d="M8.2 12.6l3.2 3.2" stroke="#16111a" stroke-width="1"/><circle cx="7.2" cy="16.8" r="1" fill="#fff"/>',
   founder: () => '<defs><linearGradient id="bf-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b0764"/><stop offset="1" stop-color="#0f0524"/></linearGradient><linearGradient id="bf-au" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6c2"/><stop offset=".5" stop-color="#f6c033"/><stop offset="1" stop-color="#a15c00"/></linearGradient></defs>'
     + '<circle cx="12" cy="12" r="10.8" fill="url(#bf-g)" stroke="url(#bf-au)" stroke-width="1.5"/>'
     + '<path d="M5.2 15.5c-1.4-2.6-1-5.6.8-7.8M18.8 15.5c1.4-2.6 1-5.6-.8-7.8" stroke="url(#bf-au)" stroke-width="1.3" fill="none" stroke-linecap="round"/><path d="M5 12.4l1.6.3M5.6 10l1.5.6M19 12.4l-1.6.3M18.4 10l-1.5.6" stroke="#f6c033" stroke-width="1.1" stroke-linecap="round"/>'
@@ -86,6 +88,7 @@ function memberDays(uid){ const m = member(uid) || {}; return m.joinedAt ? Math.
 // Every badge that exists, in display order, with how it's earned. state(uid) -> null (locked) or {tier?, progress?}
 const BADGES = [
   {id:"owner", name:"Owner", how:"Owns CampusCord.", rarity:"Mythic", state:uid => isOwnerUid(uid) ? {} : null},
+  {id:"designer", name:"Designer", how:"Designed CampusCord's look — the logo and role tags. Given by the owner.", rarity:"Epic", state:uid => isDesigner(uid) ? {} : null},
   {id:"dev", name:"Developer", how:"Helps build CampusCord. Given by the owner.", rarity:"Epic", state:uid => isDev(uid) ? {} : null},
   {id:"pp", name:"Campus++", how:"Subscribe to Campus++.", rarity:"Epic", state:uid => rankOf(uid) === "plusplus" ? {} : null},
   {id:"plus", name:"Campus+", how:"Subscribe to Campus+.", rarity:"Rare", state:uid => rankOf(uid) === "plus" ? {} : null},

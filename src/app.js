@@ -83,6 +83,7 @@ const ICONS = {
   keyboard:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"/>',
   alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/>',
   refresh:'<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8M21 3v5h-5"/>',
+  pen:'<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
   star:'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
   spark:'<path d="M12 2.5l2.3 6.2 6.2 2.3-6.2 2.3L12 19.5l-2.3-6.2L3.5 11l6.2-2.3z"/><path d="M19 17.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
@@ -190,6 +191,8 @@ function copy(t, msg){ (navigator.clipboard ? navigator.clipboard.writeText(t) :
 const isOwnerUid = uid => !!(S.config && S.config.ownerUid === uid);
 const isOwner = () => isOwnerUid(S.uid);
 const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid));
+// Designers made CampusCord's look (logo, role tags). A title + badge + ring; no extra admin powers.
+const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid));
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
 function member(uid){ return S.members[uid] || null; }
 function profile(uid){ return S.profiles[uid] || {}; }
@@ -242,7 +245,7 @@ function avatar(uid, size, withDot){
   else if (bg) a.style.background = bg.g;
   else { a.style.background = (look.bg && /^#[0-9a-f]{6}$/i.test(look.bg)) ? look.bg : colorOf(uid); a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))"; }
   if (hasPerk(uid, "ring")) a.classList.add("ring");
-  const dc = size !== "xs" && (equipped(uid, "deco") || (isDev(uid) && !isOwnerUid(uid) ? "d_devring" : null)); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
+  const dc = size !== "xs" && (equipped(uid, "deco") || (isOwnerUid(uid) ? null : isDev(uid) ? "d_devring" : isDesigner(uid) ? "d_designring" : null)); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
   if (withDot) a.appendChild(h("span",{class:"dot " + statusOf(uid), title:{online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(uid)]}));
   return a;
 }
@@ -253,6 +256,7 @@ function roleTags(uid, compact){
   const out = [];
   if (isOwnerUid(uid)) out.push(chip("admin",null,"OWNER","Owner of CampusCord"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
+  if (isDesigner(uid) && !isOwnerUid(uid)) out.push(chip("design","pen","DESIGN","Designer — made CampusCord's look"));
   const r = rankOf(uid);
   if (r === "plusplus") out.push(chip("pp","zap","PLUS+","Campus++"));
   else if (r === "plus") out.push(chip("plus","sparkles","PLUS","Campus+"));
@@ -1067,6 +1071,7 @@ function memberMenu(ev, uid){
     uid !== S.uid && S.kind === "room" && canPost() ? {label:"Mention", icon:"message", run:() => insertAt("@" + nickOf(uid) + " ")} : null,
     isOwner() && uid !== S.uid ? "-" : null,
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" : "Make developer", icon:"code", run:() => setDev(uid, !isDev(uid))} : null,
+    isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     canModerate(uid) ? "-" : null,
     canModerate(uid) && !tu ? {label:"Timeout 5 minutes", icon:"hourglass", run:() => setTimeoutFor(uid, 5)} : null,
     canModerate(uid) && !tu ? {label:"Timeout 1 hour", icon:"hourglass", run:() => setTimeoutFor(uid, 60)} : null,
@@ -1173,9 +1178,10 @@ function renderRPanel(){
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); uids = [S.uid, o].filter(u => member(u)); }
   else { const r = curRoom(); if (r && r.private) uids = roomPeople(r); }
   const sortN = (a,b) => nickOf(a).localeCompare(nickOf(b));
-  const special = u => isOwnerUid(u) || (isDev(u) && isOn(u)) || (rankOf(u) === "plusplus" && isOn(u));
+  const special = u => isOwnerUid(u) || ((isDev(u) || isDesigner(u)) && isOn(u)) || (rankOf(u) === "plusplus" && isOn(u));
   const groups = [["Owner", uids.filter(isOwnerUid)], ["Developers", uids.filter(u => !isOwnerUid(u) && isDev(u) && isOn(u))],
-    ["Campus++", uids.filter(u => !isOwnerUid(u) && !isDev(u) && rankOf(u) === "plusplus" && isOn(u))],
+    ["Design", uids.filter(u => !isOwnerUid(u) && !isDev(u) && isDesigner(u) && isOn(u))],
+    ["Campus++", uids.filter(u => !isOwnerUid(u) && !isDev(u) && !isDesigner(u) && rankOf(u) === "plusplus" && isOn(u))],
     ["Online", uids.filter(u => !special(u) && isOn(u))], ["Offline", uids.filter(u => !isOwnerUid(u) && !isOn(u))]];
   groups.forEach(([label, arr]) => {
     if (!arr.length) return;
@@ -1219,6 +1225,7 @@ function openProfile(uid, anchor, self){
         uid === S.uid ? h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openSettings("profile"); }}, "Edit profile") : h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openDM(uid); }}, ic("message"), " Message"),
         uid === S.uid ? statusPicker() : null,
         isOwner() && uid !== S.uid ? h("button",{class:"btn small ghost", onclick:() => { closeLayer("profile"); isDev(uid) ? confirmBox("Remove " + nickOf(uid) + " as developer?", "They'll go back to being a regular member.", "Remove", () => setDev(uid, false)) : confirmBox("Make " + nickOf(uid) + " a developer?", "Developers can manage rooms, delete messages, pin, kick regular members, and see the invite code. Only you can add or remove developers.", "Make developer", () => setDev(uid, true), true); }}, isDev(uid) ? "Remove dev" : "Make developer") : null,
+        isOwner() && uid !== S.uid ? h("button",{class:"btn small ghost", onclick:() => { closeLayer("profile"); setDesigner(uid, !isDesigner(uid)); }}, isDesigner(uid) ? "Remove designer" : "Make designer") : null,
         isAdmin() && uid !== S.uid && !isOwnerUid(uid) && !(isDev(uid) && !isOwner()) ? h("button",{class:"btn small danger", onclick:() => { closeLayer("profile"); confirmBox("Kick " + nickOf(uid) + "?", "They'll be locked out right away and can't rejoin unless unbanned.", "Kick", () => kick(uid)); }}, "Kick") : null)));
   document.body.appendChild(card);
   const r = anchor.getBoundingClientRect();
@@ -1929,6 +1936,10 @@ function adminOrders(p){
       : h("span",{class:"s",text: o.status === "approved" ? "Approved ✓" : "Rejected"})));
   });
   p.append(h("p",{class:"note",style:{marginTop:0,marginBottom:"10px"},text:"Only approve an order after you see its payment in Stripe (search the order ID)."}), list);
+}
+async function setDesigner(uid, on){
+  try{ await updateDoc(doc(db, "config/main"), {designers: on ? arrayUnion(uid) : arrayRemove(uid)}); toast(on ? nickOf(uid) + " is now a Designer ✏️" : nickOf(uid) + " is no longer a designer"); refreshOpenPane(); }
+  catch(e){ toast("Couldn't update: " + errMsg(e)); }
 }
 async function setDev(uid, on){
   try{ await updateDoc(doc(db, "config/main"), {admins: on ? arrayUnion(uid) : arrayRemove(uid)}); toast(on ? nickOf(uid) + " is now a developer 💻" : nickOf(uid) + " is no longer a developer"); refreshOpenPane(); }
