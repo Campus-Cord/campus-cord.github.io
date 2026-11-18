@@ -1171,6 +1171,28 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .fbhb .btn{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;width:auto}.fbhb .btn.ghost{border:1px solid var(--line)}.fbreply span{margin-left:4px}
 .vunlock{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:120;display:inline-flex;align-items:center;gap:6px;background:#3ecf7a;color:#04210f;border:0;border-radius:99px;padding:10px 18px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:nbpop .4s}
 .vst{font-weight:800;text-transform:capitalize}.vst.connected{color:#3ecf7a}.vst.connecting,.vst.new{color:#ffd166}.vst.failed,.vst.disconnected{color:#f0565c}
+/* v3.18 #vouches */
+.vico{display:inline-flex;width:18px;justify-content:center;color:#f5b83d;font-size:15px}
+.av.vbot{background:linear-gradient(135deg,#ffd166,#f5a524)!important;color:#3a2300;font-weight:900;font-size:18px}
+.vouchmsg .meta .tag.bot{color:#f5b83d!important;border-color:#f5b83d!important}
+.vcard{margin-top:4px;max-width:520px;background:var(--rail);border:1px solid var(--line);border-left:4px solid #f5b83d;border-radius:6px;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px}
+.vtitle{font-weight:800;font-size:15px}.vnum{color:#f5b83d}
+.vdesc{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.45}
+.vfields{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.vfl{font-size:12px;font-weight:800;color:var(--text);margin-bottom:2px}
+.vfv{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:2px}
+.vwho{display:inline-flex;align-items:center;gap:6px;cursor:pointer}.vwho .av.xs{width:18px;height:18px;font-size:9px}
+.vstarsro{color:#f5b83d;letter-spacing:1px;font-size:16px}.vsn{font-size:12px}
+.vimg{max-width:100%;max-height:260px;border-radius:6px;cursor:zoom-in;object-fit:cover;align-self:flex-start}
+.vfoot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding-top:2px}.vfoot .av.xs{width:16px;height:16px;font-size:8px}
+.vbarw{gap:8px;background:color-mix(in srgb,#f5b83d 12%,var(--rail))!important;border:1px solid color-mix(in srgb,#f5b83d 35%,transparent)}
+.vouchmodal{width:min(460px,94vw)}
+.vmhead{display:flex;gap:12px;align-items:center;margin-bottom:6px}.vmic{font-size:28px}
+.vstars{display:flex;align-items:center;gap:2px}
+.vstar{background:none;border:0;font-size:30px;line-height:1;color:var(--line);cursor:pointer;padding:0 2px;transition:transform .1s,color .1s}
+.vstar.on{color:#f5b83d}.vstar:hover{transform:scale(1.15)}.vstxt{margin-left:10px;font-weight:700;color:var(--muted)}
+.vprof .vpr{display:flex;align-items:center;gap:2px}
+@media (max-width:640px){.vfields{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -1283,7 +1305,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.26";
+const APP_VERSION = "2026-11-18.27";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1390,6 +1412,7 @@ const PLUS_INCLUDES = ["name_fx","themes","banner","big_uploads","supporter"];
 const PLUSPLUS_INCLUDES = [...PLUS_INCLUDES, "plus", "fx_exclusive", "ring", "banner_gradient"];
 
 const SLASH = [
+  {c:"vouch", a:"[@name]", d:"Write a star-rated vouch (in #vouches)"},
   {c:"shrug", a:"[message]", d:"Appends ¯\\_(ツ)_/¯"},
   {c:"tableflip", a:"[message]", d:"(╯°□°)╯︵ ┻━┻"},
   {c:"unflip", a:"[message]", d:"┬─┬ノ( º _ ºノ)"},
@@ -1680,6 +1703,9 @@ async function ownerHousekeeping(){
   if (!isOwner() || housekeeping || !S.config) return; housekeeping = true;
   try{
     if (!S.config.launchAt) await updateDoc(doc(db, "config/main"), {launchAt:Date.now()});
+    if (!S.config.vouchRoomMade && !S.allRooms.some(r => r.type === "vouches")){
+      await setDoc(doc(db, "rooms", "vouches-" + rid().slice(-4)), {name:"vouches", topic:"Vouch for friends and for CampusCord with /vouch ⭐", category:"Text rooms", readonly:false, type:"vouches", order:S.rooms.length, createdAt:Date.now()});
+      await updateDoc(doc(db, "config/main"), {vouchRoomMade:true}); }
     const done = new Set(S.config.welcomed || []);
     const todo = Object.keys(S.members).filter(u => !isOwnerUid(u) && !done.has(u) && !isBanned(u));
     if (!S.walletsLoaded) return;
@@ -1869,7 +1895,7 @@ function renderSide(){
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : "") + (vr ? " voice" : "") + (inV ? " invoice" : ""),
           "data-room": r.id, "data-in": opts.pinned ? "pins" : c, draggable: (opts.pinned || isAdmin()) ? "true" : null,
           onclick:() => { if (vr){ joinVoice(r.id); bumpStat("voice"); } openChat("room", r.id); }, oncontextmenu:e => roomMenu(e, r), title: vr ? (inV ? "You're in this voice channel" : "Click to join voice") : null},
-        h("span",{class:"ic"}, ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+        h("span",{class:"ic"}, isVouchRoom(r) ? h("span",{class:"vico",text:"★"}) : ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
         vr && vn ? h("span",{class:"vcount",text:vn + "/" + VOICE_MAX}) : null,
         h("button",{class:"x pinb" + (opts.pinned ? " on" : ""), title: opts.pinned ? "Unpin" : "Pin to top", onclick:e => { e.stopPropagation(); togglePinRoom(r.id); }}, ic("pin")),
         isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
@@ -2256,7 +2282,7 @@ function renderMessages(){
     const dl = new Date(m.ts).toDateString();
     if (dl !== prevDay){ box.appendChild(h("div",{class:"day",text:dayLabel(m.ts)})); prevDay = dl; prev = null; }
     if (!divDone && S.unreadSince && m.ts > S.unreadSince && m.uid !== S.uid){ box.appendChild(h("div",{class:"newdiv"}, h("span",{text:"NEW"}))); divDone = true; prev = null; }
-    const first = !prev || prev.uid !== m.uid || (m.ts - prev.ts) > 5*60*1000 || m.reply || m.me || prev.join;
+    const first = !prev || prev.uid !== m.uid || (m.ts - prev.ts) > 5*60*1000 || m.reply || m.me || prev.join || prev.vouch;
     box.appendChild(messageEl(m, first, byMsg[m.id]));
     prev = m;
   });
@@ -2276,7 +2302,16 @@ function welcomeBlock(){
       h("p",null, !S.roomLoaded ? "Loading messages…" : (r && r.private) ? "Private room — only " + listNames(roomPeople(r).map(nickOf)) + " can see this." : (r && r.topic) ? r.topic : "This is the start of the #" + (r ? r.name : "") + " room.")); }
   return w;
 }
+function reactionRow(m, reacts){
+  const rkeys = reacts ? Object.keys(reacts).filter(e => !e.startsWith("poll:")) : []; if (!rkeys.length) return null;
+  const wrap = h("div",{class:"reacts"});
+  rkeys.forEach(e => { const arr = reacts[e]; const mine = arr.some(x => x.uid === S.uid);
+    wrap.appendChild(h("button",{class:"rc" + (mine ? " mine" : ""), title:arr.map(x => nickOf(x.uid)).join(", "), onclick:() => toggleReact(m, e)}, e + " ", h("b",{text:String(arr.length)}))); });
+  wrap.appendChild(h("button",{class:"rc add", title:"Add reaction", onclick:ev => quickReact(ev, m)}, ic("smileplus")));
+  return wrap;
+}
 function messageEl(m, first, reacts){
+  if (m.vouch){ const el = vouchEl(m); const rw = reactionRow(m, reacts); if (rw) el.querySelector(".body").appendChild(rw); el.oncontextmenu = e => msgMenu(e, m); return el; }
   if (m.join){ const line = JOIN_LINES[parseInt(m.id.replace(/\D/g, "").slice(-3) || "0", 10) % JOIN_LINES.length];
     return h("div",{class:"msg joinmsg first", id:"m-" + m.id}, h("div",{class:"gut"}, h("span",{class:"joinic"}, ic("arrowdown"))),
       h("div",{class:"body"}, h("div",{class:"jl"}, paintName(h("b",{class:"n",text:nickOf(m.uid), onclick:e => openProfile(m.uid, e.target)}), m.uid), " " + line, h("span",{class:"t",text:" " + fmtDay(m.ts)})))); }
@@ -2302,12 +2337,7 @@ function messageEl(m, first, reacts){
   if (m.text && !m.poll && S.editing !== m.id) embedsFor(m.text).forEach(e => body.appendChild(e));
   if (m.img){ const im = h("img",{class:"att", src:m.img, alt: m.gif ? "GIF" : "image", loading:"lazy", onclick:() => lightbox(m.img)});
     im.onload = () => { if (S.stickBottom){ const b = $("msgs"); b.scrollTop = b.scrollHeight; } }; body.appendChild(im); }
-  const rkeys = reacts ? Object.keys(reacts).filter(e => !e.startsWith("poll:")) : [];
-  if (rkeys.length){ const wrap = h("div",{class:"reacts"});
-    rkeys.forEach(e => { const arr = reacts[e]; const mine = arr.some(x => x.uid === S.uid);
-      wrap.appendChild(h("button",{class:"rc" + (mine ? " mine" : ""), title:arr.map(x => nickOf(x.uid)).join(", "), onclick:() => toggleReact(m, e)}, e + " ", h("b",{text:String(arr.length)}))); });
-    wrap.appendChild(h("button",{class:"rc add", title:"Add reaction", onclick:ev => quickReact(ev, m)}, ic("smileplus")));
-    body.appendChild(wrap); }
+  const rw = reactionRow(m, reacts); if (rw) body.appendChild(rw);
   row.appendChild(body);
   if (m.pinned) row.appendChild(h("span",{class:"pinmark",title:"Pinned"}, ic("pin")));
   const mine = m.uid === S.uid;
@@ -2573,6 +2603,7 @@ function openProfile(uid, anchor, self){
       h("div",{class:"pstat",text: (p.customStatus ? p.customStatus + " · " : "") + ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st])}),
       timeoutUntil(uid) ? h("div",{class:"pstat tmo"}, ic("hourglass","sm"), " Timed out until " + fmtTime(timeoutUntil(uid))) : null,
       p.bio ? h("div",{class:"sect"}, h("h4",{text:"About me"}), h("div",{text:p.bio})) : null,
+      vouchProfileEl(uid),
       h("div",{class:"sect"}, h("h4",{text:"Member since"}), h("div",{text: member(uid).joinedAt ? new Date(member(uid).joinedAt).toLocaleDateString([], {month:"long", day:"numeric", year:"numeric"}) : "—"})),
       h("div",{class:"acts"},
         uid === S.uid ? h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openSettings("profile"); }}, "Edit profile") : h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openDM(uid); }}, ic("message"), " Message"),
@@ -2630,7 +2661,8 @@ function renderComposer(){
   if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
   if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"ib", title:"Remove", onclick:() => setPending(null)}, ic("x"))));
   const r = curRoom();
-  input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : "Message #" + (r ? r.name : "");
+  input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : isVouchRoom(r) ? "Type /vouch or click Write a vouch" : "Message #" + (r ? r.name : "");
+  if (isVouchRoom(r) && ok) bars.appendChild(h("div",{class:"cbar vbarw"}, h("span",{text:"🎉"}), h("span",{text:"Vouch for a friend or for CampusCord — stars, a short review and optional proof."}), h("span",{class:"sp"}), h("button",{class:"btn small", onclick:() => openVouchModal()}, "Write a vouch")));
   $("hintline").textContent = "";
 }
 let draftT = null;
@@ -2685,6 +2717,7 @@ function drawAutocomplete(){
     it.uid ? avatar(it.uid, "xs") : null, it.uid ? paintName(h("span",{text:it.label}), it.uid) : h("b",{text:it.label}), it.desc ? h("span",{class:"d",text:it.desc}) : null)));
 }
 function pickAutocomplete(i){ const it = S.ac.items[i]; const pos = input.selectionStart;
+  if (it.insert && it.insert.trim() === "/vouch" && it.start === 0){ hideAutocomplete(); input.value = ""; autoGrow(); openVouchModal(); return; }
   input.value = input.value.slice(0, it.start) + it.insert + input.value.slice(pos); const np = it.start + it.insert.length; input.selectionStart = input.selectionEnd = np; hideAutocomplete(); input.focus(); autoGrow(); }
 function hideAutocomplete(){ S.ac = null; $("acPop").classList.add("hidden"); }
 input.addEventListener("blur", () => setTimeout(hideAutocomplete, 150));
@@ -2733,6 +2766,7 @@ async function runSlash(raw){
     case "me": return arg ? {text:arg, me:true} : null;
     case "spoiler": return arg ? {text:"||" + arg + "||"} : null;
     case "roll": { const n = Math.max(2, Math.min(1000, parseInt(arg) || 6)); return {text:"🎲 rolled a **" + (1 + Math.floor(Math.random()*n)) + "** (1–" + n + ")"}; }
+    case "vouch": { const at = arg.match(/^@?(\S+)/); const u = at ? Object.keys(S.members).find(x => nickOf(x).toLowerCase() === at[1].toLowerCase()) : null; openVouchModal(u || undefined); return null; }
     case "flip": return {text:"🪙 flipped a coin: **" + (Math.random() < .5 ? "Heads" : "Tails") + "**"};
     case "nick": if (arg.length >= 2){ try{ await updateDoc(doc(db, "members", S.uid), {nick:arg.slice(0,24)}); toast("Name changed to " + arg.slice(0,24)); }catch(e){ toast("Couldn't change name: " + errMsg(e)); } } else toast("Usage: /nick <new name>"); return null;
     case "status": try{ await setMyProfile({customStatus:arg.slice(0,60)}); toast(arg ? "Status set" : "Status cleared"); }catch(e){} return null;
@@ -2890,11 +2924,12 @@ function roomModal(room, cat){
     const t = h("input",{class:"inp", placeholder:"What's this room for?", value: room ? room.topic || "" : ""});
     const c = h("input",{class:"inp", placeholder:"Text rooms", value: room ? room.category || "Text rooms" : (cat || "Text rooms"), list:"catlist"});
     const dl = h("datalist",{id:"catlist"}, [...new Set(S.rooms.map(r => r.category || "Text rooms"))].map(x => h("option",{value:x})));
-    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice");
+    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice"), vch = !!(room && room.type === "vouches");
     const sw = h("button",{class:"sw" + (ro ? " on" : ""), onclick:() => { ro = !ro; sw.classList.toggle("on", ro); }});
     const vsw = h("button",{class:"sw" + (vc ? " on" : ""), onclick:() => { vc = !vc; vsw.classList.toggle("on", vc); if (vc && !room && (c.value === "Text rooms" || !c.value)) c.value = "Voice rooms"; }});
     m.append(h("label",{class:"f",text:"Room name"}), n, h("label",{class:"f",text:"Topic"}), t, h("label",{class:"f",text:"Category"}), c, dl,
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 20). It also has a text chat."})), vsw),
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, "🎉 Vouches channel"), h("span",{text:"People post star-rated vouch cards with /vouch"})), (() => { const b = h("button",{class:"sw" + (vch ? " on" : ""), onclick:() => { vch = !vch; b.classList.toggle("on", vch); }}); return b; })()),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
     let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
     const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
@@ -2910,7 +2945,7 @@ function roomModal(room, cat){
       drawPeople();
     }
     const save = async () => { const s = slug(n.value); if (!s){ toast("Give the room a name"); return; }
-      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : "text"};
+      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : vch ? "vouches" : "text"};
       if (isOwner()){ data.private = priv; data.allowed = priv ? [...allowed] : []; }
       try{ if (room) await updateDoc(doc(db, "rooms", room.id), data);
         else { const id = s + "-" + rid().slice(-4); await setDoc(doc(db, "rooms", id), Object.assign(data, {order:S.rooms.length, createdAt:Date.now()})); close(); openChat("room", id); return; }
@@ -3831,6 +3866,88 @@ setInterval(() => { try{ checkNewBadges(); }catch(e){} }, 4000);
     const b = el.getBoundingClientRect(); tip.style.top = (b.top - tip.offsetHeight - 8) + "px"; tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, b.left + b.width / 2 - tip.offsetWidth / 2)) + "px"; });
 })();
 
+
+// ---------------------------------------------------------------- #vouches channel (Discord vouch-bot style)
+// A text room with type "vouches". People run /vouch (or the Write a vouch button): pick who it's for — a person or
+// CampusCord itself — give 1–5 stars, write a review and optionally attach proof. It posts as a numbered vouch card.
+const isVouchRoom = r => r && r.type === "vouches";
+const VOUCH_GOLD = "#f5b83d";
+function starsText(n){ return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
+function vouchCount(){ return S.msgs.filter(m => m.vouch).length; }
+function openVouchModal(preTo){
+  const r = curRoom(); if (!isVouchRoom(r)){ const vr = S.rooms.find(isVouchRoom); if (vr){ openChat("room", vr.id); setTimeout(() => openVouchModal(preTo), 600); } else toast("Ask the owner to make a #vouches room first"); return; }
+  modal((m, close) => {
+    let to = preTo || "server", stars = 5, file = null;
+    const people = Object.keys(S.members).filter(u => u !== S.uid && !isBanned(u)).sort((a, b) => nickOf(a).localeCompare(nickOf(b)));
+    const sel = h("select",{class:"inp", onchange:e => { to = e.target.value; }},
+      h("option",{value:"server", text:"🏫 CampusCord (the whole server)", selected: to === "server" ? "" : null}),
+      people.map(u => h("option",{value:u, text:"👤 " + nickOf(u), selected: to === u ? "" : null})));
+    const starRow = h("div",{class:"vstars"}); const drawStars = () => { starRow.innerHTML = "";
+      for (let i = 1; i <= 5; i++) starRow.appendChild(h("button",{class:"vstar" + (i <= stars ? " on" : ""), title:i + " star" + (i > 1 ? "s" : ""), onclick:() => { stars = i; drawStars(); }}, "★"));
+      starRow.appendChild(h("span",{class:"vstxt",text:["","Bad","Meh","Okay","Good","Amazing"][stars]})); }; drawStars();
+    const txt = h("textarea",{class:"inp", maxlength:"1000", rows:"4", placeholder:"What was good (or not)? e.g. “Helped me with my homework, super fast and nice.”"});
+    const proof = h("span",{class:"note",style:{margin:0},text:"No image"});
+    const pick = h("button",{class:"btn small ghost", onclick:() => pickPhotoFile(f => { file = f; proof.textContent = f.name; })}, ic("image","sm"), " Add proof (optional)");
+    const go = async () => {
+      const review = txt.value.trim(); if (review.length < 3){ toast("Write a short review (at least 3 characters)"); return; }
+      const why = spamCheck(review); if (why){ toast(why); return; }
+      btn.disabled = true; btn.textContent = "Posting…";
+      try{
+        const body = {uid:S.uid, text:review.slice(0, 1000), ts:Date.now(), vouch:{to, stars, n:vouchCount() + 1}};
+        if (to !== "server") body.mentions = [to];
+        if (file) body.img = await imageToData(file);
+        const id = Date.now().toString(36) + "-v" + Math.random().toString(36).slice(2, 6);
+        await setDoc(doc(db, "rooms", r.id, "msgs", id), body);
+        setDoc(doc(db, "rooms", r.id, "reacts", id + "__" + S.uid + "__" + eKey("✅")), {mid:id, uid:S.uid, e:"✅", ts:Date.now()}).catch(() => {});
+        setDoc(doc(db, "meta", r.id), {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview:"left a " + stars + "★ vouch" + (to === "server" ? "" : " for " + nickOf(to)), lastMentions:body.mentions || [], lastEveryone:false}).catch(() => {});
+        bumpStat("vouch"); close(); toast("Vouch #" + body.vouch.n + " posted ✦");
+      }catch(e){ toast("Couldn't post: " + errMsg(e)); btn.disabled = false; btn.textContent = "Post vouch"; }
+    };
+    const btn = h("button",{class:"btn", onclick:go}, "Post vouch");
+    m.append(h("div",{class:"vmhead"}, h("span",{class:"vmic"}, "🎉"), h("div",null, h("h3",{style:{margin:0},text:"Write a vouch"}), h("div",{class:"note",style:{margin:0},text:"Vouch #" + (vouchCount() + 1) + " · shows up in #" + r.name + " for everyone"}))),
+      h("label",{class:"f",text:"Vouching for"}), sel, h("label",{class:"f",text:"Stars"}), starRow, h("label",{class:"f",text:"Review"}), txt,
+      h("div",{class:"row",style:{marginTop:"10px",alignItems:"center",gap:"10px"}}, pick, proof),
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), btn));
+    setTimeout(() => txt.focus(), 0);
+  }, "vouchmodal");
+}
+// The vouch card (like a vouch bot's embed)
+function vouchEl(m){
+  const v = m.vouch, who = v.to === "server" ? null : v.to;
+  const field = (label, ...val) => h("div",{class:"vf"}, h("div",{class:"vfl",text:label}), h("div",{class:"vfv"}, ...val));
+  const row = h("div",{class:"msg first vouchmsg", id:"m-" + m.id},
+    h("div",{class:"gut"}, h("div",{class:"av vbot"}, h("span",{text:"✓"}))),
+    h("div",{class:"body"},
+      h("div",{class:"meta"}, h("span",{class:"n",style:{color:VOUCH_GOLD},text:"Vouches"}), h("span",{class:"tag bot noi"}, h("b",{text:"APP"})), h("span",{class:"t",text:fmtDay(m.ts)})),
+      h("div",{class:"vcard"},
+        h("div",{class:"vtitle"}, "🎉 Vouch ", h("span",{class:"vnum",text:"(#" + (v.n || "?") + ")"})),
+        m.text ? h("div",{class:"vdesc",text:m.text}) : null,
+        h("div",{class:"vfields"},
+          field("Vouched " + (who ? "User" : "For"), who ? h("span",{class:"vwho", onclick:e => openProfile(who, e.currentTarget)}, avatar(who, "xs"), paintName(h("b",{text:nickOf(who)}), who)) : h("b",{text:"CampusCord"})),
+          field("Vouched By", h("span",{class:"vwho", onclick:e => openProfile(m.uid, e.currentTarget)}, avatar(m.uid, "xs"), paintName(h("b",{text:nickOf(m.uid)}), m.uid))),
+          field("Stars", h("span",{class:"vstarsro",text:starsText(v.stars || 0)}), h("span",{class:"vsn",text:" " + (v.stars || 0) + "/5"})),
+          field("Vouched At", h("span",{text:new Date(m.ts).toLocaleString([], {month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"})}))),
+        m.img ? h("img",{class:"vimg", src:m.img, alt:"Proof", onclick:() => window.open(m.img, "_blank")}) : null,
+        h("div",{class:"vfoot"}, avatar(m.uid, "xs"), h("span",{text:"Vouched by " + nickOf(m.uid) + " • CampusCord Vouches"})))));
+  return row;
+}
+// Profile stats: how many vouches someone has and their average rating (reads the #vouches room once per open).
+const VSTATS = {};
+async function vouchStats(uid){
+  const vr = S.rooms.find(isVouchRoom); if (!vr) return null;
+  const c = VSTATS[vr.id]; let list;
+  if (c && Date.now() - c.at < 60000) list = c.list;
+  else { try{ const snap = await getDocs(query(collection(db, "rooms", vr.id, "msgs"), orderBy("ts", "desc"), limit(500))); list = snap.docs.map(d => d.data()).filter(m => m.vouch); VSTATS[vr.id] = {at:Date.now(), list}; }catch(e){ return null; } }
+  const mine = list.filter(m => m.vouch.to === uid); if (!mine.length) return {n:0, avg:0};
+  return {n:mine.length, avg:mine.reduce((a, m) => a + (m.vouch.stars || 0), 0) / mine.length};
+}
+function vouchProfileEl(uid){
+  const box = h("div",{class:"sect vprof hidden"});
+  vouchStats(uid).then(st => { if (!st) return; box.classList.remove("hidden");
+    box.append(h("h4",{text:"Vouches"}), h("div",{class:"vpr"}, st.n ? [h("span",{class:"vstarsro",text:starsText(Math.round(st.avg))}), h("b",{text:" " + st.avg.toFixed(1)}), h("span",{class:"note",style:{margin:"0 0 0 6px"},text:"from " + st.n + " vouch" + (st.n > 1 ? "es" : "")})] : h("span",{class:"note",style:{margin:0},text:"No vouches yet."}),
+      uid !== S.uid ? h("button",{class:"btn small ghost",style:{marginLeft:"auto"}, onclick:() => { closeLayer("profile"); openVouchModal(uid); }}, "Vouch") : null)); });
+  return box;
+}
 
 // ---------------------------------------------------------------- Feedback board ("vouches")
 // Anyone can post a bug or an idea; everyone else can vouch for it (one vouch each). The owner and developers

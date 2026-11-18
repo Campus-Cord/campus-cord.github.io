@@ -155,7 +155,10 @@ service cloud.firestore {
       match /msgs/{msgId} {
         allow read: if inRoom();
         allow create: if inRoom() && ownsNew() && request.resource.data.text.size() <= 4000
-          && (roomOpen() || isAdmin()) && notTimedOut();
+          && (roomOpen() || isAdmin()) && notTimedOut()
+          && (!('vouch' in request.resource.data) || (request.resource.data.vouch.stars is int
+              && request.resource.data.vouch.stars >= 1 && request.resource.data.vouch.stars <= 5
+              && request.resource.data.vouch.to is string && request.resource.data.vouch.to != request.auth.uid));
         // Authors edit their own text; admins pin.
         allow update: if inRoom() && ownsOld()
           && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])

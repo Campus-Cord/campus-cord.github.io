@@ -27,6 +27,9 @@ await t("wrong invite code is refused", assertFails(setDoc(doc(as("dave"), "memb
 
 console.log("Rooms");
 await t("member posts in a public room", assertSucceeds(setDoc(doc(as("alice"), "rooms/general/msgs/m1"), { uid: "alice", text: "hi", ts: now })));
+await t("post a vouch", assertSucceeds(setDoc(doc(as("alice"), "rooms/general/msgs/v1"), { uid: "alice", text: "great", ts: now, vouch: { to: "bob", stars: 5, n: 1 } })));
+await t("can't vouch for yourself", assertFails(setDoc(doc(as("alice"), "rooms/general/msgs/v2"), { uid: "alice", text: "me!", ts: now, vouch: { to: "alice", stars: 5, n: 2 } })));
+await t("can't give 6 stars", assertFails(setDoc(doc(as("alice"), "rooms/general/msgs/v3"), { uid: "alice", text: "wow", ts: now, vouch: { to: "server", stars: 6, n: 3 } })));
 await t("timed-out member can't post", assertFails(setDoc(doc(as("timed"), "rooms/general/msgs/m2"), { uid: "timed", text: "hi", ts: now })));
 await t("invited member reads private room", assertSucceeds(getDoc(doc(as("alice"), "rooms/secret/msgs/x"))));
 await t("uninvited member can't read private room", assertFails(getDoc(doc(as("bob"), "rooms/secret/msgs/x"))));

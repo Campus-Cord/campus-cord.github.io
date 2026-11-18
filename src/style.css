@@ -1156,3 +1156,25 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .fbhb .btn{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;width:auto}.fbhb .btn.ghost{border:1px solid var(--line)}.fbreply span{margin-left:4px}
 .vunlock{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:120;display:inline-flex;align-items:center;gap:6px;background:#3ecf7a;color:#04210f;border:0;border-radius:99px;padding:10px 18px;font-weight:800;font-size:14px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:nbpop .4s}
 .vst{font-weight:800;text-transform:capitalize}.vst.connected{color:#3ecf7a}.vst.connecting,.vst.new{color:#ffd166}.vst.failed,.vst.disconnected{color:#f0565c}
+/* v3.18 #vouches */
+.vico{display:inline-flex;width:18px;justify-content:center;color:#f5b83d;font-size:15px}
+.av.vbot{background:linear-gradient(135deg,#ffd166,#f5a524)!important;color:#3a2300;font-weight:900;font-size:18px}
+.vouchmsg .meta .tag.bot{color:#f5b83d!important;border-color:#f5b83d!important}
+.vcard{margin-top:4px;max-width:520px;background:var(--rail);border:1px solid var(--line);border-left:4px solid #f5b83d;border-radius:6px;padding:12px 16px 10px;display:flex;flex-direction:column;gap:8px}
+.vtitle{font-weight:800;font-size:15px}.vnum{color:#f5b83d}
+.vdesc{white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.45}
+.vfields{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+.vfl{font-size:12px;font-weight:800;color:var(--text);margin-bottom:2px}
+.vfv{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:2px}
+.vwho{display:inline-flex;align-items:center;gap:6px;cursor:pointer}.vwho .av.xs{width:18px;height:18px;font-size:9px}
+.vstarsro{color:#f5b83d;letter-spacing:1px;font-size:16px}.vsn{font-size:12px}
+.vimg{max-width:100%;max-height:260px;border-radius:6px;cursor:zoom-in;object-fit:cover;align-self:flex-start}
+.vfoot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding-top:2px}.vfoot .av.xs{width:16px;height:16px;font-size:8px}
+.vbarw{gap:8px;background:color-mix(in srgb,#f5b83d 12%,var(--rail))!important;border:1px solid color-mix(in srgb,#f5b83d 35%,transparent)}
+.vouchmodal{width:min(460px,94vw)}
+.vmhead{display:flex;gap:12px;align-items:center;margin-bottom:6px}.vmic{font-size:28px}
+.vstars{display:flex;align-items:center;gap:2px}
+.vstar{background:none;border:0;font-size:30px;line-height:1;color:var(--line);cursor:pointer;padding:0 2px;transition:transform .1s,color .1s}
+.vstar.on{color:#f5b83d}.vstar:hover{transform:scale(1.15)}.vstxt{margin-left:10px;font-weight:700;color:var(--muted)}
+.vprof .vpr{display:flex;align-items:center;gap:2px}
+@media (max-width:640px){.vfields{grid-template-columns:1fr}}

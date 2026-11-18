@@ -115,6 +115,7 @@ const PLUS_INCLUDES = ["name_fx","themes","banner","big_uploads","supporter"];
 const PLUSPLUS_INCLUDES = [...PLUS_INCLUDES, "plus", "fx_exclusive", "ring", "banner_gradient"];
 
 const SLASH = [
+  {c:"vouch", a:"[@name]", d:"Write a star-rated vouch (in #vouches)"},
   {c:"shrug", a:"[message]", d:"Appends ¯\\_(ツ)_/¯"},
   {c:"tableflip", a:"[message]", d:"(╯°□°)╯︵ ┻━┻"},
   {c:"unflip", a:"[message]", d:"┬─┬ノ( º _ ºノ)"},
@@ -405,6 +406,9 @@ async function ownerHousekeeping(){
   if (!isOwner() || housekeeping || !S.config) return; housekeeping = true;
   try{
     if (!S.config.launchAt) await updateDoc(doc(db, "config/main"), {launchAt:Date.now()});
+    if (!S.config.vouchRoomMade && !S.allRooms.some(r => r.type === "vouches")){
+      await setDoc(doc(db, "rooms", "vouches-" + rid().slice(-4)), {name:"vouches", topic:"Vouch for friends and for CampusCord with /vouch ⭐", category:"Text rooms", readonly:false, type:"vouches", order:S.rooms.length, createdAt:Date.now()});
+      await updateDoc(doc(db, "config/main"), {vouchRoomMade:true}); }
     const done = new Set(S.config.welcomed || []);
     const todo = Object.keys(S.members).filter(u => !isOwnerUid(u) && !done.has(u) && !isBanned(u));
     if (!S.walletsLoaded) return;
@@ -594,7 +598,7 @@ function renderSide(){
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : "") + (vr ? " voice" : "") + (inV ? " invoice" : ""),
           "data-room": r.id, "data-in": opts.pinned ? "pins" : c, draggable: (opts.pinned || isAdmin()) ? "true" : null,
           onclick:() => { if (vr){ joinVoice(r.id); bumpStat("voice"); } openChat("room", r.id); }, oncontextmenu:e => roomMenu(e, r), title: vr ? (inV ? "You're in this voice channel" : "Click to join voice") : null},
-        h("span",{class:"ic"}, ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+        h("span",{class:"ic"}, isVouchRoom(r) ? h("span",{class:"vico",text:"★"}) : ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
         vr && vn ? h("span",{class:"vcount",text:vn + "/" + VOICE_MAX}) : null,
         h("button",{class:"x pinb" + (opts.pinned ? " on" : ""), title: opts.pinned ? "Unpin" : "Pin to top", onclick:e => { e.stopPropagation(); togglePinRoom(r.id); }}, ic("pin")),
         isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
@@ -981,7 +985,7 @@ function renderMessages(){
     const dl = new Date(m.ts).toDateString();
     if (dl !== prevDay){ box.appendChild(h("div",{class:"day",text:dayLabel(m.ts)})); prevDay = dl; prev = null; }
     if (!divDone && S.unreadSince && m.ts > S.unreadSince && m.uid !== S.uid){ box.appendChild(h("div",{class:"newdiv"}, h("span",{text:"NEW"}))); divDone = true; prev = null; }
-    const first = !prev || prev.uid !== m.uid || (m.ts - prev.ts) > 5*60*1000 || m.reply || m.me || prev.join;
+    const first = !prev || prev.uid !== m.uid || (m.ts - prev.ts) > 5*60*1000 || m.reply || m.me || prev.join || prev.vouch;
     box.appendChild(messageEl(m, first, byMsg[m.id]));
     prev = m;
   });
@@ -1001,7 +1005,16 @@ function welcomeBlock(){
       h("p",null, !S.roomLoaded ? "Loading messages…" : (r && r.private) ? "Private room — only " + listNames(roomPeople(r).map(nickOf)) + " can see this." : (r && r.topic) ? r.topic : "This is the start of the #" + (r ? r.name : "") + " room.")); }
   return w;
 }
+function reactionRow(m, reacts){
+  const rkeys = reacts ? Object.keys(reacts).filter(e => !e.startsWith("poll:")) : []; if (!rkeys.length) return null;
+  const wrap = h("div",{class:"reacts"});
+  rkeys.forEach(e => { const arr = reacts[e]; const mine = arr.some(x => x.uid === S.uid);
+    wrap.appendChild(h("button",{class:"rc" + (mine ? " mine" : ""), title:arr.map(x => nickOf(x.uid)).join(", "), onclick:() => toggleReact(m, e)}, e + " ", h("b",{text:String(arr.length)}))); });
+  wrap.appendChild(h("button",{class:"rc add", title:"Add reaction", onclick:ev => quickReact(ev, m)}, ic("smileplus")));
+  return wrap;
+}
 function messageEl(m, first, reacts){
+  if (m.vouch){ const el = vouchEl(m); const rw = reactionRow(m, reacts); if (rw) el.querySelector(".body").appendChild(rw); el.oncontextmenu = e => msgMenu(e, m); return el; }
   if (m.join){ const line = JOIN_LINES[parseInt(m.id.replace(/\D/g, "").slice(-3) || "0", 10) % JOIN_LINES.length];
     return h("div",{class:"msg joinmsg first", id:"m-" + m.id}, h("div",{class:"gut"}, h("span",{class:"joinic"}, ic("arrowdown"))),
       h("div",{class:"body"}, h("div",{class:"jl"}, paintName(h("b",{class:"n",text:nickOf(m.uid), onclick:e => openProfile(m.uid, e.target)}), m.uid), " " + line, h("span",{class:"t",text:" " + fmtDay(m.ts)})))); }
@@ -1027,12 +1040,7 @@ function messageEl(m, first, reacts){
   if (m.text && !m.poll && S.editing !== m.id) embedsFor(m.text).forEach(e => body.appendChild(e));
   if (m.img){ const im = h("img",{class:"att", src:m.img, alt: m.gif ? "GIF" : "image", loading:"lazy", onclick:() => lightbox(m.img)});
     im.onload = () => { if (S.stickBottom){ const b = $("msgs"); b.scrollTop = b.scrollHeight; } }; body.appendChild(im); }
-  const rkeys = reacts ? Object.keys(reacts).filter(e => !e.startsWith("poll:")) : [];
-  if (rkeys.length){ const wrap = h("div",{class:"reacts"});
-    rkeys.forEach(e => { const arr = reacts[e]; const mine = arr.some(x => x.uid === S.uid);
-      wrap.appendChild(h("button",{class:"rc" + (mine ? " mine" : ""), title:arr.map(x => nickOf(x.uid)).join(", "), onclick:() => toggleReact(m, e)}, e + " ", h("b",{text:String(arr.length)}))); });
-    wrap.appendChild(h("button",{class:"rc add", title:"Add reaction", onclick:ev => quickReact(ev, m)}, ic("smileplus")));
-    body.appendChild(wrap); }
+  const rw = reactionRow(m, reacts); if (rw) body.appendChild(rw);
   row.appendChild(body);
   if (m.pinned) row.appendChild(h("span",{class:"pinmark",title:"Pinned"}, ic("pin")));
   const mine = m.uid === S.uid;
@@ -1298,6 +1306,7 @@ function openProfile(uid, anchor, self){
       h("div",{class:"pstat",text: (p.customStatus ? p.customStatus + " · " : "") + ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st])}),
       timeoutUntil(uid) ? h("div",{class:"pstat tmo"}, ic("hourglass","sm"), " Timed out until " + fmtTime(timeoutUntil(uid))) : null,
       p.bio ? h("div",{class:"sect"}, h("h4",{text:"About me"}), h("div",{text:p.bio})) : null,
+      vouchProfileEl(uid),
       h("div",{class:"sect"}, h("h4",{text:"Member since"}), h("div",{text: member(uid).joinedAt ? new Date(member(uid).joinedAt).toLocaleDateString([], {month:"long", day:"numeric", year:"numeric"}) : "—"})),
       h("div",{class:"acts"},
         uid === S.uid ? h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openSettings("profile"); }}, "Edit profile") : h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openDM(uid); }}, ic("message"), " Message"),
@@ -1355,7 +1364,8 @@ function renderComposer(){
   if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
   if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"ib", title:"Remove", onclick:() => setPending(null)}, ic("x"))));
   const r = curRoom();
-  input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : "Message #" + (r ? r.name : "");
+  input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : isVouchRoom(r) ? "Type /vouch or click Write a vouch" : "Message #" + (r ? r.name : "");
+  if (isVouchRoom(r) && ok) bars.appendChild(h("div",{class:"cbar vbarw"}, h("span",{text:"🎉"}), h("span",{text:"Vouch for a friend or for CampusCord — stars, a short review and optional proof."}), h("span",{class:"sp"}), h("button",{class:"btn small", onclick:() => openVouchModal()}, "Write a vouch")));
   $("hintline").textContent = "";
 }
 let draftT = null;
@@ -1410,6 +1420,7 @@ function drawAutocomplete(){
     it.uid ? avatar(it.uid, "xs") : null, it.uid ? paintName(h("span",{text:it.label}), it.uid) : h("b",{text:it.label}), it.desc ? h("span",{class:"d",text:it.desc}) : null)));
 }
 function pickAutocomplete(i){ const it = S.ac.items[i]; const pos = input.selectionStart;
+  if (it.insert && it.insert.trim() === "/vouch" && it.start === 0){ hideAutocomplete(); input.value = ""; autoGrow(); openVouchModal(); return; }
   input.value = input.value.slice(0, it.start) + it.insert + input.value.slice(pos); const np = it.start + it.insert.length; input.selectionStart = input.selectionEnd = np; hideAutocomplete(); input.focus(); autoGrow(); }
 function hideAutocomplete(){ S.ac = null; $("acPop").classList.add("hidden"); }
 input.addEventListener("blur", () => setTimeout(hideAutocomplete, 150));
@@ -1458,6 +1469,7 @@ async function runSlash(raw){
     case "me": return arg ? {text:arg, me:true} : null;
     case "spoiler": return arg ? {text:"||" + arg + "||"} : null;
     case "roll": { const n = Math.max(2, Math.min(1000, parseInt(arg) || 6)); return {text:"🎲 rolled a **" + (1 + Math.floor(Math.random()*n)) + "** (1–" + n + ")"}; }
+    case "vouch": { const at = arg.match(/^@?(\S+)/); const u = at ? Object.keys(S.members).find(x => nickOf(x).toLowerCase() === at[1].toLowerCase()) : null; openVouchModal(u || undefined); return null; }
     case "flip": return {text:"🪙 flipped a coin: **" + (Math.random() < .5 ? "Heads" : "Tails") + "**"};
     case "nick": if (arg.length >= 2){ try{ await updateDoc(doc(db, "members", S.uid), {nick:arg.slice(0,24)}); toast("Name changed to " + arg.slice(0,24)); }catch(e){ toast("Couldn't change name: " + errMsg(e)); } } else toast("Usage: /nick <new name>"); return null;
     case "status": try{ await setMyProfile({customStatus:arg.slice(0,60)}); toast(arg ? "Status set" : "Status cleared"); }catch(e){} return null;
@@ -1615,11 +1627,12 @@ function roomModal(room, cat){
     const t = h("input",{class:"inp", placeholder:"What's this room for?", value: room ? room.topic || "" : ""});
     const c = h("input",{class:"inp", placeholder:"Text rooms", value: room ? room.category || "Text rooms" : (cat || "Text rooms"), list:"catlist"});
     const dl = h("datalist",{id:"catlist"}, [...new Set(S.rooms.map(r => r.category || "Text rooms"))].map(x => h("option",{value:x})));
-    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice");
+    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice"), vch = !!(room && room.type === "vouches");
     const sw = h("button",{class:"sw" + (ro ? " on" : ""), onclick:() => { ro = !ro; sw.classList.toggle("on", ro); }});
     const vsw = h("button",{class:"sw" + (vc ? " on" : ""), onclick:() => { vc = !vc; vsw.classList.toggle("on", vc); if (vc && !room && (c.value === "Text rooms" || !c.value)) c.value = "Voice rooms"; }});
     m.append(h("label",{class:"f",text:"Room name"}), n, h("label",{class:"f",text:"Topic"}), t, h("label",{class:"f",text:"Category"}), c, dl,
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 20). It also has a text chat."})), vsw),
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, "🎉 Vouches channel"), h("span",{text:"People post star-rated vouch cards with /vouch"})), (() => { const b = h("button",{class:"sw" + (vch ? " on" : ""), onclick:() => { vch = !vch; b.classList.toggle("on", vch); }}); return b; })()),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
     let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
     const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
@@ -1635,7 +1648,7 @@ function roomModal(room, cat){
       drawPeople();
     }
     const save = async () => { const s = slug(n.value); if (!s){ toast("Give the room a name"); return; }
-      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : "text"};
+      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : vch ? "vouches" : "text"};
       if (isOwner()){ data.private = priv; data.allowed = priv ? [...allowed] : []; }
       try{ if (room) await updateDoc(doc(db, "rooms", room.id), data);
         else { const id = s + "-" + rid().slice(-4); await setDoc(doc(db, "rooms", id), Object.assign(data, {order:S.rooms.length, createdAt:Date.now()})); close(); openChat("room", id); return; }
@@ -2099,6 +2112,7 @@ function installApp(){
 }
 
 // __COSMETICS__
+// __VOUCHES__
 // __FEEDBACK__
 // __CAMERA__
 // __VOICE__
