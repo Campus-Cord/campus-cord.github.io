@@ -650,6 +650,191 @@ html,body{overflow:hidden}
 @media (max-height:520px){ .rwrap .rl{display:none} .rgroup{gap:4px} }
 #app{grid-template-rows:minmax(0,1fr)}
 .rail,.side,.main{min-height:0}
+
+/* ================= v3.6 Sparks shop ================= */
+.spk{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--text)}
+.spk .i{width:15px;height:15px;color:#c4b5fd}
+.spk.inv .i{color:inherit}
+.spk.rw{background:color-mix(in srgb,#a78bfa 16%,transparent);padding:3px 8px;border-radius:12px;font-size:13px}
+.ichip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;letter-spacing:.05em;background:#fff;color:#1b1530;padding:3px 7px;border-radius:10px;white-space:nowrap}
+.ichip .i{width:11px;height:11px}
+.ichip.new{background:var(--accent);color:#fff}
+.ichip.free{background:var(--green);color:#06210f}
+.ichip.disc{background:#3ecf7a;color:#06210f}
+.ch .ichip{margin-left:auto;font-size:9px;padding:2px 6px}
+.ch.navi{padding:8px 8px;font-size:15px}
+.ch.navi .ic .i{width:20px;height:20px}
+
+.shoppage{min-height:100%;display:flex;flex-direction:column}
+.shopbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:4px;padding:10px 20px;background:color-mix(in srgb,var(--chat) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.shopbar .sbic{display:flex;color:var(--muted);margin-right:8px}.shopbar .sbic .i{width:22px;height:22px}
+.stab{background:none;border:0;padding:8px 12px;font-weight:600;font-size:14px;color:var(--muted);border-radius:6px;position:relative}
+.stab:hover{color:var(--text);background:var(--hover)}
+.stab.on{color:var(--text)}
+.stab.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-11px;height:2px;background:var(--text);border-radius:2px}
+.shopbar .sp{flex:1}
+.ssearch{display:flex;align-items:center;gap:6px;background:var(--rail);border-radius:8px;padding:0 10px;height:34px;width:220px}
+.ssearch .i{width:15px;height:15px;color:var(--dim)}
+.ssearch input{background:none;border:0;outline:none;flex:1;min-width:0;font-size:13px}
+.swish,.sbal{height:34px;border:0;border-radius:8px;background:var(--rail);display:flex;align-items:center;justify-content:center;padding:0 10px}
+.swish .i{width:17px;height:17px;color:var(--muted)}
+.swish.on .i{color:#ff7ac6;fill:#ff7ac6}
+.sbal:hover,.swish:hover{background:var(--hover)}
+.sbody{padding:20px 24px 40px;max-width:1180px;width:100%;margin:0 auto}
+.ssec{margin-top:26px}
+.ssh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ssh h3{margin:0;font-size:18px}
+.seeall{background:none;border:0;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:2px}
+.seeall:hover{color:var(--text)}
+.seeall .i{width:16px;height:16px;transform:rotate(-90deg)}
+.igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.icard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s}
+.icard:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.35);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.icard .ichip{position:absolute;top:10px;left:10px;z-index:3}
+.iheart{position:absolute;top:8px;right:8px;z-index:3;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;color:#fff;opacity:0;transition:opacity .15s}
+.iheart .i{width:16px;height:16px}
+.icard:hover .iheart,.iheart.on{opacity:1}
+.iheart.on .i{color:#ff7ac6;fill:#ff7ac6}
+.iinfo{padding:12px 14px 14px}
+.iname{font-weight:700;font-size:15px;margin-bottom:4px}
+.iprice{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.iprice s{color:var(--dim);font-size:12px}
+.iprice.owned{color:var(--green);font-weight:700;gap:4px}
+/* art */
+.art{height:170px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(120% 90% at 50% 100%,color-mix(in srgb,var(--tint,#7c5cff) 38%,transparent),transparent 70%),#15131f}
+.art .av.xl{width:84px;height:84px}
+.tint-cosmic{--tint:#7c5cff}.tint-aurora{--tint:#22d3c5}.tint-ember{--tint:#ff6a3d}.tint-halo{--tint:#f5b83d}.tint-frost{--tint:#7dd3fc}.tint-sakura{--tint:#ff7ac6}.tint-pixel{--tint:#3ecf7a}.tint-bubble{--tint:#60a5fa}
+.tint-starfall{--tint:#6366f1}.tint-snow{--tint:#93c5fd}.tint-confetti{--tint:#f472b6}.tint-hearts{--tint:#fb7185}.tint-matrix{--tint:#22c55e}
+.tint-nebula{--tint:#8b5cf6}.tint-gold{--tint:#f5a524}.tint-sunset{--tint:#fb923c}.tint-ocean{--tint:#06b6d4}.tint-matcha{--tint:#84cc16}.tint-candy{--tint:#f9a8d4}.tint-midnight{--tint:#1e3a8a}
+.minicard{position:relative;width:150px;height:130px;border-radius:12px;background:var(--side);overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.minicard .mb2{height:42px;background:linear-gradient(135deg,var(--tint),#3fb8ff)}
+.minicard .mav{position:absolute;top:22px;left:12px;border:4px solid var(--side);border-radius:50%}
+.minicard .l1,.minicard .l2{position:absolute;left:14px;height:8px;border-radius:4px;background:var(--active)}
+.minicard .l1{top:82px;width:70px}.minicard .l2{top:98px;width:110px;opacity:.6}
+.platedemo{width:86%;display:flex;flex-direction:column;gap:6px}
+.pd{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:8px;font-weight:600;font-size:14px;background:var(--side)}
+.pd.ghost{opacity:.35}.pd.ghost i{width:28px;height:28px;border-radius:50%;background:var(--active)}.pd.ghost b{height:8px;width:90px;background:var(--active);border-radius:4px}
+.art-bundle .bdeco{position:relative;z-index:2;margin-right:auto;margin-left:20%}
+.art-bundle .bplate{position:absolute;z-index:2;bottom:16px;right:14px;left:46%;font-size:13px}
+
+/* ---- avatar decorations ---- */
+.av .deco{position:absolute;inset:-16%;border-radius:50%;pointer-events:none;z-index:1}
+.av .dot{z-index:2}
+.deco-cosmic{background:conic-gradient(from var(--a,0deg),#7c5cff,#3fb8ff,#ff7ac6,#a78bfa,#7c5cff);-webkit-mask:radial-gradient(closest-side,transparent 78%,#000 81%,#000 93%,transparent 96%);mask:radial-gradient(closest-side,transparent 78%,#000 81%,#000 93%,transparent 96%);animation:ring 4s linear infinite;filter:drop-shadow(0 0 6px rgba(124,92,255,.8))}
+.deco-cosmic::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 15% 30%,#fff 0 1.5%,transparent 2.5%),radial-gradient(circle at 85% 20%,#fff 0 1.2%,transparent 2.2%),radial-gradient(circle at 70% 90%,#fff 0 1.5%,transparent 2.5%),radial-gradient(circle at 10% 75%,#c4b5fd 0 1.2%,transparent 2.2%);animation:spin 9s linear infinite}
+.deco-aurora{background:conic-gradient(from var(--a,0deg),#22d3c5,#3ecf7a,#a78bfa,#3fb8ff,#22d3c5);-webkit-mask:radial-gradient(closest-side,transparent 72%,#000 82%,#000 90%,transparent 100%);mask:radial-gradient(closest-side,transparent 72%,#000 82%,#000 90%,transparent 100%);filter:blur(2px) saturate(1.3);opacity:.95;animation:ring 6s linear infinite}
+.deco-ember{background:conic-gradient(from var(--a,0deg),#ff4d4d,#ff9447,#ffd166,#ff9447,#ff4d4d);-webkit-mask:radial-gradient(closest-side,transparent 79%,#000 82%,#000 94%,transparent 97%);mask:radial-gradient(closest-side,transparent 79%,#000 82%,#000 94%,transparent 97%);animation:ring 2.5s linear infinite,flick 1.2s ease-in-out infinite alternate;filter:drop-shadow(0 0 8px rgba(255,120,40,.9))}
+@keyframes flick{to{filter:drop-shadow(0 0 3px rgba(255,120,40,.6));transform:scale(1.03)}}
+.deco-halo{-webkit-mask:none;mask:none;border:2px solid rgba(255,214,102,.65);box-shadow:0 0 10px rgba(255,214,102,.5),inset 0 0 8px rgba(255,214,102,.3)}
+.deco-halo::after{content:"";position:absolute;left:18%;right:18%;top:-14%;height:16%;border-radius:50%;border:3px solid #ffd166;box-shadow:0 0 12px #ffd166,inset 0 0 6px #ffe08a;animation:floaty 2.4s ease-in-out infinite}
+@keyframes floaty{50%{transform:translateY(-4px)}}
+.deco-frost{border:3px solid rgba(186,230,253,.9);box-shadow:0 0 12px rgba(125,211,252,.8),inset 0 0 10px rgba(186,230,253,.5)}
+.deco-frost::after{content:"";position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(circle at 20% 15%,#fff 0 3%,transparent 4%),radial-gradient(circle at 88% 30%,#e0f2fe 0 2.5%,transparent 3.5%),radial-gradient(circle at 80% 85%,#fff 0 3%,transparent 4%),radial-gradient(circle at 12% 70%,#e0f2fe 0 2%,transparent 3%),radial-gradient(circle at 50% 2%,#fff 0 2%,transparent 3%);animation:twinkle 1.8s ease-in-out infinite alternate}
+@keyframes twinkle{to{opacity:.35}}
+.deco-sakura{border:3px solid #ffb3d1;box-shadow:0 0 10px rgba(255,122,198,.6)}
+.deco-sakura::after{content:"";position:absolute;inset:-10%;border-radius:50%;background:radial-gradient(ellipse 7% 4% at 50% 3%,#ff8cc6 90%,transparent),radial-gradient(ellipse 4% 7% at 97% 50%,#ffc2dd 90%,transparent),radial-gradient(ellipse 7% 4% at 50% 97%,#ff8cc6 90%,transparent),radial-gradient(ellipse 4% 7% at 3% 50%,#ffc2dd 90%,transparent),radial-gradient(ellipse 5% 5% at 15% 15%,#fff 80%,transparent),radial-gradient(ellipse 5% 5% at 85% 85%,#ff8cc6 80%,transparent);animation:spin 12s linear infinite}
+.deco-pixel{inset:-12%;border-radius:22%;background:repeating-conic-gradient(#3ecf7a 0 25%,#16a34a 0 50%) 0 0/12.5% 12.5%;-webkit-mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);-webkit-mask-composite:xor;padding:9%;image-rendering:pixelated}
+.deco-bubble{inset:-10%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.75) 0 7%,rgba(255,255,255,0) 18%),radial-gradient(circle at 70% 80%,rgba(191,219,254,.35),transparent 40%),radial-gradient(closest-side,transparent 82%,rgba(147,197,253,.55) 92%,rgba(255,255,255,.75) 100%);animation:floaty 3s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.av.xs .deco{display:none}
+
+/* ---- profile effects ---- */
+.pfx{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:hidden;border-radius:inherit}
+.profile{position:fixed}
+.profile .pb,.profile .pav,.profile .banner{position:relative}
+.pfx::before,.pfx::after{content:"";position:absolute;left:0;right:0;top:-100%;height:200%;background-repeat:repeat}
+.pfx-starfall::before{background-image:radial-gradient(1.5px 1.5px at 20% 10%,#fff,transparent),radial-gradient(1px 1px at 60% 30%,#fff,transparent),radial-gradient(2px 2px at 85% 55%,#e0e7ff,transparent),radial-gradient(1px 1px at 35% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 75% 90%,#c7d2fe,transparent);background-size:140px 140px;animation:fall 6s linear infinite}
+.pfx-starfall::after{top:-50%;left:-30%;height:3px;width:90px;background:linear-gradient(90deg,transparent,#fff);border-radius:3px;transform:rotate(25deg);animation:shoot 3.2s ease-in infinite;box-shadow:0 0 8px #c7d2fe}
+@keyframes shoot{0%{transform:translate(0,0) rotate(25deg);opacity:0}10%{opacity:1}60%,100%{transform:translate(420px,220px) rotate(25deg);opacity:0}}
+@keyframes fall{to{transform:translateY(50%)}}
+.pfx-snow::before{background-image:radial-gradient(3px 3px at 10% 20%,#fff,transparent),radial-gradient(2px 2px at 40% 60%,#f0f9ff,transparent),radial-gradient(4px 4px at 70% 30%,#fff,transparent),radial-gradient(2.5px 2.5px at 90% 80%,#fff,transparent),radial-gradient(3px 3px at 55% 95%,#e0f2fe,transparent);background-size:120px 120px;animation:fall 9s linear infinite;filter:blur(.4px)}
+.pfx-snow::after{background-image:radial-gradient(2px 2px at 25% 40%,#fff,transparent),radial-gradient(3px 3px at 80% 10%,#fff,transparent);background-size:90px 90px;animation:fall 6s linear infinite;opacity:.7}
+.pfx-aurora::before{top:-20%;height:70%;background:linear-gradient(100deg,transparent 10%,rgba(62,207,122,.55) 30%,rgba(34,211,197,.45) 45%,rgba(167,139,250,.55) 60%,transparent 80%);filter:blur(14px);animation:wave 6s ease-in-out infinite alternate;mix-blend-mode:screen}
+.pfx-aurora::after{top:-10%;height:50%;background:linear-gradient(80deg,transparent 20%,rgba(63,184,255,.5) 45%,rgba(62,207,122,.4) 60%,transparent 85%);filter:blur(16px);animation:wave 8s ease-in-out infinite alternate-reverse;mix-blend-mode:screen}
+@keyframes wave{from{transform:translateX(-18%) skewX(-8deg)}to{transform:translateX(18%) skewX(8deg)}}
+.pfx-confetti::before{background-image:linear-gradient(45deg,#ff7ac6 0 0),linear-gradient(-30deg,#ffd166 0 0),linear-gradient(60deg,#3fb8ff 0 0),linear-gradient(10deg,#3ecf7a 0 0),linear-gradient(80deg,#a78bfa 0 0),linear-gradient(30deg,#ff9447 0 0);background-size:6px 3px;background-position:10% 5%,30% 35%,55% 15%,75% 55%,90% 25%,45% 75%;background-repeat:no-repeat;animation:none}
+.pfx-confetti::before,.pfx-confetti::after{height:100%;top:0;background-image:radial-gradient(3px 2px at 10% 10%,#ff7ac6 99%,transparent),radial-gradient(2px 3px at 30% 40%,#ffd166 99%,transparent),radial-gradient(3px 2px at 55% 20%,#3fb8ff 99%,transparent),radial-gradient(2px 3px at 75% 60%,#3ecf7a 99%,transparent),radial-gradient(3px 2px at 90% 30%,#a78bfa 99%,transparent),radial-gradient(2px 3px at 45% 80%,#ff9447 99%,transparent);background-size:110px 110px;background-repeat:repeat;animation:confetti 5s linear infinite}
+.pfx-confetti::after{background-size:80px 80px;animation-duration:3.5s;opacity:.8}
+@keyframes confetti{from{background-position:0 -110px}to{background-position:30px 110px}}
+.pfx-hearts::before{top:0;height:200%;background-image:radial-gradient(4px 4px at 20% 30%,#fb7185 99%,transparent),radial-gradient(3px 3px at 60% 50%,#f9a8d4 99%,transparent),radial-gradient(5px 5px at 85% 20%,#ff7ac6 99%,transparent),radial-gradient(3px 3px at 40% 85%,#fda4af 99%,transparent);background-size:130px 130px;animation:rise 7s linear infinite}
+.pfx-hearts::after{content:"♥  ♡  ♥";top:auto;bottom:-20%;height:auto;left:15%;color:#ff7ac6;font-size:16px;letter-spacing:30px;opacity:.8;animation:rise2 5s ease-in infinite;text-shadow:0 0 8px #ff7ac6;background:none}
+@keyframes rise{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+@keyframes rise2{from{transform:translateY(0);opacity:0}20%{opacity:.9}to{transform:translateY(-260px);opacity:0}}
+.pfx-matrix::before{background-image:repeating-linear-gradient(90deg,transparent 0 12px,rgba(34,197,94,.0) 12px 14px),linear-gradient(180deg,transparent,rgba(34,197,94,.55) 50%,transparent),linear-gradient(180deg,transparent,rgba(74,222,128,.45) 40%,transparent);background-size:100% 100%,3px 60px,2px 90px;background-position:0 0,15% 0,62% 0;background-repeat:no-repeat,repeat-y,repeat-y;animation:fall 2.4s linear infinite}
+.pfx-matrix::after{background-image:linear-gradient(180deg,transparent,rgba(34,197,94,.5) 50%,transparent),linear-gradient(180deg,transparent,rgba(74,222,128,.5) 50%,transparent),linear-gradient(180deg,transparent,rgba(34,197,94,.4) 50%,transparent);background-size:2px 70px,3px 50px,2px 80px;background-position:35% 0,80% 0,92% 0;background-repeat:repeat-y;animation:fall 1.7s linear infinite}
+
+/* ---- nameplates ---- */
+.plate{position:relative;isolation:isolate;overflow:hidden}
+.plate::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--plate);background-size:220% 100%;animation:plateShift 9s linear infinite;opacity:.9}
+.mrow.plate,.ch.dm.plate,.friend.plate{border-radius:8px}
+@keyframes plateShift{to{background-position:220% 0}}
+.plate-nebula{--plate:radial-gradient(1px 1px at 70% 30%,#fff,transparent),radial-gradient(1px 1px at 88% 70%,#fff,transparent),linear-gradient(90deg,transparent 0%,rgba(124,92,255,.35) 45%,rgba(167,139,250,.6) 75%,rgba(63,184,255,.55) 100%,rgba(124,92,255,.35) 130%,transparent 170%)}
+.plate-gold{--plate:linear-gradient(100deg,rgba(245,165,36,.15) 0%,rgba(255,224,138,.55) 30%,rgba(255,244,207,.75) 40%,rgba(245,165,36,.45) 55%,rgba(255,224,138,.6) 80%,rgba(245,165,36,.15) 110%)}
+.plate-sunset{--plate:linear-gradient(90deg,transparent,rgba(251,146,60,.45) 50%,rgba(244,114,182,.55) 80%,rgba(251,146,60,.45) 110%,transparent 150%)}
+.plate-ocean{--plate:linear-gradient(90deg,transparent,rgba(6,182,212,.4) 45%,rgba(59,130,246,.5) 80%,rgba(6,182,212,.4) 115%,transparent 150%)}
+.plate-matcha{--plate:linear-gradient(90deg,transparent,rgba(132,204,22,.35) 45%,rgba(74,222,128,.45) 80%,rgba(132,204,22,.35) 115%,transparent 150%)}
+.plate-candy{--plate:linear-gradient(90deg,transparent,rgba(249,168,212,.5) 40%,rgba(125,211,252,.5) 75%,rgba(249,168,212,.5) 110%,transparent 150%)}
+.plate-midnight{--plate:radial-gradient(1px 1px at 60% 40%,#fff,transparent),radial-gradient(1px 1px at 80% 65%,#c7d2fe,transparent),radial-gradient(1px 1px at 92% 25%,#fff,transparent),linear-gradient(90deg,transparent,rgba(30,58,138,.7) 50%,rgba(49,46,129,.85) 100%,rgba(30,58,138,.7) 130%,transparent 170%)}
+
+/* hero banners */
+.shero,.qhero{position:relative;overflow:hidden;border-radius:16px;min-height:220px;display:flex;align-items:center;padding:30px 36px;cursor:pointer;color:#fff;background:radial-gradient(600px 300px at 80% 50%,rgba(124,92,255,.55),transparent 70%),radial-gradient(400px 250px at 10% 100%,rgba(255,122,198,.35),transparent 70%),linear-gradient(135deg,#120c2b,#1d1446 50%,#0b1d3a)}
+.qhero{cursor:default;background:radial-gradient(500px 260px at 85% 40%,rgba(245,184,61,.35),transparent 70%),radial-gradient(400px 250px at 0% 100%,rgba(62,207,122,.25),transparent 70%),linear-gradient(135deg,#1a1033,#2a1650 55%,#3b1d4a)}
+.shtext{position:relative;z-index:5;max-width:520px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.shtext h2{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em}
+.shtext p{margin:0 0 6px;color:rgba(255,255,255,.82);font-size:15px}
+.shtext .btn{width:auto;margin:0;background:#fff;color:#1b1530}
+.shtext .btn:disabled{background:rgba(255,255,255,.25);color:#fff;opacity:1}
+.shart{position:absolute;right:6%;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:14px}
+.shart .av.xl{width:110px;height:110px;font-size:40px}
+.shart .pd{min-width:190px;justify-content:center;background:rgba(0,0,0,.35)}
+.qbig{position:absolute;right:8%;top:50%;transform:translateY(-50%);z-index:5;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3c4,#f5b83d 60%,#b7791f);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(245,184,61,.6);animation:floaty 3s ease-in-out infinite}
+.qbig .i{width:64px;height:64px;color:#7a4a00}
+.freebar,.earnbar{display:flex;align-items:center;gap:14px;margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;cursor:pointer}
+.freebar:hover{border-color:var(--green)}
+.earnbar{cursor:default;margin-top:30px}
+.earnbar > .i{width:28px;height:28px;color:var(--yellow)}
+.freebar .btn,.earnbar .btn{width:auto;margin:0}
+/* item modal */
+.modal.itemmodal{max-width:720px;padding:0;display:flex;overflow:hidden;position:relative}
+.itemmodal .close{position:absolute;top:12px;right:12px;z-index:6;background:rgba(0,0,0,.35);color:#fff}
+.itemmodal .ibig{width:46%;flex:none;display:flex}
+.itemmodal .ibig .art{height:auto;min-height:340px;width:100%}
+.itemmodal .ibig .av.xl{width:120px;height:120px;font-size:44px}
+.itemmodal .ibig .minicard{transform:scale(1.35)}
+.itemmodal .ibody{flex:1;padding:28px 24px;display:flex;flex-direction:column;gap:10px}
+.itemmodal .ibody h2{margin:0;font-size:24px}
+.itemmodal .ikind{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.itemmodal .iprow{margin-top:auto;font-size:16px}
+.itemmodal .iacts .btn{margin-top:4px}
+.itemmodal .btn.wide{width:100%}
+.btn.buy .spk{color:inherit}
+/* quests */
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
+.qcard{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.qcard.ready{border-color:var(--green);box-shadow:0 0 0 1px color-mix(in srgb,var(--green) 40%,transparent)}
+.qcard.claimed{opacity:.65}
+.qic{width:44px;height:44px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 35%,transparent),color-mix(in srgb,#3fb8ff 30%,transparent))}
+.qic .i{width:22px;height:22px}
+.qmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.qbar{height:6px;background:var(--active);border-radius:3px;overflow:hidden;margin-top:6px}
+.qbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#3fb8ff);border-radius:3px;transition:width .3s}
+.qcard.ready .qbar i{background:var(--green)}
+.qprog{font-size:11px;color:var(--dim)}
+.qside{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex:none}
+.qside .btn{margin:0}
+.ranksinline{position:relative;background:var(--side);border-radius:16px;overflow:hidden;padding-bottom:24px}
+.ranksinline > .close{display:none}
+.ranksinline .shophero{border-radius:16px 16px 0 0}
+.spackitem .ii{background:radial-gradient(circle at 35% 30%,#fff3c4,#f5b83d 60%,#b7791f)}
+.spackitem .ii .i{color:#7a4a00}
+@media (max-width:760px){
+  .shopbar{padding:8px 10px}.ssearch{width:100%;order:9}
+  .sbody{padding:14px}
+  .shero,.qhero{padding:22px;min-height:180px}.shart,.qbig{display:none}
+  .modal.itemmodal{flex-direction:column}.itemmodal .ibig{width:100%}.itemmodal .ibig .art{min-height:220px}
+  .qgrid{grid-template-columns:1fr}
+}
+.shtext .btn .spk,.shtext .btn .spk .i{color:#1b1530}
 </style>
 </head>
 <body>
@@ -758,7 +943,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-18.7";
+const APP_VERSION = "2026-11-18.8";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -824,6 +1009,8 @@ const ICONS = {
   alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
   star:'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
+  spark:'<path d="M12 2.5l2.3 6.2 6.2 2.3-6.2 2.3L12 19.5l-2.3-6.2L3.5 11l6.2-2.3z"/><path d="M19 17.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
   hourglass:'<path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/>',
 };
 function ic(name, cls){ const s = document.createElement("span"); s.className = "i" + (cls ? " " + cls : ""); s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[name] || "") + "</svg>"; return s; }
@@ -837,6 +1024,9 @@ const CATALOG = [
   {id:"name_fx", icon:"wand", name:"Animated Name", price:"$1.99", desc:"Rainbow, Gold, Fire, Ocean or Neon — your name shimmers everywhere."},
   {id:"themes", icon:"palette", name:"Theme Pack", price:"$0.99", desc:"Unlock Midnight, Ocean, Sunset, Forest and Sakura."},
   {id:"banner", icon:"image", name:"Profile Banner", price:"$0.99", desc:"Pick a custom banner color for your profile card."},
+  {id:"sparks_1000", icon:"spark", name:"1,000 Sparks", price:"$0.99", coins:1000, desc:"Spend them on decorations, effects and nameplates."},
+  {id:"sparks_3000", icon:"spark", name:"3,000 Sparks", price:"$2.49", coins:3000, desc:"Best for a bundle or two. 15% bonus value."},
+  {id:"sparks_7500", icon:"spark", name:"7,500 Sparks", price:"$4.99", coins:7500, desc:"Basically the whole shop. 50% bonus value."},
   {id:"supporter", icon:"gem", name:"Supporter Badge", price:"$0.99", desc:"A gem badge next to your name to show you back CampusCord."},
 ];
 const PLUS_INCLUDES = ["name_fx","themes","banner","big_uploads","supporter"];
@@ -875,7 +1065,7 @@ function applyPrefs(){
 // ---------------------------------------------------------------- state
 const S = {
   uid:null, config:null, configLoaded:false, invite:null, shop:{},
-  rooms:[], members:{}, membersLoaded:false, profiles:{}, perks:{}, orders:[], myOrders:[],
+  rooms:[], members:{}, membersLoaded:false, profiles:{}, perks:{}, wallets:{}, walletsLoaded:false, catalogV:null, orders:[], myOrders:[],
   kind:"room", cur:null, mode:"server", msgs:[], reacts:[], typing:[], gifs:[], meta:{}, dms:[],
   msgLimit:PAGE, olderLoading:false, hasMore:false, roomLoaded:false,
   unsubRoom:[], unsubApp:[], pending:null, replyTo:null, editing:null, joinColor:COLORS[0],
@@ -967,6 +1157,7 @@ function avatar(uid, size, withDot){
   if (bg) a.style.background = bg.g;
   else { a.style.background = (look.bg && /^#[0-9a-f]{6}$/i.test(look.bg)) ? look.bg : colorOf(uid); a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))"; }
   if (hasPerk(uid, "ring")) a.classList.add("ring");
+  const dc = size !== "xs" && equipped(uid, "deco"); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
   if (withDot) a.appendChild(h("span",{class:"dot " + statusOf(uid), title:{online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(uid)]}));
   return a;
 }
@@ -1019,6 +1210,8 @@ function start(){
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   // optional collections (need v3 rules) — fail quietly
   onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; need("side","msgs","rpanel","me","header"); }, () => {});
+  onSnapshot(collection(db, "wallet"), snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); S.wallets = w; S.walletsLoaded = true;
+    if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane(); }, () => {});
   onSnapshot(collection(db, "perks"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.perks = p; applyPrefs(); need("side","msgs","rpanel","me"); }, () => {});
 }
 
@@ -1090,7 +1283,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
-    if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && saved.kind === "home") openChat("home", "home"); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
+    if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
     need("side","header","composer");
   }, ()=>{}));
   S.unsubApp.push(onSnapshot(collection(db, "meta"), snap => {
@@ -1120,8 +1313,11 @@ function initApp(){
   S.unsubApp.push(onSnapshot(doc(db, "config/shop"), s => { S.shop = s.exists() ? s.data() : {}; refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => { S.myOrders = s.docs.map(d => Object.assign({id:d.id}, d.data())); refreshOpenPane(); }, ()=>{}));
   if (isOwner()) S.unsubApp.push(onSnapshot(collection(db, "orders"), s => { S.orders = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => b.ts - a.ts); need("rail"); refreshOpenPane(); }, ()=>{}));
+  S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
+    if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
+  ensureWallet();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS);
-  setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home") need("msgs"); }, 15000);
+  setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
   need("rail","side","header","msgs","rpanel","me","composer","gifs");
   $("input").focus();
@@ -1167,7 +1363,7 @@ function renderRail(){
   const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0);
   top.appendChild(railItem({label:"Rooms", tip: name + " — all rooms", on: S.mode === "server", cls:"srv", onclick:() => goServer(), oncontextmenu:e => serverMenu(e),
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
-  bot.appendChild(railItem({label:"Shop", tip:"Campus+ Shop — ranks & perks", cls:"shopri", onclick:() => openShop(), content:ic("bag")}));
+  bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
   if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
@@ -1188,7 +1384,13 @@ function renderSide(){
     hdr.append(h("span",{class:"hdric"}, ic("message")), h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
     const f = h("input",{class:"dmsearch", placeholder:"Find a conversation", value:S.dmFilter||"", oninput:e => { S.dmFilter = e.target.value; renderDMList(box); }});
     list.appendChild(f);
-    list.appendChild(h("div",{class:"ch" + (S.kind === "home" ? " on" : ""), onclick:() => openChat("home", "home")}, h("span",{class:"ic"}, ic("users")), h("span",{class:"nm",text:"Friends"})));
+    const nav = (kind, page, icn, label, extra) => list.appendChild(h("div",{class:"ch navi" + (S.kind === kind && (kind !== "shop" || (page === "ranks") === (S.page === "ranks")) ? " on" : ""), onclick:() => openChat(kind, page || kind)},
+      h("span",{class:"ic"}, ic(icn)), h("span",{class:"nm",text:label}), extra || null));
+    nav("home", "home", "users", "Friends");
+    nav("shop", "ranks", "sparkles", "Campus+", hasPlus(S.uid) && !isOwner() ? h("span",{class:"ichip free",text:"ACTIVE"}) : null);
+    nav("shop", "featured", "bag", "Shop", h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
+    const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal) || Date.now() - (wal(S.uid).lastDaily || 0) >= DAILY_MS;
+    nav("quests", "all", "star", "Quests", qready ? h("span",{class:"newdot",title:"Rewards ready"}) : null);
     list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
     const box = h("div"); list.appendChild(box); renderDMList(box);
     return;
@@ -1226,7 +1428,8 @@ function renderDMList(box){
     const o = dmOther(d); const on = S.kind === "dm" && S.cur === d.id;
     const un = !on && d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
     const cs = profile(o).customStatus;
-    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : ""), onclick:() => openChat("dm", d.id)},
+    const pl = equipped(o, "plate");
+    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : "") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:() => openChat("dm", d.id)},
       avatar(o, "sm", true),
       h("div",{class:"meta"}, paintName(h("span",{class:"nm",text:nickOf(o)}), o), cs ? h("span",{class:"sub",text:cs}) : (typersIn("dm", d.id).length ? h("span",{class:"sub",text:"typing…"}) : null)),
       un ? h("span",{class:"newdot",title:"New message"}) : null));
@@ -1323,8 +1526,10 @@ async function openDM(uid){
   }
   S.mode = "dms"; openChat("dm", id);
 }
+const isPage = k => k === "home" || k === "shop" || k === "quests";
 function goDMs(){
-  if (S.kind === "dm" || S.kind === "home"){ if (S.kind === "dm") openChat("home", "home"); return; }
+  if (S.kind === "dm" || (isPage(S.kind) && S.kind !== "home")){ openChat("home", "home"); return; }
+  if (S.kind === "home") return;
   const last = store("lastDM");
   if (last && S.dms.find(d => d.id === last)) openChat("dm", last); else openChat("home", "home");
 }
@@ -1335,11 +1540,12 @@ function goServer(){
 }
 function openChat(kind, id){
   closeNav();
-  if (kind === "home"){
+  if (isPage(kind)){
     if (S.cur) saveDraft(); stopTyping(); S.unsubRoom.forEach(u => u()); S.unsubRoom = []; if (S.pending) setPending(null);
-    Object.assign(S, {kind:"home", cur:null, mode:"dms", msgs:[], reacts:[], typing:[], roomLoaded:true, hasMore:false, replyTo:null, editing:null, pins:null});
+    if (S.kind !== kind) $("msgs").scrollTop = 0;
+    Object.assign(S, {kind, page:id, cur:null, mode:"dms", msgs:[], reacts:[], typing:[], roomLoaded:true, hasMore:false, replyTo:null, editing:null, pins:null});
     if (S.rpanel === "pins" || S.rpanel === "search") S.rpanel = prefs.showMembers === false ? null : "members";
-    store("chat", {kind:"home", id:"home"});
+    store("chat", {kind, id});
     need("rail","side","header","msgs","rpanel","composer","typing"); return;
   }
   if (S.cur === id && S.kind === kind && S.unsubRoom.length){ need("side","rail"); return; }
@@ -1385,7 +1591,10 @@ function subscribeMsgs(first){
 function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
   icon.innerHTML = "";
-  $("btnPins").classList.toggle("hidden", S.kind === "home"); $("search").parentElement.classList.toggle("hidden", S.kind === "home");
+  $("btnPins").classList.toggle("hidden", isPage(S.kind)); $("search").parentElement.classList.toggle("hidden", isPage(S.kind));
+  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
+  if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
+  if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn free Sparks"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
@@ -1452,7 +1661,7 @@ function renderHome(box){
   wrap.appendChild(h("div",{class:"cat",text:"Online — " + on.length}));
   const list = h("div",{class:"friends"});
   if (!people.length) list.appendChild(h("div",{class:"empty-note",text:"Nobody else has joined yet. Share the invite link!"}));
-  people.forEach(u => list.appendChild(h("div",{class:"friend" + (isOn(u) ? "" : " off"), onclick:() => openDM(u)},
+  people.forEach(u => list.appendChild(h("div",{class:"friend" + (isOn(u) ? "" : " off") + (equipped(u, "plate") ? " plate plate-" + equipped(u, "plate").slice(2) : ""), onclick:() => openDM(u)},
     avatar(u, null, true), h("div",{class:"fi"}, paintName(h("b",{text:nickOf(u)}), u), h("span",{text: profile(u).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(u)])})),
     h("button",{class:"ib", title:"Message " + nickOf(u), onclick:e => { e.stopPropagation(); openDM(u); }}, ic("message")))));
   wrap.appendChild(list);
@@ -1461,6 +1670,8 @@ function renderHome(box){
 function renderMessages(){
   const box = $("msgs");
   if (S.kind === "home"){ renderHome(box); return; }
+  if (S.kind === "shop"){ renderShopPage(box); return; }
+  if (S.kind === "quests"){ renderQuestsPage(box); return; }
   const atBottom = S.stickBottom !== false;
   const prevTop = box.scrollTop;
   box.innerHTML = "";
@@ -1551,7 +1762,7 @@ async function votePoll(m, i){
   const b = base(); const mine = S.reacts.filter(x => x.mid === m.id && x.uid === S.uid && String(x.e).startsWith("poll:"));
   const had = mine.some(x => x.e === "poll:" + i);
   try{ for (const x of mine) await deleteDoc(doc(db, ...b, "reacts", x.id));
-    if (!had) await setDoc(doc(db, ...b, "reacts", m.id + "__" + S.uid + "__poll" + i), {mid:m.id, uid:S.uid, e:"poll:" + i, ts:Date.now()}); }
+    if (!had){ await setDoc(doc(db, ...b, "reacts", m.id + "__" + S.uid + "__poll" + i), {mid:m.id, uid:S.uid, e:"poll:" + i, ts:Date.now()}); bumpStat("votes"); } }
   catch(e){ toast("Couldn't vote: " + errMsg(e)); }
 }
 // ---------------------------------------------------------------- embeds (YouTube + image links)
@@ -1657,7 +1868,7 @@ async function toggleReact(m, e){
   pushRecent(e);
   const id = m.id + "__" + S.uid + "__" + eKey(e);
   const ref = doc(db, ...base(), "reacts", id);
-  try{ if (S.reacts.some(x => x.id === id)) await deleteDoc(ref); else await setDoc(ref, {mid:m.id, uid:S.uid, e, ts:Date.now()}); }
+  try{ if (S.reacts.some(x => x.id === id)) await deleteDoc(ref); else { await setDoc(ref, {mid:m.id, uid:S.uid, e, ts:Date.now()}); bumpStat("reacts"); } }
   catch(err){ toast("Couldn't react: " + errMsg(err)); }
 }
 function quickReact(ev, m){
@@ -1697,6 +1908,7 @@ async function loadPins(){
 }
 function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
+  if (S.kind === "shop" || S.kind === "quests"){ p.classList.add("hidden"); return; }
   const narrow = window.innerWidth < 1100;
   if (S.rpanel === null && prefs.showMembers === false || !S.rpanel || (narrow && S.rpanel === "members" && !S.rpanelForced)){ p.classList.add("hidden"); $("btnMembers").classList.remove("on"); return; }
   p.classList.remove("hidden");
@@ -1736,7 +1948,8 @@ function renderRPanel(){
     b.appendChild(h("div",{class:"cat",text: label + " — " + arr.length}));
     arr.sort(sortN).forEach(u => {
       const cs = profile(u).customStatus; const typing = typersIn(S.kind, S.cur).includes(u);
-      const row = h("div",{class:"mrow" + (isOn(u) ? "" : " off"), onclick:e => openProfile(u, row), oncontextmenu:e => memberMenu(e, u)},
+      const pl = equipped(u, "plate");
+      const row = h("div",{class:"mrow" + (isOn(u) ? "" : " off") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:e => openProfile(u, row), oncontextmenu:e => memberMenu(e, u)},
         avatar(u, "sm", true),
         h("div",{class:"info"}, h("div",{class:"nm"}, paintName(h("span",{text:nickOf(u)}), u), ...miniTags(u)),
           typing ? h("div",{class:"sub",text:"typing…"}) : cs ? h("div",{class:"sub",text:cs}) : null));
@@ -1757,7 +1970,8 @@ function openProfile(uid, anchor, self){
   const p = profile(uid), st = statusOf(uid);
   const bannerColor = hasPerk(uid, "banner") && p.banner ? p.banner : colorOf(uid);
   const big = avatar(uid, "xl", true);
-  const card = h("div",{class:"profile", "data-layer":"profile"},
+  const pe = equipped(uid, "pfx");
+  const card = h("div",{class:"profile", "data-layer":"profile"}, pe ? h("div",{class:"pfx pfx-" + pe.slice(2)}) : null,
     h("div",{class:"banner", style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
     h("div",{class:"pav"}, big),
     h("div",{class:"pb"},
@@ -1813,7 +2027,7 @@ setInterval(() => need("typing"), 2000);
 const input = $("input");
 function renderComposer(){
   const bars = $("cbars"); bars.innerHTML = "";
-  $("composer").classList.toggle("hidden", S.kind === "home"); if (S.kind === "home") return;
+  $("composer").classList.toggle("hidden", isPage(S.kind)); if (isPage(S.kind)) return;
   const ok = canPost();
   $("cbox").classList.toggle("hidden", !ok); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
@@ -1958,7 +2172,7 @@ async function send(extra){
     const text = (out.text || "").slice(0, 4000);
     const body = {uid:S.uid, text, ts:Date.now()};
     if (out.me) body.me = true;
-    if (out.poll) body.poll = out.poll;
+    if (out.poll){ body.poll = out.poll; bumpStat("polls"); }
     const mentions = findMentions(text); if (mentions.length) body.mentions = mentions;
     if (/@everyone\b/.test(text) && isAdmin() && kind === "room") body.everyone = true;
     if (replyTo){ body.reply = replyTo; }
@@ -1967,7 +2181,7 @@ async function send(extra){
     const id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
     const stillHere = S.kind === kind && S.cur === chatId;
     if (stillHere){ input.value = ""; autoGrow(); saveDraft(); } S.replyTo = null; setPending(null); S.stickBottom = true;
-    await setDoc(doc(db, ...b, "msgs", id), body);
+    await setDoc(doc(db, ...b, "msgs", id), body); bumpStat("msgs");
     const preview = (body.me ? nickOf(S.uid) + " " : "") + (text || (body.gif ? "sent a GIF" : body.img ? "sent an image" : "")).slice(0, 120);
     const priv = kind === "room" && (roomAtSend || {}).private;
     const meta = {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview: priv ? "New message in a private room" : preview, lastMentions:mentions, lastEveryone:!!body.everyone};
@@ -2240,10 +2454,10 @@ function shopButton(c){
   if (!it.link) return h("button",{class:"btn buy",disabled:true},"Coming soon");
   return h("button",{class:"btn buy", onclick:() => buy(c.id)}, c.tier ? "Get " + c.name : "Buy");
 }
-function openShop(){
-  modal((m, close, bg) => {
-    const draw = () => {
-      m.innerHTML = "";
+function openShop(tab){ openChat("shop", tab || "featured"); }
+function drawRanks(m, draw){
+  const close = () => {};
+  m.innerHTML = "";
       const r = rankOf(S.uid);
       m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
         h("div",{class:"shophero"},
@@ -2270,7 +2484,7 @@ function openShop(){
           h("span",{class:"fx fx-" + fx.id, text:nickOf(S.uid)}), h("small",null, ok ? null : ic("lock","sm"), " " + fx.name + (fx.ex ? " ++" : "")))); });
       m.append(h("h3",{class:"sh3",text:"Preview your name"}), prev);
       const grid = h("div",{class:"shop"});
-      CATALOG.filter(c => !c.tier).forEach(c => { const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
+      CATALOG.filter(c => !c.tier && !c.coins).forEach(c => { const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
         grid.appendChild(h("div",{class:"item"}, h("div",{class:"ii"}, ic(c.icon)), h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}), shopButton(c))); });
       m.append(h("h3",{class:"sh3",text:"Individual perks"}), grid);
       if (S.myOrders.length){
@@ -2279,10 +2493,13 @@ function openShop(){
           h("span",{class:"s st-" + o.status,text: o.status === "approved" ? "Active" : o.status === "rejected" ? "Not approved" : "Pending"})))));
       }
       m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. Perks are cosmetic. After you pay, the server admin activates your perk — usually within a few hours."));
-    };
-    S.paneRefresh = {bg, draw};
-    draw();
-  }, "shopmodal");
+
+  const packs = CATALOG.filter(c => c.coins && (shopItem(c.id).enabled || isOwner()));
+  if (packs.length){ const grid = h("div",{class:"shop"});
+    packs.forEach(c => { const it = shopItem(c.id); const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
+      grid.appendChild(h("div",{class:"item spackitem"}, h("div",{class:"ii"}, ic("spark")), h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}),
+        pend ? h("div",{class:"pending"}, ic("hourglass"), " Payment pending") : !it.link ? h("button",{class:"btn buy",disabled:true},"Coming soon") : h("button",{class:"btn buy", onclick:() => buy(c.id)}, "Buy"))); });
+    m.append(h("h3",{class:"sh3",text:"Spark packs"}), h("p",{class:"note",style:{padding:"0 28px",marginTop:"-4px"},text:"Short on Sparks? Top up with real money — or earn them free in Quests."}), grid); }
 }
 async function buy(itemId){
   const it = shopItem(itemId); if (!it.link) return;
@@ -2408,14 +2625,17 @@ function grantModal(uid){
   modal((m, close) => {
     m.append(h("h3",{text:"Perks for " + nickOf(uid)}), h("p",{class:"note",text:"Grant or remove perks by hand (gifts, giveaways, refunds)."}));
     const list = h("div",{class:"list"});
-    CATALOG.forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
+    CATALOG.filter(c => !c.coins).forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
       list.appendChild(h("div",{class:"li"}, ic(c.icon), h("span",{class:"nm",text:c.name + (on && items[c.id].until ? " (until " + new Date(items[c.id].until).toLocaleDateString() + ")" : "")}),
         on ? h("button",{class:"btn small danger", onclick:async () => { await revokePerk(uid, c.id); close(); }}, "Remove") : h("button",{class:"btn small", onclick:async () => { await grantPerk(uid, c.id); close(); }}, "Grant"))); });
-    m.append(list, h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
+    m.append(list, h("label",{class:"f",text:"Give Sparks (" + sparks(uid).toLocaleString() + " now)"}),
+      h("div",{class:"row"}, [100, 500, 1000, 5000].map(n => h("button",{class:"btn small ghost", onclick:async () => { await giveSparks(uid, n); close(); }}, "+" + n.toLocaleString()))),
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
   });
 }
 async function grantPerk(uid, item){
   const c = CATALOG.find(x => x.id === item) || {};
+  if (c.coins){ await giveSparks(uid, c.coins); return; }
   const prev = (((S.perks[uid]||{}).items||{})[item]) || {};
   const entry = {since:Date.now()};
   if (c.months){ const startAt = Math.max(Date.now(), prev.until || 0); entry.until = startAt + c.months * 31 * 864e5; }
@@ -2485,6 +2705,247 @@ function installApp(){
       h("p",{class:"note",text:"The app updates itself automatically — you never need to download it again."}),
       h("div",{class:"foot"}, h("button",{class:"btn small",onclick:close},"Got it")));
   });
+}
+
+// ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
+// Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
+// Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
+const CAT_V = 1;
+const COSM = [
+  // avatar decorations
+  {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
+  {id:"d_aurora", type:"deco", name:"Aurora Mist", price:600, tag:"new", desc:"Soft northern lights drifting around you."},
+  {id:"d_ember", type:"deco", name:"Ember", price:600, desc:"Flickering flames for the hottest takes."},
+  {id:"d_halo", type:"deco", name:"Golden Halo", price:800, tag:"exclusive", desc:"A floating golden halo. Angelic. Allegedly."},
+  {id:"d_frost", type:"deco", name:"Frostbite", price:500, desc:"An icy ring with glittering snowflakes."},
+  {id:"d_sakura", type:"deco", name:"Sakura Bloom", price:500, desc:"Cherry blossom petals circling your avatar."},
+  {id:"d_pixel", type:"deco", name:"Pixel Frame", price:300, desc:"A retro 8-bit frame."},
+  {id:"d_bubble", type:"deco", name:"Bubble", price:0, tag:"free", desc:"A shiny bubble. Free for everyone — grab it!"},
+  // profile effects
+  {id:"e_starfall", type:"pfx", name:"Starfall", price:500, tag:"exclusive", desc:"Shooting stars fall across your profile card."},
+  {id:"e_aurora", type:"pfx", name:"Northern Lights", price:600, tag:"new", desc:"Aurora waves ripple over your banner."},
+  {id:"e_snow", type:"pfx", name:"Snow Day", price:400, desc:"Gentle snowfall on your profile."},
+  {id:"e_confetti", type:"pfx", name:"Confetti", price:400, desc:"It's always a party on your profile."},
+  {id:"e_hearts", type:"pfx", name:"Floating Hearts", price:400, desc:"Little hearts drift up your card."},
+  {id:"e_matrix", type:"pfx", name:"Code Rain", price:500, desc:"Green code rains down. Very hacker."},
+  // nameplates
+  {id:"p_nebula", type:"plate", name:"Nebula", price:400, tag:"exclusive", desc:"A starry purple glow behind your name in member lists."},
+  {id:"p_gold", type:"plate", name:"Gilded", price:600, tag:"exclusive", desc:"A shimmering gold nameplate."},
+  {id:"p_sunset", type:"plate", name:"Sunset", price:300, desc:"Warm orange and pink."},
+  {id:"p_ocean", type:"plate", name:"Deep Ocean", price:300, desc:"Cool teal waves."},
+  {id:"p_matcha", type:"plate", name:"Matcha", price:300, tag:"new", desc:"Fresh green, very calming."},
+  {id:"p_candy", type:"plate", name:"Cotton Candy", price:300, desc:"Pink and blue, extra sweet."},
+  {id:"p_midnight", type:"plate", name:"Midnight", price:400, desc:"Deep navy with tiny stars."},
+];
+const BUNDLES = [
+  {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
+  {id:"b_aurora", type:"bundle", name:"Aurora Bundle", items:["d_aurora","e_aurora","p_matcha"], tag:"new", desc:"Aurora Mist, Northern Lights and the Matcha nameplate."},
+  {id:"b_winter", type:"bundle", name:"Winter Bundle", items:["d_frost","e_snow","p_ocean"], desc:"Frostbite, Snow Day and the Deep Ocean nameplate."},
+  {id:"b_love", type:"bundle", name:"Sweetheart Bundle", items:["d_sakura","e_hearts","p_candy"], desc:"Sakura Bloom, Floating Hearts and Cotton Candy."},
+];
+const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
+BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
+const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", bundle:"Bundle"};
+const DAILY_SPARKS = 50, DAILY_MS = 20 * 3600 * 1000;
+const QUESTS = [
+  {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:100},
+  {id:"q_avatar", icon:"smile", name:"Glow up", desc:"Customize your avatar in Settings → My Account.", goal:1, check:() => profile(S.uid).avatar ? 1 : 0, reward:100},
+  {id:"q_bio", icon:"user", name:"About me", desc:"Write a bio in Settings → Profile.", goal:1, check:() => profile(S.uid).bio ? 1 : 0, reward:100},
+  {id:"q_dm", icon:"message", name:"Slide in", desc:"Start a direct message with someone.", goal:1, check:() => S.dms.length ? 1 : 0, reward:100},
+  {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:150},
+  {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:100},
+  {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:100},
+  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate ? 1 : 0; }, reward:150},
+  {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:250},
+  {id:"q_regular", icon:"star", name:"Regular", desc:"Claim the daily reward 3 times.", goal:3, stat:"dailies", reward:200},
+];
+function catalogDoc(){ const prices = {}; Object.values(COSM_BY).forEach(c => prices[c.id] = c.price); const quests = {}; QUESTS.forEach(q => quests[q.id] = q.reward);
+  return {v:CAT_V, prices, quests, daily:DAILY_SPARKS}; }
+
+// ---- wallet + ownership
+const EMPTY_WALLET = {earned:0, spent:0, items:[], quests:[], lastDaily:0, lastItem:"", lastQuest:""};
+function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[uid] || {}); }
+function sparks(uid){ const w = wal(uid); return Math.max(0, (w.earned || 0) - (w.spent || 0)); }
+function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid).items || [];
+  if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }
+function ownsBundleFully(uid, b){ return owns(uid, b.id) || b.items.every(i => owns(uid, i)); }
+function equipped(uid, slot){ const id = profile(uid)[slot]; return id && COSM_BY[id] && COSM_BY[id].type === slot && owns(uid, id) ? id : null; }
+function qstats(){ return Object.assign({msgs:0, reacts:0, votes:0, polls:0, dailies:0}, store("qstats_" + S.uid) || {}); }
+function bumpStat(k, n){ const s = qstats(); s[k] = (s[k] || 0) + (n || 1); store("qstats_" + S.uid, s); if (S.kind === "quests") need("msgs"); }
+function questProgress(q){ return Math.min(q.goal, q.check ? q.check() : (qstats()[q.stat] || 0)); }
+async function ensureWallet(){ if (S.walletsLoaded && !S.wallets[S.uid] && !S.walletCreating){ S.walletCreating = true;
+  try{ await setDoc(doc(db, "wallet", S.uid), Object.assign({}, EMPTY_WALLET)); }catch(e){ console.warn("wallet", e); } S.walletCreating = false; } }
+function econError(e){ return e && e.code === "permission-denied" ? "The shop is still being set up — ask the admin to open CampusCord once, then try again." : errMsg(e); }
+async function buyCosmetic(id){
+  const c = COSM_BY[id]; if (!c) return;
+  if (owns(S.uid, id)){ toast("You already own " + c.name); return; }
+  if (sparks(S.uid) < c.price){ toast("You need " + (c.price - sparks(S.uid)) + " more Sparks — earn them in Quests!"); return; }
+  await ensureWallet(); const w = wal(S.uid);
+  try{ await updateDoc(doc(db, "wallet", S.uid), {spent:(w.spent || 0) + c.price, items:[...(w.items || []), id], lastItem:id});
+    toast((c.price ? "Bought " : "Claimed ") + c.name + "! ✦"); if (c.type !== "bundle") await equip(c.type, id, true); }
+  catch(e){ toast("Couldn't buy: " + econError(e)); }
+}
+async function equip(slot, id, quiet){ try{ await setMyProfile({[slot]: id || ""}); if (!quiet) toast(id ? COSM_BY[id].name + " equipped" : "Removed"); }catch(e){} }
+async function claimQuest(q){
+  const w = wal(S.uid); if ((w.quests || []).includes(q.id) || questProgress(q) < q.goal) return;
+  await ensureWallet(); const w2 = wal(S.uid);
+  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + q.reward, quests:[...(w2.quests || []), q.id], lastQuest:q.id}); toast("+" + q.reward + " Sparks ✦ — " + q.name); }
+  catch(e){ toast("Couldn't claim: " + econError(e)); }
+}
+async function claimDaily(){
+  const w = wal(S.uid); if (Date.now() - (w.lastDaily || 0) < DAILY_MS) return;
+  await ensureWallet(); const w2 = wal(S.uid);
+  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + DAILY_SPARKS, lastDaily:Date.now()}); bumpStat("dailies"); toast("+" + DAILY_SPARKS + " Sparks ✦ — see you tomorrow!"); }
+  catch(e){ toast("Couldn't claim: " + econError(e)); }
+}
+async function giveSparks(uid, n){ const w = wal(uid);
+  try{ await setDoc(doc(db, "wallet", uid), Object.assign({}, EMPTY_WALLET, S.wallets[uid] || {}, {earned:(w.earned || 0) + n})); toast("Gave " + n + " Sparks to " + nickOf(uid)); }
+  catch(e){ toast("Couldn't give Sparks: " + errMsg(e)); } }
+
+// ---- rendering helpers
+function sparkPill(n, cls){ return h("span",{class:"spk" + (cls ? " " + cls : "")}, ic("spark"), h("b",{text: (n || 0).toLocaleString()})); }
+function decoEl(id){ return h("span",{class:"deco deco-" + id.slice(2)}); }
+function previewAvatar(id, size){ const a = avatar(S.uid, size || "xl"); a.querySelectorAll(".deco").forEach(x => x.remove()); a.classList.remove("ring"); if (id) a.appendChild(decoEl(id)); return a; }
+function itemArt(c){
+  const art = h("div",{class:"art art-" + c.type + " tint-" + (c.items ? c.items[0] : c.id).slice(2)});
+  if (c.type === "deco") art.appendChild(previewAvatar(c.id));
+  else if (c.type === "pfx"){ art.appendChild(h("div",{class:"minicard"}, h("div",{class:"mb2"}), h("div",{class:"mav"}, previewAvatar(null, "sm")), h("i",{class:"l1"}), h("i",{class:"l2"}), h("div",{class:"pfx pfx-" + c.id.slice(2)}))); }
+  else if (c.type === "plate"){ art.appendChild(h("div",{class:"platedemo"}, h("div",{class:"pd ghost"}, h("i"), h("b")),
+      h("div",{class:"pd plate plate-" + c.id.slice(2)}, previewAvatar(null, "sm"), paintName(h("span",{text:nickOf(S.uid)}), S.uid)), h("div",{class:"pd ghost"}, h("i"), h("b")))); }
+  else if (c.type === "bundle"){ const [d, e, p] = c.items;
+    art.append(h("div",{class:"pfx pfx-" + e.slice(2)}), h("div",{class:"bdeco"}, previewAvatar(d)), h("div",{class:"bplate pd plate plate-" + p.slice(2)}, paintName(h("span",{text:nickOf(S.uid)}), S.uid))); }
+  return art;
+}
+function itemChip(c){
+  if (c.type === "bundle") return h("span",{class:"ichip disc",text:"-15%"});
+  if (c.tag === "exclusive") return h("span",{class:"ichip"}, ic("spark"), "SPARKS EXCLUSIVE");
+  if (c.tag === "new") return h("span",{class:"ichip new",text:"NEW"});
+  if (c.tag === "free") return h("span",{class:"ichip free",text:"FREE"});
+  return null;
+}
+function priceEl(c){
+  if (owns(S.uid, c.id) || (c.type === "bundle" && ownsBundleFully(S.uid, c))){ const on = c.type !== "bundle" && equipped(S.uid, c.type) === c.id;
+    return h("div",{class:"iprice owned"}, ic("check","sm"), on ? "Equipped" : "Owned"); }
+  return h("div",{class:"iprice"}, c.price ? sparkPill(c.price) : h("b",{text:"Free"}), c.full ? h("s",{text:c.full.toLocaleString()}) : null);
+}
+function wished(id){ return !!(prefs.wish || {})[id]; }
+function toggleWish(id){ prefs.wish = prefs.wish || {}; if (prefs.wish[id]) delete prefs.wish[id]; else prefs.wish[id] = true; savePrefs(); need("msgs"); }
+function itemCard(c){
+  return h("div",{class:"icard", onclick:() => itemModal(c)},
+    itemArt(c), itemChip(c),
+    h("button",{class:"iheart" + (wished(c.id) ? " on" : ""), title: wished(c.id) ? "Remove from wishlist" : "Add to wishlist", onclick:e => { e.stopPropagation(); toggleWish(c.id); }}, ic("heart")),
+    h("div",{class:"iinfo"}, h("div",{class:"iname",text:c.name}), priceEl(c)));
+}
+function itemModal(c){
+  modal((m, close, bg) => {
+    const draw = () => {
+      m.innerHTML = "";
+      const isB = c.type === "bundle"; const own = isB ? ownsBundleFully(S.uid, c) : owns(S.uid, c.id);
+      const on = !isB && equipped(S.uid, c.type) === c.id; const can = sparks(S.uid) >= c.price;
+      const acts = h("div",{class:"iacts"});
+      if (!own) acts.append(h("button",{class:"btn buy", disabled: !can, onclick:async () => { await buyCosmetic(c.id); }}, c.price ? ["Buy for ", sparkPill(c.price, "inv")] : "Claim for free"),
+        !can ? h("div",{class:"note"}, "You have ", sparkPill(sparks(S.uid)), ". ", h("a",{href:"#", onclick:e => { e.preventDefault(); close(); openChat("quests", "all"); }}, "Earn more in Quests →")) : null);
+      else if (isB) acts.append(h("div",{class:"note",text:"You own everything in this bundle. Equip each piece below."}));
+      else acts.append(on ? h("button",{class:"btn ghost wide", onclick:() => equip(c.type, "")}, "Unequip") : h("button",{class:"btn", onclick:() => equip(c.type, c.id)}, "Equip"));
+      m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
+        h("div",{class:"ibig"}, itemArt(c)),
+        h("div",{class:"ibody"},
+          h("div",{class:"ikind"}, SLOT_NAME[c.type], itemChip(c)),
+          h("h2",{text:c.name}), h("p",{class:"note",style:{fontSize:"14px",marginTop:0},text:c.desc}),
+          isB ? h("div",{class:"list"}, c.items.map(i => { const x = COSM_BY[i]; const eq = equipped(S.uid, x.type) === i;
+            return h("div",{class:"li"}, h("span",{class:"nm"}, h("b",{text:x.name}), h("span",{class:"s",text:"  · " + SLOT_NAME[x.type]})),
+              owns(S.uid, i) ? h("button",{class:"btn small" + (eq ? " ghost" : ""), onclick:() => equip(x.type, eq ? "" : i)}, eq ? "Unequip" : "Equip") : h("span",{class:"s"}, sparkPill(x.price))); })) : null,
+          h("div",{class:"iprow"}, priceEl(c)), acts));
+    };
+    S.paneRefresh = {bg, draw}; draw();
+  }, "itemmodal");
+}
+
+// ---- Shop page
+const SHOP_TABS = [{id:"featured", name:"Featured"}, {id:"deco", name:"Decorations"}, {id:"pfx", name:"Profile Effects"}, {id:"plate", name:"Nameplates"}, {id:"bundle", name:"Bundles"}, {id:"ranks", name:"Ranks & Sparks"}];
+function shopHeaderBar(active){
+  const bar = h("div",{class:"shopbar"});
+  bar.append(h("span",{class:"sbic"}, ic("bag")));
+  SHOP_TABS.forEach(t => bar.appendChild(h("button",{class:"stab" + (active === t.id ? " on" : ""), onclick:() => { S.page = t.id; store("chat", {kind:"shop", id:t.id}); $("msgs").scrollTop = 0; need("msgs"); }}, t.name)));
+  bar.append(h("span",{class:"sp"}),
+    active !== "ranks" ? h("label",{class:"ssearch"}, ic("search"), h("input",{placeholder:"Search the shop", value:S.shopQ || "", oninput:e => { S.shopQ = e.target.value; clearTimeout(S.shopQT); S.shopQT = setTimeout(() => { const pos = e.target.selectionStart; need("msgs"); setTimeout(() => { const i = document.querySelector(".ssearch input"); if (i){ i.focus(); i.selectionStart = i.selectionEnd = pos; } }, 0); }, 250); }})) : null,
+    active !== "ranks" ? h("button",{class:"swish" + (S.wishOnly ? " on" : ""), title:"Show my wishlist", onclick:() => { S.wishOnly = !S.wishOnly; need("msgs"); }}, ic("heart")) : null,
+    h("button",{class:"sbal", title:"Your Sparks — earn more in Quests", onclick:() => openChat("quests", "all")}, sparkPill(sparks(S.uid))));
+  return bar;
+}
+function filterItems(list){ const q = (S.shopQ || "").toLowerCase().trim();
+  return list.filter(c => (!q || c.name.toLowerCase().includes(q) || (c.desc || "").toLowerCase().includes(q)) && (!S.wishOnly || wished(c.id))); }
+function shopSection(title, items, tab){
+  if (!items.length) return null;
+  return h("div",{class:"ssec"}, h("div",{class:"ssh"}, h("h3",{text:title}), tab ? h("button",{class:"seeall", onclick:() => { S.page = tab; $("msgs").scrollTop = 0; need("msgs"); }}, "See all ", ic("chevron","rot")) : null),
+    h("div",{class:"igrid"}, items.map(itemCard)));
+}
+function renderShopPage(box){
+  const keep = box.scrollTop; box.innerHTML = "";
+  const tab = S.page || "featured";
+  const wrap = h("div",{class:"shoppage"}); wrap.appendChild(shopHeaderBar(tab));
+  const body = h("div",{class:"sbody"}); wrap.appendChild(body);
+  if (tab === "ranks"){ const r = h("div",{class:"ranksinline"}); drawRanks(r, () => need("msgs")); body.appendChild(r); box.appendChild(wrap); box.scrollTop = keep; return; }
+  const filtering = (S.shopQ || "").trim() || S.wishOnly;
+  if (tab === "featured" && !filtering){
+    const b = BUNDLES[0];
+    body.appendChild(h("div",{class:"shero", onclick:() => itemModal(b)},
+      h("div",{class:"pfx pfx-starfall"}),
+      h("div",{class:"shtext"}, h("span",{class:"ichip"}, ic("spark"), "NEW COLLECTION"), h("h2",{text:"The Cosmic Collection"}), h("p",{text:"Out-of-this-world looks for your avatar, profile and name. Get all three for 15% off."}),
+        h("button",{class:"btn", onclick:e => { e.stopPropagation(); S.page = "bundle"; need("msgs"); }}, "Shop the collection")),
+      h("div",{class:"shart"}, previewAvatar("d_cosmic"), h("div",{class:"pd plate plate-nebula"}, paintName(h("span",{text:nickOf(S.uid)}), S.uid)))));
+    if (!owns(S.uid, "d_bubble")) body.appendChild(h("div",{class:"freebar", onclick:() => itemModal(COSM_BY.d_bubble)}, previewAvatar("d_bubble", "sm"),
+      h("div",{style:{flex:"1"}}, h("b",{text:"Free avatar decoration!"}), h("div",{class:"note",style:{margin:0},text:"Claim the Bubble decoration — on the house."})), h("button",{class:"btn small"}, "Claim")));
+    body.append(shopSection("Bundles", BUNDLES.slice(0, 3), "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
+      shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));
+    body.appendChild(h("div",{class:"earnbar"}, ic("star"), h("div",{style:{flex:"1"}}, h("b",{text:"Earn Sparks for free"}), h("div",{class:"note",style:{margin:0},text:"Complete quests and claim your daily reward. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
+      h("button",{class:"btn small", onclick:() => openChat("quests", "all")}, "Go to Quests")));
+  } else {
+    const all = [...BUNDLES, ...COSM];
+    const list = filterItems(tab === "featured" ? all : all.filter(c => c.type === tab));
+    if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"40px",textAlign:"center"},text: S.wishOnly ? "Your wishlist is empty. Tap the heart on anything you like." : "Nothing matches that search."}));
+    else body.appendChild(h("div",{class:"ssec"}, h("div",{class:"ssh"}, h("h3",{text: tab === "featured" ? (S.wishOnly ? "Wishlist" : "Results") : SHOP_TABS.find(t => t.id === tab).name})), h("div",{class:"igrid"}, list.map(itemCard))));
+  }
+  box.appendChild(wrap); box.scrollTop = keep;
+}
+
+// ---- Quests page
+function fmtLeft(ms){ const hh = Math.floor(ms / 3600000), mm = Math.ceil((ms % 3600000) / 60000); return hh ? hh + "h " + mm + "m" : mm + "m"; }
+function renderQuestsPage(box){
+  const keep = box.scrollTop; box.innerHTML = "";
+  const tab = S.page === "claimed" ? "claimed" : "all";
+  const w = wal(S.uid); const done = w.quests || [];
+  const wrap = h("div",{class:"shoppage"});
+  const bar = h("div",{class:"shopbar"}, h("span",{class:"sbic"}, ic("star")),
+    h("button",{class:"stab" + (tab === "all" ? " on" : ""), onclick:() => { S.page = "all"; need("msgs"); }}, "All Quests"),
+    h("button",{class:"stab" + (tab === "claimed" ? " on" : ""), onclick:() => { S.page = "claimed"; need("msgs"); }}, "Claimed"),
+    h("span",{class:"sp"}), h("button",{class:"sbal", title:"Spend Sparks in the Shop", onclick:() => openChat("shop", "featured")}, sparkPill(sparks(S.uid))));
+  wrap.appendChild(bar);
+  const body = h("div",{class:"sbody"}); wrap.appendChild(body);
+  if (tab === "all"){
+    const left = DAILY_MS - (Date.now() - (w.lastDaily || 0)); const ready = left <= 0;
+    body.appendChild(h("div",{class:"qhero"},
+      h("div",{class:"pfx pfx-confetti"}),
+      h("div",{class:"shtext"}, h("span",{class:"ichip"}, ic("spark"), "DAILY REWARD"), h("h2",{text: ready ? "Your daily Sparks are ready!" : "Come back tomorrow"}),
+        h("p",{text: ready ? "Claim " + DAILY_SPARKS + " free Sparks every day you visit." : "Next reward in " + fmtLeft(left) + "."}),
+        h("button",{class:"btn", disabled:!ready, onclick:() => claimDaily()}, ready ? ["Claim ", sparkPill(DAILY_SPARKS, "inv")] : "Claimed today ✓")),
+      h("div",{class:"qbig"}, ic("spark"))));
+  }
+  const list = QUESTS.filter(q => tab === "claimed" ? done.includes(q.id) : !done.includes(q.id))
+    .sort((a, b) => (questProgress(b) >= b.goal) - (questProgress(a) >= a.goal));
+  body.appendChild(h("div",{class:"ssh"}, h("h3",{text: tab === "claimed" ? "Claimed quests" : "Quests"}), h("span",{class:"note",style:{margin:0},text: done.length + " of " + QUESTS.length + " complete"})));
+  if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"30px",textAlign:"center"},text: tab === "claimed" ? "Nothing claimed yet — finish a quest to earn Sparks." : "You've finished every quest. Legend. New ones are coming!"}));
+  const grid = h("div",{class:"qgrid"});
+  list.forEach(q => { const p = questProgress(q), ok = p >= q.goal, claimed = done.includes(q.id);
+    grid.appendChild(h("div",{class:"qcard" + (ok && !claimed ? " ready" : "") + (claimed ? " claimed" : "")},
+      h("div",{class:"qic"}, ic(q.icon)),
+      h("div",{class:"qmain"}, h("b",{text:q.name}), h("span",{class:"note",style:{margin:0},text:q.desc}),
+        h("div",{class:"qbar"}, h("i",{style:{width:(p / q.goal * 100) + "%"}})), h("span",{class:"qprog",text: p + " / " + q.goal})),
+      h("div",{class:"qside"}, sparkPill(q.reward, "rw"),
+        claimed ? h("span",{class:"owned"}, ic("check","sm"), " Claimed") : h("button",{class:"btn small", disabled:!ok, onclick:() => claimQuest(q)}, ok ? "Claim" : "In progress")))); });
+  body.appendChild(grid);
+  body.appendChild(h("p",{class:"note",style:{textAlign:"center",marginTop:"20px"},text:"Sparks are free and only for cosmetics. Spend them in the Shop."}));
+  box.appendChild(wrap); box.scrollTop = keep;
 }
 
 // ---------------------------------------------------------------- updates

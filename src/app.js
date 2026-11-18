@@ -74,6 +74,8 @@ const ICONS = {
   alert:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/>',
   camera:'<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
   star:'<path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>',
+  spark:'<path d="M12 2.5l2.3 6.2 6.2 2.3-6.2 2.3L12 19.5l-2.3-6.2L3.5 11l6.2-2.3z"/><path d="M19 17.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+  heart:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
   hourglass:'<path d="M5 22h14M5 2h14M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/>',
 };
 function ic(name, cls){ const s = document.createElement("span"); s.className = "i" + (cls ? " " + cls : ""); s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[name] || "") + "</svg>"; return s; }
@@ -87,6 +89,9 @@ const CATALOG = [
   {id:"name_fx", icon:"wand", name:"Animated Name", price:"$1.99", desc:"Rainbow, Gold, Fire, Ocean or Neon — your name shimmers everywhere."},
   {id:"themes", icon:"palette", name:"Theme Pack", price:"$0.99", desc:"Unlock Midnight, Ocean, Sunset, Forest and Sakura."},
   {id:"banner", icon:"image", name:"Profile Banner", price:"$0.99", desc:"Pick a custom banner color for your profile card."},
+  {id:"sparks_1000", icon:"spark", name:"1,000 Sparks", price:"$0.99", coins:1000, desc:"Spend them on decorations, effects and nameplates."},
+  {id:"sparks_3000", icon:"spark", name:"3,000 Sparks", price:"$2.49", coins:3000, desc:"Best for a bundle or two. 15% bonus value."},
+  {id:"sparks_7500", icon:"spark", name:"7,500 Sparks", price:"$4.99", coins:7500, desc:"Basically the whole shop. 50% bonus value."},
   {id:"supporter", icon:"gem", name:"Supporter Badge", price:"$0.99", desc:"A gem badge next to your name to show you back CampusCord."},
 ];
 const PLUS_INCLUDES = ["name_fx","themes","banner","big_uploads","supporter"];
@@ -125,7 +130,7 @@ function applyPrefs(){
 // ---------------------------------------------------------------- state
 const S = {
   uid:null, config:null, configLoaded:false, invite:null, shop:{},
-  rooms:[], members:{}, membersLoaded:false, profiles:{}, perks:{}, orders:[], myOrders:[],
+  rooms:[], members:{}, membersLoaded:false, profiles:{}, perks:{}, wallets:{}, walletsLoaded:false, catalogV:null, orders:[], myOrders:[],
   kind:"room", cur:null, mode:"server", msgs:[], reacts:[], typing:[], gifs:[], meta:{}, dms:[],
   msgLimit:PAGE, olderLoading:false, hasMore:false, roomLoaded:false,
   unsubRoom:[], unsubApp:[], pending:null, replyTo:null, editing:null, joinColor:COLORS[0],
@@ -217,6 +222,7 @@ function avatar(uid, size, withDot){
   if (bg) a.style.background = bg.g;
   else { a.style.background = (look.bg && /^#[0-9a-f]{6}$/i.test(look.bg)) ? look.bg : colorOf(uid); a.style.backgroundImage = "linear-gradient(145deg, rgba(255,255,255,.18), rgba(0,0,0,.18))"; }
   if (hasPerk(uid, "ring")) a.classList.add("ring");
+  const dc = size !== "xs" && equipped(uid, "deco"); if (dc){ a.appendChild(decoEl(dc)); a.classList.remove("ring"); }
   if (withDot) a.appendChild(h("span",{class:"dot " + statusOf(uid), title:{online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(uid)]}));
   return a;
 }
@@ -269,6 +275,8 @@ function start(){
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   // optional collections (need v3 rules) — fail quietly
   onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; need("side","msgs","rpanel","me","header"); }, () => {});
+  onSnapshot(collection(db, "wallet"), snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); S.wallets = w; S.walletsLoaded = true;
+    if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane(); }, () => {});
   onSnapshot(collection(db, "perks"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.perks = p; applyPrefs(); need("side","msgs","rpanel","me"); }, () => {});
 }
 
@@ -340,7 +348,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
-    if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && saved.kind === "home") openChat("home", "home"); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
+    if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
     need("side","header","composer");
   }, ()=>{}));
   S.unsubApp.push(onSnapshot(collection(db, "meta"), snap => {
@@ -370,8 +378,11 @@ function initApp(){
   S.unsubApp.push(onSnapshot(doc(db, "config/shop"), s => { S.shop = s.exists() ? s.data() : {}; refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(query(collection(db, "orders"), where("uid","==",S.uid)), s => { S.myOrders = s.docs.map(d => Object.assign({id:d.id}, d.data())); refreshOpenPane(); }, ()=>{}));
   if (isOwner()) S.unsubApp.push(onSnapshot(collection(db, "orders"), s => { S.orders = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => b.ts - a.ts); need("rail"); refreshOpenPane(); }, ()=>{}));
+  S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
+    if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
+  ensureWallet();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS);
-  setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home") need("msgs"); }, 15000);
+  setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
   need("rail","side","header","msgs","rpanel","me","composer","gifs");
   $("input").focus();
@@ -417,7 +428,7 @@ function renderRail(){
   const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0);
   top.appendChild(railItem({label:"Rooms", tip: name + " — all rooms", on: S.mode === "server", cls:"srv", onclick:() => goServer(), oncontextmenu:e => serverMenu(e),
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
-  bot.appendChild(railItem({label:"Shop", tip:"Campus+ Shop — ranks & perks", cls:"shopri", onclick:() => openShop(), content:ic("bag")}));
+  bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
   if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
@@ -438,7 +449,13 @@ function renderSide(){
     hdr.append(h("span",{class:"hdric"}, ic("message")), h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
     const f = h("input",{class:"dmsearch", placeholder:"Find a conversation", value:S.dmFilter||"", oninput:e => { S.dmFilter = e.target.value; renderDMList(box); }});
     list.appendChild(f);
-    list.appendChild(h("div",{class:"ch" + (S.kind === "home" ? " on" : ""), onclick:() => openChat("home", "home")}, h("span",{class:"ic"}, ic("users")), h("span",{class:"nm",text:"Friends"})));
+    const nav = (kind, page, icn, label, extra) => list.appendChild(h("div",{class:"ch navi" + (S.kind === kind && (kind !== "shop" || (page === "ranks") === (S.page === "ranks")) ? " on" : ""), onclick:() => openChat(kind, page || kind)},
+      h("span",{class:"ic"}, ic(icn)), h("span",{class:"nm",text:label}), extra || null));
+    nav("home", "home", "users", "Friends");
+    nav("shop", "ranks", "sparkles", "Campus+", hasPlus(S.uid) && !isOwner() ? h("span",{class:"ichip free",text:"ACTIVE"}) : null);
+    nav("shop", "featured", "bag", "Shop", h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
+    const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal) || Date.now() - (wal(S.uid).lastDaily || 0) >= DAILY_MS;
+    nav("quests", "all", "star", "Quests", qready ? h("span",{class:"newdot",title:"Rewards ready"}) : null);
     list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
     const box = h("div"); list.appendChild(box); renderDMList(box);
     return;
@@ -476,7 +493,8 @@ function renderDMList(box){
     const o = dmOther(d); const on = S.kind === "dm" && S.cur === d.id;
     const un = !on && d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
     const cs = profile(o).customStatus;
-    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : ""), onclick:() => openChat("dm", d.id)},
+    const pl = equipped(o, "plate");
+    box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : "") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:() => openChat("dm", d.id)},
       avatar(o, "sm", true),
       h("div",{class:"meta"}, paintName(h("span",{class:"nm",text:nickOf(o)}), o), cs ? h("span",{class:"sub",text:cs}) : (typersIn("dm", d.id).length ? h("span",{class:"sub",text:"typing…"}) : null)),
       un ? h("span",{class:"newdot",title:"New message"}) : null));
@@ -573,8 +591,10 @@ async function openDM(uid){
   }
   S.mode = "dms"; openChat("dm", id);
 }
+const isPage = k => k === "home" || k === "shop" || k === "quests";
 function goDMs(){
-  if (S.kind === "dm" || S.kind === "home"){ if (S.kind === "dm") openChat("home", "home"); return; }
+  if (S.kind === "dm" || (isPage(S.kind) && S.kind !== "home")){ openChat("home", "home"); return; }
+  if (S.kind === "home") return;
   const last = store("lastDM");
   if (last && S.dms.find(d => d.id === last)) openChat("dm", last); else openChat("home", "home");
 }
@@ -585,11 +605,12 @@ function goServer(){
 }
 function openChat(kind, id){
   closeNav();
-  if (kind === "home"){
+  if (isPage(kind)){
     if (S.cur) saveDraft(); stopTyping(); S.unsubRoom.forEach(u => u()); S.unsubRoom = []; if (S.pending) setPending(null);
-    Object.assign(S, {kind:"home", cur:null, mode:"dms", msgs:[], reacts:[], typing:[], roomLoaded:true, hasMore:false, replyTo:null, editing:null, pins:null});
+    if (S.kind !== kind) $("msgs").scrollTop = 0;
+    Object.assign(S, {kind, page:id, cur:null, mode:"dms", msgs:[], reacts:[], typing:[], roomLoaded:true, hasMore:false, replyTo:null, editing:null, pins:null});
     if (S.rpanel === "pins" || S.rpanel === "search") S.rpanel = prefs.showMembers === false ? null : "members";
-    store("chat", {kind:"home", id:"home"});
+    store("chat", {kind, id});
     need("rail","side","header","msgs","rpanel","composer","typing"); return;
   }
   if (S.cur === id && S.kind === kind && S.unsubRoom.length){ need("side","rail"); return; }
@@ -635,7 +656,10 @@ function subscribeMsgs(first){
 function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
   icon.innerHTML = "";
-  $("btnPins").classList.toggle("hidden", S.kind === "home"); $("search").parentElement.classList.toggle("hidden", S.kind === "home");
+  $("btnPins").classList.toggle("hidden", isPage(S.kind)); $("search").parentElement.classList.toggle("hidden", isPage(S.kind));
+  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
+  if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
+  if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn free Sparks"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
@@ -702,7 +726,7 @@ function renderHome(box){
   wrap.appendChild(h("div",{class:"cat",text:"Online — " + on.length}));
   const list = h("div",{class:"friends"});
   if (!people.length) list.appendChild(h("div",{class:"empty-note",text:"Nobody else has joined yet. Share the invite link!"}));
-  people.forEach(u => list.appendChild(h("div",{class:"friend" + (isOn(u) ? "" : " off"), onclick:() => openDM(u)},
+  people.forEach(u => list.appendChild(h("div",{class:"friend" + (isOn(u) ? "" : " off") + (equipped(u, "plate") ? " plate plate-" + equipped(u, "plate").slice(2) : ""), onclick:() => openDM(u)},
     avatar(u, null, true), h("div",{class:"fi"}, paintName(h("b",{text:nickOf(u)}), u), h("span",{text: profile(u).customStatus || ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[statusOf(u)])})),
     h("button",{class:"ib", title:"Message " + nickOf(u), onclick:e => { e.stopPropagation(); openDM(u); }}, ic("message")))));
   wrap.appendChild(list);
@@ -711,6 +735,8 @@ function renderHome(box){
 function renderMessages(){
   const box = $("msgs");
   if (S.kind === "home"){ renderHome(box); return; }
+  if (S.kind === "shop"){ renderShopPage(box); return; }
+  if (S.kind === "quests"){ renderQuestsPage(box); return; }
   const atBottom = S.stickBottom !== false;
   const prevTop = box.scrollTop;
   box.innerHTML = "";
@@ -801,7 +827,7 @@ async function votePoll(m, i){
   const b = base(); const mine = S.reacts.filter(x => x.mid === m.id && x.uid === S.uid && String(x.e).startsWith("poll:"));
   const had = mine.some(x => x.e === "poll:" + i);
   try{ for (const x of mine) await deleteDoc(doc(db, ...b, "reacts", x.id));
-    if (!had) await setDoc(doc(db, ...b, "reacts", m.id + "__" + S.uid + "__poll" + i), {mid:m.id, uid:S.uid, e:"poll:" + i, ts:Date.now()}); }
+    if (!had){ await setDoc(doc(db, ...b, "reacts", m.id + "__" + S.uid + "__poll" + i), {mid:m.id, uid:S.uid, e:"poll:" + i, ts:Date.now()}); bumpStat("votes"); } }
   catch(e){ toast("Couldn't vote: " + errMsg(e)); }
 }
 // ---------------------------------------------------------------- embeds (YouTube + image links)
@@ -907,7 +933,7 @@ async function toggleReact(m, e){
   pushRecent(e);
   const id = m.id + "__" + S.uid + "__" + eKey(e);
   const ref = doc(db, ...base(), "reacts", id);
-  try{ if (S.reacts.some(x => x.id === id)) await deleteDoc(ref); else await setDoc(ref, {mid:m.id, uid:S.uid, e, ts:Date.now()}); }
+  try{ if (S.reacts.some(x => x.id === id)) await deleteDoc(ref); else { await setDoc(ref, {mid:m.id, uid:S.uid, e, ts:Date.now()}); bumpStat("reacts"); } }
   catch(err){ toast("Couldn't react: " + errMsg(err)); }
 }
 function quickReact(ev, m){
@@ -947,6 +973,7 @@ async function loadPins(){
 }
 function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
+  if (S.kind === "shop" || S.kind === "quests"){ p.classList.add("hidden"); return; }
   const narrow = window.innerWidth < 1100;
   if (S.rpanel === null && prefs.showMembers === false || !S.rpanel || (narrow && S.rpanel === "members" && !S.rpanelForced)){ p.classList.add("hidden"); $("btnMembers").classList.remove("on"); return; }
   p.classList.remove("hidden");
@@ -986,7 +1013,8 @@ function renderRPanel(){
     b.appendChild(h("div",{class:"cat",text: label + " — " + arr.length}));
     arr.sort(sortN).forEach(u => {
       const cs = profile(u).customStatus; const typing = typersIn(S.kind, S.cur).includes(u);
-      const row = h("div",{class:"mrow" + (isOn(u) ? "" : " off"), onclick:e => openProfile(u, row), oncontextmenu:e => memberMenu(e, u)},
+      const pl = equipped(u, "plate");
+      const row = h("div",{class:"mrow" + (isOn(u) ? "" : " off") + (pl ? " plate plate-" + pl.slice(2) : ""), onclick:e => openProfile(u, row), oncontextmenu:e => memberMenu(e, u)},
         avatar(u, "sm", true),
         h("div",{class:"info"}, h("div",{class:"nm"}, paintName(h("span",{text:nickOf(u)}), u), ...miniTags(u)),
           typing ? h("div",{class:"sub",text:"typing…"}) : cs ? h("div",{class:"sub",text:cs}) : null));
@@ -1007,7 +1035,8 @@ function openProfile(uid, anchor, self){
   const p = profile(uid), st = statusOf(uid);
   const bannerColor = hasPerk(uid, "banner") && p.banner ? p.banner : colorOf(uid);
   const big = avatar(uid, "xl", true);
-  const card = h("div",{class:"profile", "data-layer":"profile"},
+  const pe = equipped(uid, "pfx");
+  const card = h("div",{class:"profile", "data-layer":"profile"}, pe ? h("div",{class:"pfx pfx-" + pe.slice(2)}) : null,
     h("div",{class:"banner", style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
     h("div",{class:"pav"}, big),
     h("div",{class:"pb"},
@@ -1063,7 +1092,7 @@ setInterval(() => need("typing"), 2000);
 const input = $("input");
 function renderComposer(){
   const bars = $("cbars"); bars.innerHTML = "";
-  $("composer").classList.toggle("hidden", S.kind === "home"); if (S.kind === "home") return;
+  $("composer").classList.toggle("hidden", isPage(S.kind)); if (isPage(S.kind)) return;
   const ok = canPost();
   $("cbox").classList.toggle("hidden", !ok); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
@@ -1208,7 +1237,7 @@ async function send(extra){
     const text = (out.text || "").slice(0, 4000);
     const body = {uid:S.uid, text, ts:Date.now()};
     if (out.me) body.me = true;
-    if (out.poll) body.poll = out.poll;
+    if (out.poll){ body.poll = out.poll; bumpStat("polls"); }
     const mentions = findMentions(text); if (mentions.length) body.mentions = mentions;
     if (/@everyone\b/.test(text) && isAdmin() && kind === "room") body.everyone = true;
     if (replyTo){ body.reply = replyTo; }
@@ -1217,7 +1246,7 @@ async function send(extra){
     const id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2,7);
     const stillHere = S.kind === kind && S.cur === chatId;
     if (stillHere){ input.value = ""; autoGrow(); saveDraft(); } S.replyTo = null; setPending(null); S.stickBottom = true;
-    await setDoc(doc(db, ...b, "msgs", id), body);
+    await setDoc(doc(db, ...b, "msgs", id), body); bumpStat("msgs");
     const preview = (body.me ? nickOf(S.uid) + " " : "") + (text || (body.gif ? "sent a GIF" : body.img ? "sent an image" : "")).slice(0, 120);
     const priv = kind === "room" && (roomAtSend || {}).private;
     const meta = {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview: priv ? "New message in a private room" : preview, lastMentions:mentions, lastEveryone:!!body.everyone};
@@ -1490,10 +1519,10 @@ function shopButton(c){
   if (!it.link) return h("button",{class:"btn buy",disabled:true},"Coming soon");
   return h("button",{class:"btn buy", onclick:() => buy(c.id)}, c.tier ? "Get " + c.name : "Buy");
 }
-function openShop(){
-  modal((m, close, bg) => {
-    const draw = () => {
-      m.innerHTML = "";
+function openShop(tab){ openChat("shop", tab || "featured"); }
+function drawRanks(m, draw){
+  const close = () => {};
+  m.innerHTML = "";
       const r = rankOf(S.uid);
       m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
         h("div",{class:"shophero"},
@@ -1520,7 +1549,7 @@ function openShop(){
           h("span",{class:"fx fx-" + fx.id, text:nickOf(S.uid)}), h("small",null, ok ? null : ic("lock","sm"), " " + fx.name + (fx.ex ? " ++" : "")))); });
       m.append(h("h3",{class:"sh3",text:"Preview your name"}), prev);
       const grid = h("div",{class:"shop"});
-      CATALOG.filter(c => !c.tier).forEach(c => { const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
+      CATALOG.filter(c => !c.tier && !c.coins).forEach(c => { const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
         grid.appendChild(h("div",{class:"item"}, h("div",{class:"ii"}, ic(c.icon)), h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}), shopButton(c))); });
       m.append(h("h3",{class:"sh3",text:"Individual perks"}), grid);
       if (S.myOrders.length){
@@ -1529,10 +1558,13 @@ function openShop(){
           h("span",{class:"s st-" + o.status,text: o.status === "approved" ? "Active" : o.status === "rejected" ? "Not approved" : "Pending"})))));
       }
       m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. Perks are cosmetic. After you pay, the server admin activates your perk — usually within a few hours."));
-    };
-    S.paneRefresh = {bg, draw};
-    draw();
-  }, "shopmodal");
+
+  const packs = CATALOG.filter(c => c.coins && (shopItem(c.id).enabled || isOwner()));
+  if (packs.length){ const grid = h("div",{class:"shop"});
+    packs.forEach(c => { const it = shopItem(c.id); const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
+      grid.appendChild(h("div",{class:"item spackitem"}, h("div",{class:"ii"}, ic("spark")), h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}),
+        pend ? h("div",{class:"pending"}, ic("hourglass"), " Payment pending") : !it.link ? h("button",{class:"btn buy",disabled:true},"Coming soon") : h("button",{class:"btn buy", onclick:() => buy(c.id)}, "Buy"))); });
+    m.append(h("h3",{class:"sh3",text:"Spark packs"}), h("p",{class:"note",style:{padding:"0 28px",marginTop:"-4px"},text:"Short on Sparks? Top up with real money — or earn them free in Quests."}), grid); }
 }
 async function buy(itemId){
   const it = shopItem(itemId); if (!it.link) return;
@@ -1658,14 +1690,17 @@ function grantModal(uid){
   modal((m, close) => {
     m.append(h("h3",{text:"Perks for " + nickOf(uid)}), h("p",{class:"note",text:"Grant or remove perks by hand (gifts, giveaways, refunds)."}));
     const list = h("div",{class:"list"});
-    CATALOG.forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
+    CATALOG.filter(c => !c.coins).forEach(c => { const items = (S.perks[uid]||{}).items || {}; const on = perkActive(items[c.id]);
       list.appendChild(h("div",{class:"li"}, ic(c.icon), h("span",{class:"nm",text:c.name + (on && items[c.id].until ? " (until " + new Date(items[c.id].until).toLocaleDateString() + ")" : "")}),
         on ? h("button",{class:"btn small danger", onclick:async () => { await revokePerk(uid, c.id); close(); }}, "Remove") : h("button",{class:"btn small", onclick:async () => { await grantPerk(uid, c.id); close(); }}, "Grant"))); });
-    m.append(list, h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
+    m.append(list, h("label",{class:"f",text:"Give Sparks (" + sparks(uid).toLocaleString() + " now)"}),
+      h("div",{class:"row"}, [100, 500, 1000, 5000].map(n => h("button",{class:"btn small ghost", onclick:async () => { await giveSparks(uid, n); close(); }}, "+" + n.toLocaleString()))),
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
   });
 }
 async function grantPerk(uid, item){
   const c = CATALOG.find(x => x.id === item) || {};
+  if (c.coins){ await giveSparks(uid, c.coins); return; }
   const prev = (((S.perks[uid]||{}).items||{})[item]) || {};
   const entry = {since:Date.now()};
   if (c.months){ const startAt = Math.max(Date.now(), prev.until || 0); entry.until = startAt + c.months * 31 * 864e5; }
@@ -1737,6 +1772,7 @@ function installApp(){
   });
 }
 
+// __COSMETICS__
 // ---------------------------------------------------------------- updates
 function updBar(nodes){ const b = $("updbar"); b.innerHTML = ""; b.append(...nodes, h("button",{class:"x",onclick:() => b.classList.add("hidden")}, ic("x"))); b.classList.remove("hidden"); }
 if (location.protocol === "file:"){

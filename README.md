@@ -19,6 +19,8 @@ A Discord-style group chat for friends, running on Firebase.
 - Timeouts (5 min / 1 hour / 1 day) for admins and developers, enforced by the rules
 - Built-in Help bot (? button or /help)
 - Private rooms (owner picks who can see them)
+- Sparks shop: avatar decorations, profile effects, nameplates and bundles, bought with Sparks earned free from Quests and a daily reward (or Spark packs via Stripe)
+- `tests/rules.test.mjs` runs in the Firestore emulator on GitHub before any rules are published
 - Appearance: 8 themes, accent color, font size, compact mode, 24h time
 - Roles: 👑 Admin (owner) and 💻 Developers
 - Campus+ and Campus++ ranks with PLUS / PLUS+ badges, plus individual perks, sold through Stripe Payment Links and approved by the owner
