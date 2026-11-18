@@ -238,11 +238,11 @@ function avatar(uid, size, withDot){
   return a;
 }
 let CHIP_MINI = false;
-function chip(cls, iconName, text, title){ return h("span",{class:"tag " + cls + (CHIP_MINI ? " mini" : ""), title: title || null}, iconName ? ic(iconName) : null, text && !CHIP_MINI ? h("b",{text}) : null); }
+function chip(cls, iconName, text, title){ const mini = CHIP_MINI && iconName; return h("span",{class:"tag " + cls + (mini ? " mini" : "") + (iconName ? "" : " noi"), title: title || null}, iconName ? ic(iconName) : null, text && !mini ? h("b",{text}) : null); }
 function miniTags(uid){ CHIP_MINI = true; try{ return roleTags(uid, true); } finally { CHIP_MINI = false; } }
 function roleTags(uid, compact){
   const out = [];
-  if (isOwnerUid(uid)) out.push(chip("admin","yinyang","ADMIN","Server admin"));
+  if (isOwnerUid(uid)) out.push(chip("admin",null,"ADMIN","Server admin"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   const r = rankOf(uid);
   if (r === "plusplus") out.push(chip("pp","zap","PLUS+","Campus++"));
@@ -1568,7 +1568,7 @@ function drawRanks(m, draw){
         h("div",{class:"shophero"},
           h("div",{class:"shg"}, ic("sparkles")),
           h("div",null, h("h2",{text:"Campus+ Shop"}), h("p",{text:"Ranks, animated names and themes. Every purchase supports the server."})),
-          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin","yinyang","ADMIN") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
+          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin",null,"ADMIN") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
       const tiers = h("div",{class:"tiers"});
       CATALOG.filter(c => c.tier).forEach(c => {
         const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
