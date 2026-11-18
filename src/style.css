@@ -902,7 +902,7 @@ html,body{overflow:hidden}
 @media (max-width:1050px){ .shopbar{overflow-x:auto} .ssearch{display:none} }
 
 /* v3.8 owner yin-yang theme */
-.fx-yinyang{background-image:linear-gradient(90deg,#fff 0%,#fff 30%,#5d636b 42%,#0f0f10 50%,#5d636b 58%,#fff 70%,#fff 100%);background-size:300% 100%;animation-duration:4.5s;-webkit-text-stroke:.4px rgba(255,255,255,.55)}
+.fx-yinyang{background-image:linear-gradient(90deg,#fff 0%,#fff 30%,#8a9098 42%,#3a3e44 50%,#8a9098 58%,#fff 70%,#fff 100%);background-size:300% 100%;animation-duration:4.5s;-webkit-text-stroke:.6px rgba(255,255,255,.7)}
 .tag.admin{background:linear-gradient(135deg,#000 0%,#1c1c1c 100%);color:#fff;border:1px solid #fff;--yyb:#000;box-shadow:0 0 0 1px #000,0 0 8px rgba(255,255,255,.25)}
 .tag.admin .i{animation:yyspin 6s linear infinite}
 .pb-owner{background:radial-gradient(circle at 30% 30%,#fff,#d9d9d9);color:#000;--yyb:#fff;box-shadow:0 0 0 2px #000,0 0 10px rgba(255,255,255,.35)}
@@ -969,3 +969,9 @@ html,body{overflow:hidden}
 .bdcard,.bdcard .bdtxt{text-align:left;align-items:flex-start}
 .bdcard .bdtxt{padding-right:18px}
 .bdcard.blk{opacity:1}.bdcard.blk .bdtxt b{color:var(--muted)}
+/* v3.10 owner yin-yang decoration + nameplate (no spinning) */
+.deco-yinyang{inset:-12%;filter:drop-shadow(0 0 .8px #fff) drop-shadow(0 0 .8px #fff) drop-shadow(0 0 4px rgba(255,255,255,.3))}
+.deco-yinyang::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(#fff 0 50%,#0c0c0d 50% 100%);-webkit-mask:radial-gradient(closest-side,transparent 83%,#000 85%,#000 96%,transparent 98%);mask:radial-gradient(closest-side,transparent 83%,#000 85%,#000 96%,transparent 98%)}
+.plate-yinyang{--plate:linear-gradient(100deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.9) 48%,rgba(255,255,255,.55) 64%,rgba(255,255,255,.3) 100%)}
+.plate-yinyang::after{animation:none!important;background-size:100% 100%!important}
+.b-owner svg{animation:none!important}

@@ -44,6 +44,9 @@ const BUNDLES = [
   {id:"b_galaxy", type:"bundle", name:"Deep Space Bundle", items:["d_cosmic","e_starfall","p_midnight","n_galaxy"], tag:"exclusive", desc:"The full space look: Cosmic Swirl, Starfall, Midnight nameplate and the animated Galaxy banner."},
 ];
 const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
+// Owner-only looks: not sold in the Shop (missing from the catalog, so they can't be bought).
+[{id:"d_yinyang", type:"deco", name:"Yin-Yang", price:0, own:true, desc:"A black-and-white outline. Owner only."},
+ {id:"p_yinyang", type:"plate", name:"Yin-Yang", price:0, own:true, desc:"Black fading into white. Owner only."}].forEach(c => COSM_BY[c.id] = c);
 BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
 const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bundle:"Bundle"};
 const DAILY_SPARKS = 0, DAILY_MS = 20 * 3600 * 1000;
@@ -60,7 +63,7 @@ const QUESTS = [
   {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:0},
   {id:"q_buy", icon:"bag", name:"First purchase", desc:"Buy something with Sparks in the Shop.", goal:1, check:() => (wal(S.uid).items || []).some(i => COSM_BY[i] && COSM_BY[i].price > 0) ? 1 : 0, reward:0},
 ];
-function catalogDoc(){ const prices = {}; Object.values(COSM_BY).forEach(c => prices[c.id] = c.price); const quests = {}; QUESTS.forEach(q => quests[q.id] = q.reward);
+function catalogDoc(){ const prices = {}; Object.values(COSM_BY).filter(c => !c.own).forEach(c => prices[c.id] = c.price); const quests = {}; QUESTS.forEach(q => quests[q.id] = q.reward);
   return {v:CAT_V, prices, quests, daily:DAILY_SPARKS}; }
 
 // ---- wallet + ownership
@@ -70,7 +73,7 @@ function sparks(uid){ const w = wal(uid); return Math.max(0, (w.earned || 0) - (
 function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid).items || [];
   if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }
 function ownsBundleFully(uid, b){ return owns(uid, b.id) || b.items.every(i => owns(uid, i)); }
-function equipped(uid, slot){ const id = profile(uid)[slot]; return id && COSM_BY[id] && COSM_BY[id].type === slot && owns(uid, id) ? id : null; }
+function equipped(uid, slot){ const id = profile(uid)[slot]; if (id && COSM_BY[id] && COSM_BY[id].own) return isOwnerUid(uid) && COSM_BY[id].type === slot ? id : null; return id && COSM_BY[id] && COSM_BY[id].type === slot && owns(uid, id) ? id : null; }
 function qstats(){ return Object.assign({msgs:0, reacts:0, votes:0, polls:0, dailies:0, voice:0}, store("qstats_" + S.uid) || {}); }
 function bumpStat(k, n){ const s = qstats(); s[k] = (s[k] || 0) + (n || 1); store("qstats_" + S.uid, s); if (S.kind === "quests") need("msgs"); }
 function questProgress(q){ return Math.min(q.goal, q.check ? q.check() : (qstats()[q.stat] || 0)); }
