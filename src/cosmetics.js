@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 2;
+const CAT_V = 3;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -46,19 +46,19 @@ const BUNDLES = [
 const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
 BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
 const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bundle:"Bundle"};
-const DAILY_SPARKS = 50, DAILY_MS = 20 * 3600 * 1000;
+const DAILY_SPARKS = 0, DAILY_MS = 20 * 3600 * 1000;
 const QUESTS = [
-  {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:100},
-  {id:"q_avatar", icon:"smile", name:"Glow up", desc:"Customize your avatar in Settings → My Account.", goal:1, check:() => profile(S.uid).avatar ? 1 : 0, reward:100},
-  {id:"q_bio", icon:"user", name:"About me", desc:"Write a bio in Settings → Profile.", goal:1, check:() => profile(S.uid).bio ? 1 : 0, reward:100},
-  {id:"q_dm", icon:"message", name:"Slide in", desc:"Start a direct message with someone.", goal:1, check:() => S.dms.length ? 1 : 0, reward:100},
-  {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:150},
-  {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:100},
-  {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:100},
-  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:150},
-  {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:150},
-  {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:250},
-  {id:"q_regular", icon:"star", name:"Regular", desc:"Claim the daily reward 3 times.", goal:3, stat:"dailies", reward:200},
+  {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:0},
+  {id:"q_avatar", icon:"smile", name:"Glow up", desc:"Customize your avatar in Settings → My Account.", goal:1, check:() => profile(S.uid).avatar ? 1 : 0, reward:0},
+  {id:"q_bio", icon:"user", name:"About me", desc:"Write a bio in Settings → Profile.", goal:1, check:() => profile(S.uid).bio ? 1 : 0, reward:0},
+  {id:"q_dm", icon:"message", name:"Slide in", desc:"Start a direct message with someone.", goal:1, check:() => S.dms.length ? 1 : 0, reward:0},
+  {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:0},
+  {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:0},
+  {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:0},
+  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:0},
+  {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:0},
+  {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:0},
+  {id:"q_buy", icon:"bag", name:"First purchase", desc:"Buy something with Sparks in the Shop.", goal:1, check:() => (wal(S.uid).items || []).some(i => COSM_BY[i] && COSM_BY[i].price > 0) ? 1 : 0, reward:0},
 ];
 function catalogDoc(){ const prices = {}; Object.values(COSM_BY).forEach(c => prices[c.id] = c.price); const quests = {}; QUESTS.forEach(q => quests[q.id] = q.reward);
   return {v:CAT_V, prices, quests, daily:DAILY_SPARKS}; }
@@ -80,7 +80,7 @@ function econError(e){ return e && e.code === "permission-denied" ? "The shop is
 async function buyCosmetic(id){
   const c = COSM_BY[id]; if (!c) return;
   if (owns(S.uid, id)){ toast("You already own " + c.name); return; }
-  if (sparks(S.uid) < c.price){ toast("You need " + (c.price - sparks(S.uid)) + " more Sparks — earn them in Quests!"); return; }
+  if (sparks(S.uid) < c.price){ toast("You need " + (c.price - sparks(S.uid)).toLocaleString() + " more Sparks"); openSparks(); return; }
   await ensureWallet(); const w = wal(S.uid);
   try{ await updateDoc(doc(db, "wallet", S.uid), {spent:(w.spent || 0) + c.price, items:[...(w.items || []), id], lastItem:id});
     toast((c.price ? "Bought " : "Claimed ") + c.name + "! ✦"); if (c.type !== "bundle") await equip(c.type, id, true); }
@@ -90,7 +90,7 @@ async function equip(slot, id, quiet){ try{ await setMyProfile({[slot]: id || ""
 async function claimQuest(q){
   const w = wal(S.uid); if ((w.quests || []).includes(q.id) || questProgress(q) < q.goal) return;
   await ensureWallet(); const w2 = wal(S.uid);
-  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + q.reward, quests:[...(w2.quests || []), q.id], lastQuest:q.id}); toast("+" + q.reward + " Sparks ✦ — " + q.name); }
+  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + q.reward, quests:[...(w2.quests || []), q.id], lastQuest:q.id}); toast("Quest complete — " + q.name + " ✦ Explorer badge progress!"); }
   catch(e){ toast("Couldn't claim: " + econError(e)); }
 }
 async function claimDaily(){
@@ -147,7 +147,7 @@ function itemModal(c){
       const on = !isB && equipped(S.uid, c.type) === c.id; const can = sparks(S.uid) >= c.price;
       const acts = h("div",{class:"iacts"});
       if (!own) acts.append(h("button",{class:"btn buy", disabled: !can, onclick:async () => { await buyCosmetic(c.id); }}, c.price ? ["Buy for ", sparkPill(c.price, "inv")] : "Claim for free"),
-        !can ? h("div",{class:"note"}, "You have ", sparkPill(sparks(S.uid)), ". ", h("a",{href:"#", onclick:e => { e.preventDefault(); close(); openChat("quests", "all"); }}, "Earn more in Quests →")) : null);
+        !can ? h("div",{class:"note"}, "You have ", sparkPill(sparks(S.uid)), ". ", h("a",{href:"#", onclick:e => { e.preventDefault(); close(); openSparks(); }}, "Get more Sparks →")) : null);
       else if (isB) acts.append(h("div",{class:"note",text:"You own everything in this bundle. Equip each piece below."}));
       else acts.append(on ? h("button",{class:"btn ghost wide", onclick:() => equip(c.type, "")}, "Unequip") : h("button",{class:"btn", onclick:() => equip(c.type, c.id)}, "Equip"));
       m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
@@ -173,7 +173,7 @@ function shopHeaderBar(active){
   bar.append(h("span",{class:"sp"}),
     active !== "ranks" ? h("label",{class:"ssearch"}, ic("search"), h("input",{placeholder:"Search the shop", value:S.shopQ || "", oninput:e => { S.shopQ = e.target.value; clearTimeout(S.shopQT); S.shopQT = setTimeout(() => { const pos = e.target.selectionStart; need("msgs"); setTimeout(() => { const i = document.querySelector(".ssearch input"); if (i){ i.focus(); i.selectionStart = i.selectionEnd = pos; } }, 0); }, 250); }})) : null,
     active !== "ranks" ? h("button",{class:"swish" + (S.wishOnly ? " on" : ""), title:"Show my wishlist", onclick:() => { S.wishOnly = !S.wishOnly; need("msgs"); }}, ic("heart")) : null,
-    h("button",{class:"sbal", title:"Your Sparks — earn more in Quests", onclick:() => openChat("quests", "all")}, sparkPill(sparks(S.uid))));
+    h("button",{class:"sbal", title:"Your Sparks — click to buy more", onclick:() => openSparks()}, sparkPill(sparks(S.uid)), h("span",{class:"sbplus"}, ic("plus","sm"))));
   return bar;
 }
 function filterItems(list){ const q = (S.shopQ || "").toLowerCase().trim();
@@ -203,8 +203,8 @@ function renderShopPage(box){
     body.append(shopSection("Bundles", [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]], "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
       shopSection("Animated Banners", COSM.filter(c => c.type === "pban").slice(0, 4), "pban"),
       shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));
-    body.appendChild(h("div",{class:"earnbar"}, ic("star"), h("div",{style:{flex:"1"}}, h("b",{text:"Earn Sparks for free"}), h("div",{class:"note",style:{margin:0},text:"Complete quests and claim your daily reward. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
-      h("button",{class:"btn small", onclick:() => openChat("quests", "all")}, "Go to Quests")));
+    body.appendChild(h("div",{class:"earnbar"}, ic("spark"), h("div",{style:{flex:"1"}}, h("b",{text:"Get Sparks"}), h("div",{class:"note",style:{margin:0},text:"Sparks are bought with real money and spent on anything in the Shop. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
+      h("button",{class:"btn small", onclick:() => openSparks()}, "Buy Sparks")));
   } else {
     const all = [...BUNDLES, ...COSM];
     const list = filterItems(tab === "featured" ? all : all.filter(c => c.type === tab));
@@ -228,55 +228,32 @@ function renderQuestsPage(box){
   wrap.appendChild(bar);
   const body = h("div",{class:"sbody"}); wrap.appendChild(body);
   if (tab === "all"){
-    const left = DAILY_MS - (Date.now() - (w.lastDaily || 0)); const ready = left <= 0;
+    const qb = BADGES.find(x => x.id === "quest"), st = qb.state(S.uid), n = done.length;
+    const nextAt = n < 1 ? 1 : n < 5 ? 5 : n < QUESTS.length ? QUESTS.length : null;
     body.appendChild(h("div",{class:"qhero"},
       h("div",{class:"pfx pfx-confetti"}),
-      h("div",{class:"shtext"}, h("span",{class:"ichip"}, ic("spark"), "DAILY REWARD"), h("h2",{text: ready ? "Your daily Sparks are ready!" : "Come back tomorrow"}),
-        h("p",{text: ready ? "Claim " + DAILY_SPARKS + " free Sparks every day you visit." : "Next reward in " + fmtLeft(left) + "."}),
-        h("button",{class:"btn", disabled:!ready, onclick:() => claimDaily()}, ready ? ["Claim ", sparkPill(DAILY_SPARKS, "inv")] : "Claimed today ✓")),
-      h("div",{class:"qbig"}, ic("spark"))));
+      h("div",{class:"shtext"}, h("span",{class:"ichip"}, ic("star"), "EXPLORER BADGE"), h("h2",{text: st ? "Explorer · " + TIERS[st.tier].name : "Earn the Explorer badge"}),
+        h("p",{text: nextAt ? "Finish quests to evolve your badge: Bronze at 1, Silver at 5, Gold when you've done them all. " + (nextAt - n) + " more to the next tier." : "You've maxed out the Explorer badge. Legend."}),
+        h("button",{class:"btn", onclick:() => badgeDirectory(S.uid)}, "View my badges")),
+      h("div",{class:"qbig qbadge"}, badgeEl(qb, st || {tier:"bronze"}, "xl"))));
   }
   const list = QUESTS.filter(q => tab === "claimed" ? done.includes(q.id) : !done.includes(q.id))
     .sort((a, b) => (questProgress(b) >= b.goal) - (questProgress(a) >= a.goal));
   body.appendChild(h("div",{class:"ssh"}, h("h3",{text: tab === "claimed" ? "Claimed quests" : "Quests"}), h("span",{class:"note",style:{margin:0},text: done.length + " of " + QUESTS.length + " complete"})));
-  if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"30px",textAlign:"center"},text: tab === "claimed" ? "Nothing claimed yet — finish a quest to earn Sparks." : "You've finished every quest. Legend. New ones are coming!"}));
+  if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"30px",textAlign:"center"},text: tab === "claimed" ? "Nothing claimed yet — finish a quest to grow your Explorer badge." : "You've finished every quest. Legend. New ones are coming!"}));
   const grid = h("div",{class:"qgrid"});
   list.forEach(q => { const p = questProgress(q), ok = p >= q.goal, claimed = done.includes(q.id);
     grid.appendChild(h("div",{class:"qcard" + (ok && !claimed ? " ready" : "") + (claimed ? " claimed" : "")},
       h("div",{class:"qic"}, ic(q.icon)),
       h("div",{class:"qmain"}, h("b",{text:q.name}), h("span",{class:"note",style:{margin:0},text:q.desc}),
         h("div",{class:"qbar"}, h("i",{style:{width:(p / q.goal * 100) + "%"}})), h("span",{class:"qprog",text: p + " / " + q.goal})),
-      h("div",{class:"qside"}, sparkPill(q.reward, "rw"),
+      h("div",{class:"qside"}, h("span",{class:"qrw", title:"Explorer badge progress"}, ic("star","sm"), " +1"),
         claimed ? h("span",{class:"owned"}, ic("check","sm"), " Claimed") : h("button",{class:"btn small", disabled:!ok, onclick:() => claimQuest(q)}, ok ? "Claim" : "In progress")))); });
   body.appendChild(grid);
-  body.appendChild(h("p",{class:"note",style:{textAlign:"center",marginTop:"20px"},text:"Sparks are free and only for cosmetics. Spend them in the Shop."}));
+  body.appendChild(h("p",{class:"note",style:{textAlign:"center",marginTop:"20px"},text:"Quests earn badges, not Sparks. Sparks are bought in the Shop."}));
   box.appendChild(wrap); box.scrollTop = keep;
 }
 
 // ---------------------------------------------------------------- profile badges
 function ownedCount(uid){ const items = wal(uid).items || []; const set = new Set(); items.forEach(i => { const c = COSM_BY[i]; if (!c) return; if (c.items) c.items.forEach(x => set.add(x)); else set.add(i); }); return set.size; }
-function badgesOf(uid){
-  const out = [], m = member(uid) || {}, w = wal(uid), r = rankOf(uid);
-  if (isOwnerUid(uid)) out.push({id:"owner", icon:"yinyang", name:"Server Owner", desc:"Runs this CampusCord"});
-  if (isDev(uid)) out.push({id:"dev", icon:"code", name:"Developer", desc:"Helps build CampusCord"});
-  if (r === "plusplus") out.push({id:"pp", icon:"zap", name:"Campus++", desc:"Subscriber"});
-  else if (r === "plus") out.push({id:"plus", icon:"sparkles", name:"Campus+", desc:"Subscriber"});
-  if (perkActive(((S.perks[uid] || {}).items || {}).supporter)) out.push({id:"sup", icon:"gem", name:"Supporter", desc:"Backs CampusCord"});
-  if (S.config && m.joinedAt && m.joinedAt < (S.config.createdAt || 0) + 7 * 864e5) out.push({id:"early", icon:"flag", name:"Early Member", desc:"Joined in the first week"});
-  if ((w.quests || []).length >= QUESTS.length) out.push({id:"quest", icon:"trophy", name:"Quest Champion", desc:"Finished every quest"});
-  else if ((w.quests || []).length >= 5) out.push({id:"quester", icon:"star", name:"Quester", desc:"Finished 5+ quests"});
-  if (!isOwnerUid(uid) && ownedCount(uid) >= 5) out.push({id:"collector", icon:"bag", name:"Collector", desc:"Owns 5+ cosmetics"});
-  if (!isOwnerUid(uid) && (w.spent || 0) >= 2000) out.push({id:"baller", icon:"spark", name:"Big Spender", desc:"Spent 2,000+ Sparks"});
-  return out;
-}
-function badgeRow(uid){
-  const b = badgesOf(uid); if (!b.length) return null;
-  return h("div",{class:"bdgrow"}, b.map(x => h("span",{class:"pbadge pb-" + x.id, "data-tip":x.name + " — " + x.desc}, ic(x.icon))));
-}
-// hover tooltips for profile badges
-(() => { let tip = null;
-  document.addEventListener("mouseover", e => { const el = e.target.closest && e.target.closest(".pbadge"); if (!el){ if (tip){ tip.remove(); tip = null; } return; }
-    if (tip && tip._for === el) return; if (tip) tip.remove();
-    tip = h("div",{class:"rtip up",text:el.dataset.tip}); tip._for = el; document.body.appendChild(tip);
-    const b = el.getBoundingClientRect(); tip.style.top = (b.top - tip.offsetHeight - 8) + "px"; tip.style.left = Math.max(8, b.left + b.width / 2 - tip.offsetWidth / 2) + "px"; });
-})();
+// __BADGES__

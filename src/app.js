@@ -474,7 +474,7 @@ function renderSide(){
     nav("home", "home", "users", "Friends");
     nav("shop", "ranks", "sparkles", "Campus+", hasPlus(S.uid) && !isOwner() ? h("span",{class:"ichip free",text:"ACTIVE"}) : null);
     nav("shop", "featured", "bag", "Shop", prefs.shopSeen === CAT_V ? null : h("span",{class:"ichip new"}, ic("spark","sm"), "NEW"));
-    const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal) || Date.now() - (wal(S.uid).lastDaily || 0) >= DAILY_MS;
+    const qready = QUESTS.some(q => !(wal(S.uid).quests || []).includes(q.id) && questProgress(q) >= q.goal);
     nav("quests", "all", "star", "Quests", qready ? h("span",{class:"newdot",title:"Rewards ready"}) : null);
     list.appendChild(h("div",{class:"cat",style:{cursor:"default"}}, h("span",{class:"t",text:"Direct messages"})));
     const box = h("div"); list.appendChild(box); renderDMList(box);
@@ -694,7 +694,7 @@ function renderHeader(){
   $("btnPins").classList.toggle("hidden", isPage(S.kind)); $("search").parentElement.classList.toggle("hidden", isPage(S.kind));
   $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
   if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
-  if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn free Sparks"; updateTitle(); return; }
+  if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn badges"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
     const o = dmOther({id:S.cur}); icon.appendChild(avatar(o, "xs", false)); t.textContent = nickOf(o);
@@ -1077,11 +1077,11 @@ function openProfile(uid, anchor, self){
   const card = h("div",{class:"profile", "data-layer":"profile"}, pe ? h("div",{class:"pfx pfx-" + pe.slice(2)}) : null,
     h("div",{class:"banner" + (equipped(uid, "pban") ? " ban-" + equipped(uid, "pban").slice(2) : ""), style:{background: hasPerk(uid, "banner_gradient") ? "linear-gradient(135deg," + bannerColor + ",#a78bfa 55%,#3fb8ff)" : bannerColor}}),
     h("div",{class:"pav"}, big),
+    h("div",{class:"pbadges"}, badgeRow(uid)),
     h("div",{class:"pb"},
       h("div",{class:"pname"}, paintName(h("span",{text:nickOf(uid)}), uid), ...miniTags(uid)),
       h("div",{class:"pstat",text: (p.customStatus ? p.customStatus + " · " : "") + ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st])}),
       timeoutUntil(uid) ? h("div",{class:"pstat tmo"}, ic("hourglass","sm"), " Timed out until " + fmtTime(timeoutUntil(uid))) : null,
-      badgeRow(uid),
       p.bio ? h("div",{class:"sect"}, h("h4",{text:"About me"}), h("div",{text:p.bio})) : null,
       h("div",{class:"sect"}, h("h4",{text:"Member since"}), h("div",{text: member(uid).joinedAt ? new Date(member(uid).joinedAt).toLocaleDateString([], {month:"long", day:"numeric", year:"numeric"}) : "—"})),
       h("div",{class:"acts"},
@@ -1599,12 +1599,26 @@ function drawRanks(m, draw){
       }
       m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. Perks are cosmetic. After you pay, the server admin activates your perk — usually within a few hours."));
 
-  const packs = CATALOG.filter(c => c.coins && (shopItem(c.id).enabled || isOwner()));
-  if (packs.length){ const grid = h("div",{class:"shop"});
-    packs.forEach(c => { const it = shopItem(c.id); const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
-      grid.appendChild(h("div",{class:"item spackitem"}, h("div",{class:"ii"}, ic("spark")), h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}),
-        pend ? h("div",{class:"pending"}, ic("hourglass"), " Payment pending") : !it.link ? h("button",{class:"btn buy",disabled:true},"Coming soon") : h("button",{class:"btn buy", onclick:() => buy(c.id)}, "Buy"))); });
-    m.append(h("h3",{class:"sh3",text:"Spark packs"}), h("p",{class:"note",style:{padding:"0 28px",marginTop:"-4px"},text:"Short on Sparks? Top up with real money — or earn them free in Quests."}), grid); }
+  const sp = sparkPacksEl(); if (sp) m.append(h("h3",{class:"sh3",text:"Spark packs"}), h("p",{class:"note",style:{padding:"0 28px",marginTop:"-4px"},text:"Sparks are bought with real money and spent on anything in the Shop."}), sp);
+}
+function sparkPacksEl(){
+  const packs = CATALOG.filter(c => c.coins && (shopItem(c.id).enabled || isOwner())); if (!packs.length) return null;
+  const grid = h("div",{class:"shop spacks"});
+  packs.forEach((c, i) => { const it = shopItem(c.id); const pend = S.myOrders.find(o => o.item === c.id && o.status === "pending");
+    grid.appendChild(h("div",{class:"item spackitem sp" + i}, i === 2 ? h("span",{class:"ichip best",text:"BEST VALUE"}) : i === 1 ? h("span",{class:"ichip pop",text:"POPULAR"}) : null,
+      h("div",{class:"spkart"}, Array.from({length:i + 1}, (_, k) => h("span",{class:"spk3 k" + k}, ic("spark")))),
+      h("div",{class:"in",text:c.name}), h("div",{class:"id",text:c.desc}), h("div",{class:"ip",text:it.price}),
+      pend ? h("div",{class:"pending"}, ic("hourglass"), " Payment pending") : !it.link ? h("button",{class:"btn buy",disabled:true}, isOwner() ? "Add a Stripe link in Admin → Shop" : "Coming soon") : h("button",{class:"btn buy", onclick:() => buy(c.id)}, "Buy for " + it.price))); });
+  return grid;
+}
+function openSparks(){
+  modal((m, close) => {
+    m.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")),
+      h("div",{class:"sphead"}, h("div",{class:"spbig"}, ic("spark")), h("h2",{text:"Get Sparks"}),
+        h("p",{class:"note",style:{margin:0}}, "You have ", sparkPill(sparks(S.uid)), ". Spend Sparks on decorations, effects, banners and nameplates.")));
+    const sp = sparkPacksEl(); m.append(sp || h("p",{class:"note",style:{textAlign:"center",padding:"20px"},text:"Spark packs aren't on sale yet — check back soon."}));
+    m.append(h("p",{class:"note shopnote"}, ic("lock","sm"), " Checkout is handled securely by Stripe. After you pay, the admin adds your Sparks — usually within a few hours."));
+  }, "sparksmodal");
 }
 async function buy(itemId){
   const it = shopItem(itemId); if (!it.link) return;

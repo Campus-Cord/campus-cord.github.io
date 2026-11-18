@@ -911,3 +911,61 @@ html,body{overflow:hidden}
 .av.fxav{background:conic-gradient(from 0deg,#fff 0 25%,#111 25% 50%,#fff 50% 75%,#111 75%)!important;box-shadow:0 0 10px rgba(255,255,255,.3)}
 .tag.noi{padding:2px 6px}
 .tag.admin.noi{margin-left:5px}
+
+/* v3.9 badges — detailed icons in a Discord-style badge box */
+.profile .pbadges{position:absolute;top:92px;right:12px;z-index:3;max-width:168px;display:flex;justify-content:flex-end}
+.bdgrow{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px;margin:0;padding:3px 4px;background:color-mix(in srgb,var(--rail) 80%,transparent);border:1px solid var(--line);border-radius:9px;width:max-content;max-width:100%;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.bdgrow:hover{border-color:color-mix(in srgb,var(--text) 25%,transparent)}
+.pbadge,.pbadge[class*=" b-"]{width:24px;height:24px;border-radius:6px;background:none!important;box-shadow:none!important;display:inline-flex;align-items:center;justify-content:center;padding:1px;transition:transform .15s,background .15s;animation:none}
+.pbadge svg{width:22px;height:22px;display:block;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45));overflow:visible}
+.bdgrow .pbadge:hover{transform:translateY(-2px) scale(1.12);background:rgba(255,255,255,.07)!important}
+.pbadge.sm{width:22px;height:22px}.pbadge.sm svg{width:20px;height:20px}
+.pbadge.lg{width:44px;height:44px}.pbadge.lg svg{width:40px;height:40px}
+.pbadge.xl{width:96px;height:96px}.pbadge.xl svg{width:92px;height:92px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5))}
+.pbadge.blk svg{filter:grayscale(1) brightness(.55);opacity:.55}
+.b-pp svg,.t-opal svg{animation:bhue 5s linear infinite}
+@keyframes bhue{to{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45)) hue-rotate(360deg)}}
+.b-owner svg{animation:yyspin 12s linear infinite}
+.t-ruby svg,.t-emerald svg,.t-diamond svg{filter:drop-shadow(0 0 3px rgba(255,255,255,.35)) drop-shadow(0 1px 1.5px rgba(0,0,0,.45))}
+.bmore{font-size:11px;font-weight:800;color:var(--muted);align-self:center;padding:0 4px}
+.btip{display:flex;flex-direction:column;gap:2px;white-space:normal;max-width:240px;text-align:center;padding:8px 11px}
+.btip b{font-size:13px}.btip .rar{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.btip .d{font-size:12px;font-weight:500;color:#b5bac1}
+/* badge directory */
+.bdmodal{width:min(620px,94vw);padding:22px 22px 18px;max-height:86vh;overflow:auto}
+.bdhead{margin-bottom:14px}.bdhead h2{margin:0 0 2px}
+.bdgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bdcard{display:flex;gap:12px;align-items:flex-start;background:var(--rail);border:1px solid var(--line);border-radius:12px;padding:12px;position:relative}
+.bdcard.blk{opacity:.75}
+.bdcard .bdtxt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.bdcard .rar{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.bdcard .owned{position:absolute;top:10px;right:10px;color:var(--green,#3ecf7a)}
+.bdcard .lockic{position:absolute;top:10px;right:10px;color:var(--muted)}
+.bdtiers{display:flex;flex-wrap:wrap;align-items:center;gap:1px;margin-top:4px}
+@media (max-width:620px){.bdgrid{grid-template-columns:1fr}}
+/* quests hero badge */
+.qbig.qbadge{background:none!important;box-shadow:none!important}
+.qrw{display:inline-flex;align-items:center;gap:2px;font-weight:800;font-size:12px;color:#ffd166;background:rgba(255,209,102,.12);padding:3px 8px;border-radius:99px}
+/* Get Sparks */
+.sbal{display:inline-flex;align-items:center;gap:4px}
+.sbplus{display:inline-flex;width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--on-accent,#fff);align-items:center;justify-content:center}
+.sbplus .i{width:12px;height:12px}
+.sparksmodal{width:min(700px,94vw);padding:24px}
+.sphead{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:16px}
+.sphead h2{margin:0}
+.spbig{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffd166,#ff7ac6 55%,#a78bfa);color:#fff;box-shadow:0 8px 24px rgba(255,122,198,.35)}
+.spbig .i{width:34px;height:34px}
+.spacks{display:grid!important;grid-template-columns:repeat(3,1fr);gap:12px}
+.spackitem{position:relative;text-align:center;align-items:center}
+.spackitem .ichip.best,.spackitem .ichip.pop{position:absolute;top:10px;right:10px;font-size:10px}
+.ichip.best{background:linear-gradient(135deg,#ffd166,#f5a524);color:#3a2300}
+.ichip.pop{background:linear-gradient(135deg,#ff7ac6,#a78bfa);color:#fff}
+.spkart{height:64px;display:flex;align-items:center;justify-content:center;position:relative;margin:6px 0}
+.spk3{display:inline-flex;color:#ffd166;filter:drop-shadow(0 0 8px rgba(255,209,102,.6))}
+.spk3 .i{width:40px;height:40px}
+.spk3.k1{margin-left:-14px;transform:translateY(-10px) scale(.75);color:#ff7ac6}
+.spk3.k2{margin-left:-12px;transform:translateY(8px) scale(.65);color:#7ef0e6}
+.sp2 {border-color:#f5a52455}
+@media (max-width:640px){.spacks{grid-template-columns:1fr}}
+.bdcard,.bdcard .bdtxt{text-align:left;align-items:flex-start}
+.bdcard .bdtxt{padding-right:18px}
+.bdcard.blk{opacity:1}.bdcard.blk .bdtxt b{color:var(--muted)}
