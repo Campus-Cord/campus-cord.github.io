@@ -1,0 +1,47 @@
+name: Approve site changes
+
+# Every few minutes: merge the pull requests Massimo approved in CampusCord
+# (Admin → Site changes), close the ones he turned down, then rebuild the site.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+
+concurrency:
+  group: build-site
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm i --no-save --silent firebase-admin@12
+      - name: Merge approved changes
+        id: merge
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/merge.mjs
+      # Merges made by this robot don't start other workflows, so rebuild the site here.
+      - name: Rebuild the site
+        if: steps.merge.outputs.merged != '' && steps.merge.outputs.merged != '0'
+        run: |
+          git pull -q origin main
+          python3 src/build.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- index.html; then exit 0; fi
+          git add index.html version.json
+          git commit -m "Build site from src/ ($(jq -r .version version.json))"
+          git push

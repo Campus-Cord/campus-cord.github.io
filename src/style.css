@@ -1211,3 +1211,18 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .appeal{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--rail)}.appeal.open{border-color:#ffd166}
 .aph{display:flex;align-items:center;gap:8px}.apst{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#ffd166}
 .apqs{display:flex;flex-direction:column;gap:6px;margin-top:8px}.apq{display:flex;flex-direction:column;font-size:13px}.apq span{color:var(--muted)}
+
+/* site changes (pull requests) */
+.chcard{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--rail)}
+.chcard.green{border-left-color:#3ba55d}.chcard.red{border-left-color:#f0565c}.chcard.running,.chcard.waiting{border-left-color:#ffd166}
+.chh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.chh b{font-size:15px}
+.chlight{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;margin-left:auto;padding:3px 8px;border-radius:999px;background:color-mix(in srgb,var(--line) 50%,transparent)}
+.chlight .dot{width:8px;height:8px;border-radius:50%;background:#ffd166}.chlight.green .dot{background:#3ba55d}.chlight.red .dot{background:#f0565c}.chlight.running .dot{animation:pulse 1.4s infinite}
+.chdesc{white-space:pre-wrap;font-size:14px;margin:8px 0 4px;line-height:1.45}
+.chfiles{font-size:13px;margin-top:6px}.chfiles summary{cursor:pointer;color:var(--muted)}.chfiles ul{margin:6px 0 0;padding-left:18px}
+.chfiles .add{color:#3ba55d}.chfiles .del{color:#f0565c}.chwarn{color:#ffd166;font-weight:700}
+.chalert{background:color-mix(in srgb,#ffd166 12%,transparent);border:1px solid color-mix(in srgb,#ffd166 40%,transparent);border-radius:8px;padding:8px;font-size:13px;margin:8px 0 0}
+.chnote{font-weight:600;font-size:13px;margin:8px 0 0}
+.chhist{margin-top:16px}.chhist h4{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.chrow{display:flex;gap:8px;align-items:center;font-size:13px;padding:6px 0;border-top:1px solid var(--line)}
+.chcard .btn[disabled]{opacity:.4;cursor:not-allowed;filter:grayscale(1)}

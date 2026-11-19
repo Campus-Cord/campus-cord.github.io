@@ -20,7 +20,9 @@ CampusCord is owned by Massimo. Changes go in through **pull requests**: you pro
 4. Commit, push to your fork, and open a **Pull request** on GitHub. Say what you changed and why.
 5. GitHub runs the checks (the build works, the JavaScript has no syntax errors, the database-rules tests pass). Massimo reviews and merges.
 
-Using Claude Code or another AI helper? Point it at this file and `CLAUDE.md`.
+Using an AI helper (Gemini, Claude, ChatGPT…)? Point it at this file and `AGENTS.md`.
+
+Massimo can also approve changes right inside CampusCord: **Admin → Site changes** shows every pull request with a green/red test light and an Approve button. Approved changes go live within about 5 minutes.
 
 ## Map of the code
 

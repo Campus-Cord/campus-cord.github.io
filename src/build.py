@@ -4,11 +4,12 @@ import os, datetime
 # Builds the single-file site (index.html) from the files in src/ and bumps version.json.
 d = os.path.dirname(os.path.abspath(__file__)) + "/"
 root = os.path.dirname(d.rstrip("/")) + "/"
-V = sys.argv[1] if len(sys.argv) > 1 else (datetime.datetime.utcnow() - datetime.timedelta(hours=5)).strftime("%Y-%m-%d.%H%M")
+V = sys.argv[1] if len(sys.argv) > 1 else (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=5)).strftime("%Y-%m-%d.%H%M")
 css = open(d+"style.css").read(); body = open(d+"body.html").read(); js = open(d+"app.js").read()
 js = js.replace("// __COSMETICS__", open(d+"cosmetics.js").read())
 js = js.replace("// __BADGES__", open(d+"badges.js").read())
 js = js.replace("// __APPEALS__", open(d+"appeals.js").read())
+js = js.replace("// __CHANGES__", open(d+"changes.js").read())
 js = js.replace("// __PUSH__", open(d+"push.js").read())
 js = js.replace("// __VOUCHES__", open(d+"vouches.js").read())
 js = js.replace("// __FEEDBACK__", open(d+"feedback.js").read())

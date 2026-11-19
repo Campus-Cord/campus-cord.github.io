@@ -1926,6 +1926,7 @@ function openAdmin(start){
   bigModal([
     {header:(S.config && S.config.serverName) || "CampusCord"},
     {id:"overview", label:"Overview", icon:"grid", render:adminOverview},
+    {id:"changes", label:"Site changes" + (S.openChanges ? " (" + S.openChanges + ")" : ""), icon:"code", render:adminChanges, hidden:!(isOwner() || isDev(S.uid))},
     {id:"rooms", label:"Rooms", icon:"hash", render:adminRooms},
     {id:"members", label:"Members & roles", icon:"users", render:adminMembers},
     {header:"Monetization", hidden:!isOwner()},
@@ -2215,6 +2216,7 @@ function installApp(){
 
 // __COSMETICS__
 // __APPEALS__
+// __CHANGES__
 // __PUSH__
 // __VOUCHES__
 // __FEEDBACK__

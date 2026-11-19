@@ -156,6 +156,15 @@ await setDoc(doc(as("gus"), "appeals/gus"), { startedAt: Date.now(), nick: "gus"
 await updateDoc(doc(as("owner"), "appeals/gus"), { startedAt: Date.now() - 40 * 60000 });
 await t("can't submit after 30 minutes", assertFails(updateDoc(doc(as("gus"), "appeals/gus"), { answers: { names: "x", main: "x", promise: "x" }, submittedAt: Date.now() })));
 
+console.log("Site changes");
+const sha = "a".repeat(40);
+await t("owner approves a site change", assertSucceeds(setDoc(doc(as("owner"), "devApprovals/5"), { sha, status: "queued", title: "Purple button", by: "owner", at: Date.now() })));
+await t("developer can see the approval", assertSucceeds(getDoc(doc(as("dev"), "devApprovals/5"))));
+await t("regular member can't see approvals", assertFails(getDoc(doc(as("alice"), "devApprovals/5"))));
+await t("developer can't approve their own change", assertFails(setDoc(doc(as("dev"), "devApprovals/6"), { sha, status: "queued", title: "x", by: "dev", at: Date.now() })));
+await t("owner can't fake a 'merged' result", assertFails(setDoc(doc(as("owner"), "devApprovals/7"), { sha, status: "merged", title: "x", by: "owner", at: Date.now() })));
+await t("approval needs a real commit id", assertFails(setDoc(doc(as("owner"), "devApprovals/8"), { sha: "main", status: "queued", title: "x", by: "owner", at: Date.now() })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
