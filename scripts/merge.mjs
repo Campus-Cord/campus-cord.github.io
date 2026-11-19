@@ -24,6 +24,10 @@ async function gh(path, opts = {}){
   return body;
 }
 
+// Free check first: if nothing is waiting on GitHub, don't touch the database at all.
+const open = await gh("/pulls?state=open&per_page=1");
+if (!open.length){ console.log("No open pull requests."); process.exit(0); }
+
 const snap = await db.collection("devApprovals").where("status", "in", ["queued", "rejecting"]).get();
 if (snap.empty){ console.log("Nothing to do."); process.exit(0); }
 
