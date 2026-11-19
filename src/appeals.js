@@ -3,9 +3,9 @@
 // time they see the screen. Answers go to appeals/{uid}; the owner reviews them in Admin → Appeals.
 const APPEAL_MS = 30 * 60000;
 const APPEAL_QS = [
-  {k:"names", q:"What were your two previous usernames?"},
-  {k:"main", q:"Which one is the main account you want unbanned?"},
-  {k:"promise", q:"Will you change your name and provide real vouches right now?"},
+  {k:"names", q:"What was your real username?"},
+  {k:"main", q:"Retype the username you want unbanned."},
+  {k:"promise", q:"Will you change your name and provide vouches when you get back in?"},
 ];
 let appealUnsub = null, appealTick = null;
 function bannedName(){ const c = S.config || {}; return (c.bannedNames || {})[S.uid] || (c.bannedDevNames || {})[deviceId()] || (member(S.uid) || {}).nick || "this account"; }

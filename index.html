@@ -1338,7 +1338,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-19.3";
+const APP_VERSION = "2026-11-19.4";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -4007,9 +4007,9 @@ setInterval(() => { try{ checkNewBadges(); }catch(e){} }, 4000);
 // time they see the screen. Answers go to appeals/{uid}; the owner reviews them in Admin → Appeals.
 const APPEAL_MS = 30 * 60000;
 const APPEAL_QS = [
-  {k:"names", q:"What were your two previous usernames?"},
-  {k:"main", q:"Which one is the main account you want unbanned?"},
-  {k:"promise", q:"Will you change your name and provide real vouches right now?"},
+  {k:"names", q:"What was your real username?"},
+  {k:"main", q:"Retype the username you want unbanned."},
+  {k:"promise", q:"Will you change your name and provide vouches when you get back in?"},
 ];
 let appealUnsub = null, appealTick = null;
 function bannedName(){ const c = S.config || {}; return (c.bannedNames || {})[S.uid] || (c.bannedDevNames || {})[deviceId()] || (member(S.uid) || {}).nick || "this account"; }
