@@ -118,7 +118,8 @@ await t("anyone signed in can read the push public key", assertSucceeds(getDoc(d
 console.log("Names, strikes, vouch-only");
 await setDoc(doc(as("carol"), "names/carol 2"), { uid: "carol", ts: now });
 await t("rename to a name you claimed", assertSucceeds(updateDoc(doc(as("carol"), "members/carol"), { nick: "carol 2", nickAt: Date.now() })));
-await t("can't rename to someone else's name", assertFails(updateDoc(doc(as("carol"), "members/carol"), { nick: "carol", nickAt: Date.now() })));
+await setDoc(doc(as("bob"), "names/zed"), { uid: "bob", ts: now });
+await t("can't rename to someone else's name", assertFails(updateDoc(doc(as("carol"), "members/carol"), { nick: "Zed", nickAt: Date.now() })));
 await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "rooms/vch"), { name: "vouches", type: "vouches", createdAt: 1 });
   await setDoc(doc(c.firestore(), "config/main"), { nameFlags: { carol: { count: 1, at: Date.now() + 1000, active: true } } }, { merge: true }); });
 await t("only vouches can be posted in #vouches", assertFails(setDoc(doc(as("alice"), "rooms/vch/msgs/x1"), { uid: "alice", text: "hey", ts: Date.now() })));
