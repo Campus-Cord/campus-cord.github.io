@@ -40,3 +40,6 @@ A Discord-style group chat for friends, running on Firebase.
 2. In each link's "After payment" settings, redirect to `https://campus-cord.github.io/#thanks`.
 3. In CampusCord: 🛠️ Server settings → Shop & Stripe → paste the links → Save shop.
 4. When someone buys, their order appears under Orders. Search the order ID in Stripe (it's the `client_reference_id`), then click Approve.
+
+## Contributing
+See [CONTRIBUTING.md](CONTRIBUTING.md). Changes go through pull requests that the owner approves.

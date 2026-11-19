@@ -1199,3 +1199,15 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .rolepill.nameflag{color:#f0565c}.nfl{margin:6px 0 0!important;color:#f0565c!important;font-size:12px}
 .vbarw.vonly{padding:12px 14px;font-size:14px}.vbarw.vonly .btn{padding:8px 16px}
 .vbarw .btn{white-space:nowrap;flex:none}
+/* v3.20 ban appeal */
+.card.bancard{max-width:520px;text-align:left!important;display:flex;flex-direction:column;gap:10px}
+.bancard h1{margin:0;text-align:center}.banic{font-size:44px;text-align:center}
+.banname{text-align:center;color:var(--muted)}.banname b{color:var(--text)}
+.banstatus{display:flex;align-items:center;justify-content:center;gap:6px;background:color-mix(in srgb,#ffd166 12%,var(--rail));border:1px solid color-mix(in srgb,#ffd166 40%,transparent);border-radius:10px;padding:8px 12px;font-size:14px}
+.banstatus .dot{width:8px;height:8px;border-radius:50%;background:#ffd166;animation:pulse 1.6s infinite}
+.bantimer{display:flex;align-items:center;gap:4px;color:#f0565c;font-size:13px}.bantimer b{font-size:16px;font-variant-numeric:tabular-nums}
+.banqs{display:flex;flex-direction:column;gap:10px}.banq{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px}
+.bancode{font-size:28px;font-weight:900;letter-spacing:.15em;text-align:center;padding:10px;border:1px dashed var(--accent);border-radius:10px}
+.appeal{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--rail)}.appeal.open{border-color:#ffd166}
+.aph{display:flex;align-items:center;gap:8px}.apst{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#ffd166}
+.apqs{display:flex;flex-direction:column;gap:6px;margin-top:8px}.apq{display:flex;flex-direction:column;font-size:13px}.apq span{color:var(--muted)}

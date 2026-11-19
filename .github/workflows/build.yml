@@ -1,0 +1,33 @@
+name: Build site
+
+# When src/ changes on main (e.g. a merged pull request), rebuild index.html
+# and version.json so the live site updates and open tabs offer a refresh.
+on:
+  push:
+    branches: [main]
+    paths:
+      - src/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build index.html from src/
+        run: python3 src/build.py
+      - name: Commit the build if it changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- index.html; then echo "Already up to date."; exit 0; fi
+          git add index.html version.json
+          git commit -m "Build site from src/ ($(jq -r .version version.json))"
+          git push

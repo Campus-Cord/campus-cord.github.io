@@ -1,0 +1,56 @@
+name: Check pull request
+
+# Runs on every pull request so Massimo can see at a glance whether a change
+# builds, has no JavaScript syntax errors, and keeps the database rules safe.
+# Uses no secrets, so it is safe for pull requests from forks.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build
+        run: python3 src/build.py check /tmp/cc.html
+      - name: JavaScript syntax check
+        run: |
+          python3 - <<'PY'
+          import re
+          html = open("/tmp/cc.html").read()
+          m = re.search(r'<script type="module">(.*?)</script>', html, re.S)
+          assert m, "module script not found in build"
+          open("/tmp/cc.mjs", "w").write(m.group(1))
+          PY
+          node --check /tmp/cc.mjs
+      - name: Warn about owner-only files
+        run: |
+          git fetch -q origin main
+          changed=$(git diff --name-only origin/main...HEAD)
+          echo "$changed"
+          if echo "$changed" | grep -qE '^(\.github/|scripts/)'; then
+            echo "::warning::This pull request changes workflows or scripts (owner-only). Review carefully."
+          fi
+
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install test tools
+        run: npm i --no-save --silent firebase-tools@13 @firebase/rules-unit-testing@3 firebase@10
+      - name: Run rules tests in the emulator
+        run: npx firebase emulators:exec --only firestore --project demo-campuscord "node tests/rules.test.mjs"

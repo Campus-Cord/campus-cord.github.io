@@ -1,6 +1,10 @@
 import re, sys, html, json
-V = sys.argv[1] if len(sys.argv) > 1 else "dev"
-d = "/home/claude/v3/"
+import os, datetime
+# Usage: python3 src/build.py [version] [output]   (both optional)
+# Builds the single-file site (index.html) from the files in src/ and bumps version.json.
+d = os.path.dirname(os.path.abspath(__file__)) + "/"
+root = os.path.dirname(d.rstrip("/")) + "/"
+V = sys.argv[1] if len(sys.argv) > 1 else (datetime.datetime.utcnow() - datetime.timedelta(hours=5)).strftime("%Y-%m-%d.%H%M")
 css = open(d+"style.css").read(); body = open(d+"body.html").read(); js = open(d+"app.js").read()
 js = js.replace("// __COSMETICS__", open(d+"cosmetics.js").read())
 js = js.replace("// __BADGES__", open(d+"badges.js").read())
@@ -10,7 +14,7 @@ js = js.replace("// __VOUCHES__", open(d+"vouches.js").read())
 js = js.replace("// __FEEDBACK__", open(d+"feedback.js").read())
 js = js.replace("// __CAMERA__", open(d+"camera.js").read())
 js = js.replace("// __VOICE__", open(d+"voice.js").read())
-cfg = re.search(r'const firebaseConfig = (\{[^}]*\});', open("/home/claude/campus-cord.github.io/index.html").read()).group(1)
+cfg = open(d+"firebase-config.js").read().strip()
 js = js.replace("__FIREBASE_CONFIG__", cfg).replace("__APP_VERSION__", V)
 out = f'''<!DOCTYPE html>
 <html lang="en">
@@ -36,5 +40,8 @@ out = f'''<!DOCTYPE html>
 </body>
 </html>
 '''
-open(sys.argv[2] if len(sys.argv) > 2 else d+"index.html", "w").write(out)
+dest = sys.argv[2] if len(sys.argv) > 2 else root+"index.html"
+open(dest, "w").write(out)
+if len(sys.argv) <= 2: open(root+"version.json", "w").write(json.dumps({"version": V}) + "\n")
+print("built", V, "->", dest)
 print("built", V, len(out))
