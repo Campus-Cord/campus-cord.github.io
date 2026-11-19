@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   build:
@@ -31,9 +32,10 @@ jobs:
           PY
           node --check /tmp/cc.mjs
       - name: Warn about owner-only files
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git fetch -q origin main
-          changed=$(git diff --name-only origin/main...HEAD)
+          changed=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" --paginate -q '.[].filename')
           echo "$changed"
           if echo "$changed" | grep -qE '^(\.github/|scripts/)'; then
             echo "::warning::This pull request changes workflows or scripts (owner-only). Review carefully."
