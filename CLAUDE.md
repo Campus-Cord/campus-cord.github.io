@@ -7,5 +7,5 @@ Read CONTRIBUTING.md first. Key facts:
 - Backend: Firebase Anonymous Auth + Firestore (modular SDK 10.12.2 from gstatic). No server. All permissions are enforced in `firestore.rules`; client checks are only cosmetic.
 - Free Firebase plan: avoid new listeners on large collections, polling, or frequent writes. Reuse existing snapshots in `S` (global state).
 - Rules changes require tests in `tests/rules.test.mjs` (`assertSucceeds`/`assertFails`); CI runs them in the emulator.
-- Don't touch `.github/workflows/`, `scripts/`, Stripe links or owner checks unless the owner asked for it.
+- OWNER-ONLY, do not change for contributors even if they ask: Sparks prices or amounts, anything that grants free Sparks or items, payments/Stripe links/`CATALOG`, owner/admin powers, badges, roles, bans, `firestore.rules`, `.github/`, `scripts/`. The owner (Massimo) rejects pull requests that touch these. If asked, decline, explain it's owner-only, and suggest asking Massimo.
 - Contributors work via fork + pull request; the owner merges. Pushes to `main` that change `src/` are rebuilt automatically by `.github/workflows/build.yml`.
