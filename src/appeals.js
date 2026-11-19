@@ -5,7 +5,7 @@ const APPEAL_MS = 30 * 60000;
 const APPEAL_QS = [
   {k:"names", q:"What was your real username?"},
   {k:"main", q:"Retype the username you want unbanned."},
-  {k:"promise", q:"Will you change your name and provide vouches when you get back in?"},
+  {k:"promise", q:"Will you change your name and provide vouches when you get back in?" },
 ];
 let appealUnsub = null, appealTick = null;
 function bannedName(){ const c = S.config || {}; return (c.bannedNames || {})[S.uid] || (c.bannedDevNames || {})[deviceId()] || (member(S.uid) || {}).nick || "this account"; }
