@@ -1326,7 +1326,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-19.1";
+const APP_VERSION = "2026-11-19.2";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1489,7 +1489,7 @@ function h(tag, props, ...kids){
   for (const c of kids.flat()) if (c != null && c !== false) e.append(c.nodeType ? c : String(c));
   return e;
 }
-function toast(t){ const d = h("div",{class:"toast",text:t}); document.body.appendChild(d); setTimeout(()=>d.remove(), 3400); }
+function toast(t, ms){ const d = h("div",{class:"toast",text:t}); document.body.appendChild(d); setTimeout(()=>d.remove(), ms || 3400); }
 function rid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 function eKey(e){ return [...e].map(c => c.codePointAt(0).toString(16)).join("-"); }
 function initials(n){ n = (n||"?").trim(); const p = n.split(/\s+/); return ((p[0]||"?")[0] + (p[1] ? p[1][0] : "")).toUpperCase(); }
@@ -1647,7 +1647,7 @@ function route(){
   }
   if (!S.membersLoaded) return;
   if (S.joining) return; // wait for Firebase to confirm the join before switching screens
-  if (isBanned(S.uid) && !isOwner()){ kickedOut(); return; }
+  if ((isBanned(S.uid) || deviceBanned()) && !isOwner()){ kickedOut(); return; }
   if (!member(S.uid)){
     if (S.routed === "app"){ stopAppSubs(); S.routed = null; }
     if (S.routed !== "join"){ S.routed = "join"; setupJoin(); show("g-join"); }
@@ -1682,6 +1682,10 @@ function setupJoin(){
   $("j-id").onclick = () => copy(S.uid, "ID copied");
   setTimeout(()=> $("j-nick").focus(), 50);
 }
+// A random ID for this browser, saved with the member profile. Banning someone also bans their browser, so making a
+// "new account" in the same browser doesn't get them back in.
+function deviceId(){ let d = null; try{ d = localStorage.getItem("ccDevice"); if (!d){ d = "d" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("ccDevice", d); } }catch(e){} return d || "unknown"; }
+const deviceBanned = () => ((S.config && S.config.bannedDevices) || []).includes(deviceId());
 // ---- unique names: names/{key} records who owns each name (case-insensitive)
 const cleanNick = n => String(n || "").replace(/\s+/g, " ").trim().slice(0, 24);
 const nameKey = n => cleanNick(n).toLowerCase().replace(/\//g, "_");
@@ -1707,9 +1711,10 @@ async function doJoin(){
   const nick = cleanNick($("j-nick").value); const code = $("j-code").value.trim();
   if (nick.length < 2){ $("j-err").textContent = "Pick a name with at least 2 characters."; return; }
   if (nameTakenLocally(nick, S.uid)){ $("j-err").textContent = "Someone already uses that name — pick a different one (use your real name)."; return; }
+  if (Object.values((S.config && S.config.bannedNames) || {}).some(n => nameKey(n) === nameKey(nick))){ $("j-err").textContent = "That name was banned from this server."; return; }
   $("j-go").disabled = true; $("j-err").textContent = "Joining…";
   S.joining = true;
-  try{ await claimName(nick); await setDoc(doc(db, "members", S.uid), {nick, nickAt:Date.now(), color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); $("j-err").textContent = ""; if (!isOwner()) S.announceJoin = true; }
+  try{ await claimName(nick); await setDoc(doc(db, "members", S.uid), {nick, nickAt:Date.now(), dev:deviceId(), color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); $("j-err").textContent = ""; if (!isOwner()) S.announceJoin = true; }
   catch(e){
     $("j-err").textContent = e.code === "name-taken" ? e.message : e.code !== "permission-denied" ? "Couldn't join: " + errMsg(e)
       : isBanned(S.uid) ? "This account was kicked. Ask the admin to unban you."
@@ -2062,7 +2067,7 @@ function dmMenu(e, d){ const o = dmOther(d), anchor = e.currentTarget;
 function renderDMList(box){
   box.innerHTML = "";
   const q = (S.dmFilter||"").toLowerCase();
-  const rows = S.dms.filter(d => { const o = dmOther(d); return member(o) || d.lastTs; }).filter(d => q ? nickOf(dmOther(d)).toLowerCase().includes(q) : !dmHidden(d));
+  const rows = S.dms.filter(d => { const o = dmOther(d); return !isBanned(o) && (member(o) || d.lastTs); }).filter(d => q ? nickOf(dmOther(d)).toLowerCase().includes(q) : !dmHidden(d));
   if (!rows.length){ box.appendChild(h("div",{class:"empty-note",text: q ? "No matches." : "No DMs yet. Click ＋ above, or click anyone's name and choose Message."})); return; }
   rows.forEach(d => {
     const o = dmOther(d); const on = S.kind === "dm" && S.cur === d.id;
@@ -2717,23 +2722,25 @@ const input = $("input");
 function renderComposer(){
   const bars = $("cbars"); bars.innerHTML = "";
   $("composer").classList.toggle("hidden", isPage(S.kind)); if (isPage(S.kind)) return;
-  const ok = canPost(); const vroom = S.kind === "room" && isVouchRoom(curRoom());
+  const dmGone = S.kind === "dm" && (isBanned(dmOther({id:S.cur})) || !member(dmOther({id:S.cur})));
+  const ok = canPost() && !dmGone; const vroom = S.kind === "room" && isVouchRoom(curRoom());
   // #vouches is vouch-only: no regular chatting, just the Write a vouch button
   $("cbox").classList.toggle("hidden", !ok || vroom); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
-    lk.append(ic(tu ? "hourglass" : "lock"), tu ? "You're timed out until " + fmtTime(tu) + ". You can still read and use DMs." : "Only admins can post in this announcement room."); }
+    lk.append(ic(tu ? "hourglass" : "lock"), dmGone ? "This person isn't in CampusCord anymore." : tu ? "You're timed out until " + fmtTime(tu) + ". You can still read and use DMs." : "Only admins can post in this announcement room."); }
   if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
   if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"ib", title:"Remove", onclick:() => setPending(null)}, ic("x"))));
   const r = curRoom();
   input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : isVouchRoom(r) ? "Type /vouch or click Write a vouch" : "Message #" + (r ? r.name : "");
   if (isVouchRoom(r) && ok) bars.appendChild(h("div",{class:"cbar vbarw vonly"}, h("span",{text:"🎉"}), h("span",{text:"This channel is for vouches only — rate a friend or CampusCord with stars, a short review and optional proof."}), h("span",{class:"sp"}), h("button",{class:"btn small", onclick:() => openVouchModal()}, "Write a vouch")));
   $("hintline").textContent = "";
+  requestAnimationFrame(autoGrow);
 }
 let draftT = null;
 function saveDraft(){ if (!S.cur) return; const d = store("drafts") || {}; const k = readKey(S.kind, S.cur);
   if (input.value.trim()) d[k] = input.value.slice(0, 4000); else delete d[k]; store("drafts", d); }
 input.addEventListener("input", () => { clearTimeout(draftT); draftT = setTimeout(saveDraft, 400); });
-function autoGrow(){ input.style.height = "auto"; input.style.height = Math.min(200, input.scrollHeight) + "px"; }
+function autoGrow(){ if (!input.offsetParent) return; input.style.height = "auto"; input.style.height = Math.min(200, input.scrollHeight) + "px"; }
 input.addEventListener("input", () => { autoGrow(); if (input.value.trim()) iAmTyping(); else stopTyping(); updateAutocomplete(); });
 input.addEventListener("keydown", e => {
   if (S.ac && !$("acPop").classList.contains("hidden")){
@@ -3486,10 +3493,15 @@ function enforceNameLock(){
   setTimeout(() => inp.focus(), 50);
 }
 async function kick(uid){
-  try{ const upd = {banned:arrayUnion(uid), bannedNames:Object.assign({}, S.config.bannedNames||{}, {[uid]:nickOf(uid)})};
+  try{ const m = member(uid) || {}; const upd = {banned:arrayUnion(uid), bannedNames:Object.assign({}, S.config.bannedNames||{}, {[uid]:nickOf(uid)})};
+    if (m.dev) upd.bannedDevices = arrayUnion(m.dev);
     if (isOwner() && isDev(uid)) upd.admins = arrayRemove(uid);
     await updateDoc(doc(db, "config/main"), upd);
-    await deleteDoc(doc(db, "members", uid)); toast("Kicked"); refreshOpenPane();
+    await deleteDoc(doc(db, "members", uid));
+    // New invite code so they can't come back with a fresh account on another browser
+    let note = "";
+    if (isOwner()){ const code = Math.random().toString(36).slice(2, 8).toUpperCase(); try{ await setDoc(doc(db, "secret/invite"), {code}); S.inviteCode = code; note = " · New invite code: " + code; }catch(e){} }
+    toast("Banned" + note, 9000); refreshOpenPane(); need("side", "members");
   }catch(e){ toast("Couldn't kick: " + errMsg(e)); }
 }
 

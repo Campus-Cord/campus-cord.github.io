@@ -100,7 +100,8 @@ service cloud.firestore {
       allow create: if signedIn() && uid == request.auth.uid && notBanned()
         && request.resource.data.nick is string && request.resource.data.nick.size() <= 24
         && request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code
-        && nameMine(request.resource.data.nick);
+        && nameMine(request.resource.data.nick)
+        && !(request.resource.data.get('dev', '') in cfg().get('bannedDevices', []));
       allow update: if signedIn() && uid == request.auth.uid && notBanned()
         && changed().hasOnly(['nick', 'color', 'lastSeen', 'away', 'nickAt'])
         && request.resource.data.nick.size() <= 24

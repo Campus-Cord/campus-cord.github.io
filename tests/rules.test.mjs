@@ -130,6 +130,14 @@ await setDoc(doc(as("carol"), "names/carol parker"), { uid: "carol", ts: now });
 await updateDoc(doc(as("carol"), "members/carol"), { nick: "carol parker", nickAt: Date.now() + 5000 });
 await t("after changing their name they can post again", assertSucceeds(setDoc(doc(as("carol"), "rooms/general/msgs/c2"), { uid: "carol", text: "hi", ts: Date.now() })));
 
+console.log("Bans");
+await updateDoc(doc(as("owner"), "config/main"), { banned: ["bob"], bannedDevices: ["devX"] });
+await t("banned person can't send a DM", assertFails(setDoc(doc(as("bob"), "dms/alice_bob/msgs/b1"), { uid: "bob", text: "hi", ts: Date.now() })));
+await t("banned person can't update a DM thread", assertFails(setDoc(doc(as("bob"), "dms/alice_bob"), { users: ["alice", "bob"], lastTs: Date.now() })));
+await t("banned person can't post in rooms", assertFails(setDoc(doc(as("bob"), "rooms/general/msgs/b2"), { uid: "bob", text: "hi", ts: Date.now() })));
+await setDoc(doc(as("frank"), "names/frank"), { uid: "frank", ts: now });
+await t("a banned browser can't join with a new account", assertFails(setDoc(doc(as("frank"), "members/frank"), { nick: "frank", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST", dev: "devX" })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
