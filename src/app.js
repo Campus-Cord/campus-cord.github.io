@@ -5,7 +5,7 @@ const firebaseConfig = __FIREBASE_CONFIG__;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
 const APP_VERSION = "__APP_VERSION__";
@@ -364,14 +364,36 @@ function setupJoin(){
   $("j-id").onclick = () => copy(S.uid, "ID copied");
   setTimeout(()=> $("j-nick").focus(), 50);
 }
+// ---- unique names: names/{key} records who owns each name (case-insensitive)
+const cleanNick = n => String(n || "").replace(/\s+/g, " ").trim().slice(0, 24);
+const nameKey = n => cleanNick(n).toLowerCase().replace(/\//g, "_");
+function nameTakenLocally(n, except){ const k = nameKey(n); return Object.entries(S.members).some(([u, m]) => u !== except && nameKey(m.nick) === k); }
+async function claimName(n){
+  const k = nameKey(n); const ref = doc(db, "names", k); const cur = await getDoc(ref);
+  if (cur.exists()){ if (cur.data().uid === S.uid) return; const e = new Error("That name is already taken — pick a different one."); e.code = "name-taken"; throw e; }
+  await setDoc(ref, {uid:S.uid, ts:Date.now()});
+}
+async function releaseName(n){ if (!n) return; try{ const ref = doc(db, "names", nameKey(n)); const cur = await getDoc(ref); if (cur.exists() && cur.data().uid === S.uid) await deleteDoc(ref); }catch(e){} }
+// Change my own name (used by Settings, /nick and the real-name screen)
+async function changeNick(v, extra){
+  v = cleanNick(v); const old = member(S.uid) && member(S.uid).nick;
+  if (v.length < 2) throw new Error("Pick a name with at least 2 characters.");
+  if (nameTakenLocally(v, S.uid)) throw new Error("Someone already uses that name — pick a different one.");
+  if (old && nameKey(old) === nameKey(v) && !(extra && extra.force)){ await updateDoc(doc(db, "members", S.uid), Object.assign({nick:v}, extra && extra.patch || {})); return v; }
+  await claimName(v);
+  await updateDoc(doc(db, "members", S.uid), Object.assign({nick:v, nickAt:Date.now()}, extra && extra.patch || {}));
+  if (old && nameKey(old) !== nameKey(v)) releaseName(old);
+  return v;
+}
 async function doJoin(){
-  const nick = $("j-nick").value.trim(); const code = $("j-code").value.trim();
+  const nick = cleanNick($("j-nick").value); const code = $("j-code").value.trim();
   if (nick.length < 2){ $("j-err").textContent = "Pick a name with at least 2 characters."; return; }
+  if (nameTakenLocally(nick, S.uid)){ $("j-err").textContent = "Someone already uses that name — pick a different one (use your real name)."; return; }
   $("j-go").disabled = true; $("j-err").textContent = "Joining…";
   S.joining = true;
-  try{ await setDoc(doc(db, "members", S.uid), {nick, color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); $("j-err").textContent = ""; if (!isOwner()) S.announceJoin = true; }
+  try{ await claimName(nick); await setDoc(doc(db, "members", S.uid), {nick, nickAt:Date.now(), color:S.joinColor, joinedAt:Date.now(), lastSeen:Date.now(), code: isOwner() ? "" : code}); $("j-err").textContent = ""; if (!isOwner()) S.announceJoin = true; }
   catch(e){
-    $("j-err").textContent = e.code !== "permission-denied" ? "Couldn't join: " + errMsg(e)
+    $("j-err").textContent = e.code === "name-taken" ? e.message : e.code !== "permission-denied" ? "Couldn't join: " + errMsg(e)
       : isBanned(S.uid) ? "This account was kicked. Ask the admin to unban you."
       : isOwner() ? "Firebase refused the join. Make sure the latest Firestore rules are published."
       : "That invite code isn't right. (Admin? Your ID below doesn't match ownerUid in Firebase yet.)";
@@ -412,6 +434,15 @@ async function ownerHousekeeping(){
     if (!S.config.vouchRoomMade && !GIFTED.has("#vouches") && !S.allRooms.some(r => r.type === "vouches")){ GIFTED.add("#vouches");
       await setDoc(doc(db, "rooms", "vouches-" + rid().slice(-4)), {name:"vouches", topic:"Vouch for friends and for CampusCord with /vouch ⭐", category:"Text rooms", readonly:false, type:"vouches", order:S.rooms.length, createdAt:Date.now()});
       await updateDoc(doc(db, "config/main"), {vouchRoomMade:true}); }
+    const flags = S.config.nameFlags || {};
+    for (const [u, f] of Object.entries(flags)){ if (!f.active || !member(u) || !nameLocked(u) || Date.now() < f.at + NAME_DAYS * 864e5) continue;
+      await updateDoc(doc(db, "config/main"), {["nameFlags." + u + ".active"]:false, ["nameFlags." + u + ".removedAt"]:Date.now()});
+      await deleteDoc(doc(db, "members", u)); toast(nickOf(u) + " was removed: didn't change to their real name in " + NAME_DAYS + " days"); }
+    if (!S.config.namesMigrated && !GIFTED.has("#names")){ GIFTED.add("#names");
+      const seen = new Set();
+      for (const [u, m] of Object.entries(S.members)){ const k = nameKey(m.nick); if (!k || seen.has(k)) continue; seen.add(k);
+        try{ const ref = doc(db, "names", k); const cur = await getDoc(ref); if (!cur.exists()) await setDoc(ref, {uid:u, ts:Date.now()}); }catch(e){} }
+      await updateDoc(doc(db, "config/main"), {namesMigrated:true}); }
     const done = new Set([...(S.config.welcomed || []), ...GIFTED]);
     const todo = Object.keys(S.members).filter(u => !isOwnerUid(u) && !done.has(u) && !isBanned(u));
     if (!S.walletsLoaded) return;
@@ -486,7 +517,7 @@ function initApp(){
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
     if (isOwner() && !prefs.yy2){ prefs.yy2 = 1; savePrefs(); setMyProfile({deco:"d_yinyang", plate:"p_yinyang"}).catch(()=>{}); }
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
-    if (isOwner()) setTimeout(ownerHousekeeping, 2500);
+    if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
   ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
@@ -728,6 +759,7 @@ function renderDMList(box){
   });
 }
 function renderMe(){
+  enforceNameLock();
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
   const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
   const mic = $("meMic"), hd = $("meDeaf"); mic.innerHTML = ""; hd.innerHTML = "";
@@ -1162,6 +1194,7 @@ function memberMenu(ev, uid){
     uid !== S.uid ? {label:"Message", icon:"message", run:() => openDM(uid)} : null,
     uid !== S.uid && S.kind === "room" && canPost() ? {label:"Mention", icon:"message", run:() => insertAt("@" + nickOf(uid) + " ")} : null,
     isOwner() && uid !== S.uid ? "-" : null,
+    isOwner() && uid !== S.uid ? (nameLocked(uid) ? {label:"Remove name flag", icon:"check", run:() => clearNameFlag(uid)} : {label:"Not their real name…", icon:"alert", danger:true, run:() => flagName(uid)}) : null,
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" : "Make developer", icon:"code", run:() => setDev(uid, !isDev(uid))} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     canModerate(uid) ? "-" : null,
@@ -1320,7 +1353,10 @@ function openProfile(uid, anchor, self){
         isAdmin() && uid !== S.uid && !isOwnerUid(uid) && !(isDev(uid) && !isOwner()) ? h("button",{class:"btn small danger", onclick:() => { closeLayer("profile"); confirmBox("Kick " + nickOf(uid) + "?", "They'll be locked out right away and can't rejoin unless unbanned.", "Kick", () => kick(uid)); }}, "Kick") : null),
       isOwner() && uid !== S.uid ? h("div",{class:"proles"}, h("span",{class:"pl",text:"Roles"}),
         h("button",{class:"rolepill dev" + (isDev(uid) ? " on" : ""), title: isDev(uid) ? "Remove developer" : "Make developer", onclick:() => { closeLayer("profile"); isDev(uid) ? confirmBox("Remove " + nickOf(uid) + " as developer?", "They'll go back to being a regular member.", "Remove", () => setDev(uid, false)) : confirmBox("Make " + nickOf(uid) + " a developer?", "Developers can manage rooms, delete messages, pin, kick regular members, and see the invite code. Only you can add or remove developers.", "Make developer", () => setDev(uid, true), true); }}, isDev(uid) ? "✓ DEV" : "+ DEV"),
-        h("button",{class:"rolepill design" + (isDesigner(uid) ? " on" : ""), title: isDesigner(uid) ? "Remove designer" : "Make designer", onclick:() => { closeLayer("profile"); setDesigner(uid, !isDesigner(uid)); }}, isDesigner(uid) ? "✓ DESIGN" : "+ DESIGN")) : null));
+        h("button",{class:"rolepill design" + (isDesigner(uid) ? " on" : ""), title: isDesigner(uid) ? "Remove designer" : "Make designer", onclick:() => { closeLayer("profile"); setDesigner(uid, !isDesigner(uid)); }}, isDesigner(uid) ? "✓ DESIGN" : "+ DESIGN"),
+        nameLocked(uid) ? h("button",{class:"rolepill nameflag on", title:"Remove the name flag", onclick:() => { closeLayer("profile"); clearNameFlag(uid); }}, "✓ FLAGGED")
+          : h("button",{class:"rolepill nameflag", title:"This isn't their real name", onclick:() => { closeLayer("profile"); flagName(uid); }}, "NOT REAL NAME")) : null,
+      isOwner() && uid !== S.uid && nameFlagLabel(uid) ? h("div",{class:"note nfl",text:nameFlagLabel(uid)}) : null));
   document.body.appendChild(card);
   const r = anchor.getBoundingClientRect();
   let left = r.right + 12, top = r.top - 20;
@@ -1363,15 +1399,16 @@ const input = $("input");
 function renderComposer(){
   const bars = $("cbars"); bars.innerHTML = "";
   $("composer").classList.toggle("hidden", isPage(S.kind)); if (isPage(S.kind)) return;
-  const ok = canPost();
-  $("cbox").classList.toggle("hidden", !ok); $("locked").classList.toggle("hidden", ok);
+  const ok = canPost(); const vroom = S.kind === "room" && isVouchRoom(curRoom());
+  // #vouches is vouch-only: no regular chatting, just the Write a vouch button
+  $("cbox").classList.toggle("hidden", !ok || vroom); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
     lk.append(ic(tu ? "hourglass" : "lock"), tu ? "You're timed out until " + fmtTime(tu) + ". You can still read and use DMs." : "Only admins can post in this announcement room."); }
   if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
   if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"ib", title:"Remove", onclick:() => setPending(null)}, ic("x"))));
   const r = curRoom();
   input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : isVouchRoom(r) ? "Type /vouch or click Write a vouch" : "Message #" + (r ? r.name : "");
-  if (isVouchRoom(r) && ok) bars.appendChild(h("div",{class:"cbar vbarw"}, h("span",{text:"🎉"}), h("span",{text:"Vouch for a friend or for CampusCord — stars, a short review and optional proof."}), h("span",{class:"sp"}), h("button",{class:"btn small", onclick:() => openVouchModal()}, "Write a vouch")));
+  if (isVouchRoom(r) && ok) bars.appendChild(h("div",{class:"cbar vbarw vonly"}, h("span",{text:"🎉"}), h("span",{text:"This channel is for vouches only — rate a friend or CampusCord with stars, a short review and optional proof."}), h("span",{class:"sp"}), h("button",{class:"btn small", onclick:() => openVouchModal()}, "Write a vouch")));
   $("hintline").textContent = "";
 }
 let draftT = null;
@@ -1477,7 +1514,7 @@ async function runSlash(raw){
     case "roll": { const n = Math.max(2, Math.min(1000, parseInt(arg) || 6)); return {text:"🎲 rolled a **" + (1 + Math.floor(Math.random()*n)) + "** (1–" + n + ")"}; }
     case "vouch": { const at = arg.match(/^@?(\S+)/); const u = at ? Object.keys(S.members).find(x => nickOf(x).toLowerCase() === at[1].toLowerCase()) : null; openVouchModal(u || undefined); return null; }
     case "flip": return {text:"🪙 flipped a coin: **" + (Math.random() < .5 ? "Heads" : "Tails") + "**"};
-    case "nick": if (arg.length >= 2){ try{ await updateDoc(doc(db, "members", S.uid), {nick:arg.slice(0,24)}); toast("Name changed to " + arg.slice(0,24)); }catch(e){ toast("Couldn't change name: " + errMsg(e)); } } else toast("Usage: /nick <new name>"); return null;
+    case "nick": if (arg.length >= 2){ try{ const v = await changeNick(arg); toast("Name changed to " + v); }catch(e){ toast(e.message || errMsg(e)); } } else toast("Usage: /nick <new name>"); return null;
     case "status": try{ await setMyProfile({customStatus:arg.slice(0,60)}); toast(arg ? "Status set" : "Status cleared"); }catch(e){} return null;
     case "poll": { const parts = arg.split("|").map(x => x.trim()).filter(Boolean);
       if (parts.length < 3){ toast("Usage: /poll Question | Option 1 | Option 2"); return null; }
@@ -1712,7 +1749,7 @@ function paneAccount(p){
     avatarMaker(),
     h("label",{class:"f",text:"Display name"}), n, h("label",{class:"f",text:"Name color"}), cs,
     h("button",{class:"btn small", style:{marginTop:"16px"}, onclick:async () => { const v = n.value.trim(); if (v.length < 2){ toast("Name needs at least 2 characters"); return; }
-      try{ await updateDoc(doc(db, "members", S.uid), {nick:v, color}); toast("Saved"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save changes"),
+      try{ await changeNick(v, {patch:{color}}); toast("Saved"); }catch(e){ toast(e.message || ("Couldn't save: " + errMsg(e))); } }}, "Save changes"),
     h("label",{class:"f",text:"Your user ID"}), h("div",{class:"li"}, h("span",{class:"nm",style:{fontFamily:"monospace",fontSize:"12px"},text:S.uid}), h("button",{class:"btn small ghost",onclick:() => copy(S.uid,"ID copied")},"Copy")),
     h("p",{class:"note",text:"Your login is saved in this browser. If you clear your browser data or use another browser, you'll join as a new person."}));
 }
@@ -2012,7 +2049,8 @@ function adminMembers(p){
       h("div",{class:"nm"}, h("div",null, paintName(h("b",{text:nickOf(u)}), u), " ", ...roleTags(u, true)),
         h("div",{class:"amsub"}, h("span",{class:"ambd", title:bl.map(x => badgeTitle(x.b, x.st)).join(", ")}, ...bl.slice(0, 8).map(x => badgeEl(x.b, x.st, "sm")), bl.length > 8 ? h("small",{text:"+" + (bl.length - 8)}) : null),
           isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
-          !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null)),
+          !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null,
+          nameFlagLabel(u) ? h("span",{class:"s",style:{color: nameLocked(u) ? "#f0565c" : ""},text:nameFlagLabel(u)}) : null)),
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "✓ DEV" : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
@@ -2087,6 +2125,47 @@ async function setDesigner(uid, on){
 async function setDev(uid, on){
   try{ await updateDoc(doc(db, "config/main"), {admins: on ? arrayUnion(uid) : arrayRemove(uid)}); toast(on ? nickOf(uid) + " is now a developer 💻" : nickOf(uid) + " is no longer a developer"); refreshOpenPane(); }
   catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+// ---- real-name strikes
+// The owner flags a name that isn't someone's real name. That person's account locks until they change it, and they
+// get 3 days. Not changed in time → removed from the server (they can rejoin with the code). After 3 strikes, the next
+// flag bans them permanently.
+const NAME_DAYS = 3, NAME_STRIKES = 3;
+const nameFlag = uid => ((S.config && S.config.nameFlags) || {})[uid] || null;
+function nameLocked(uid){ const f = nameFlag(uid), m = member(uid); return !!(f && f.active && m && f.at > (m.nickAt || 0)); }
+function flagName(uid){
+  const f = nameFlag(uid) || {count:0}; const n = (f.count || 0) + 1; const who = nickOf(uid);
+  if (f.count >= NAME_STRIKES){
+    confirmBox("Ban " + who + " for good?", who + " already used all " + NAME_STRIKES + " chances to use their real name. This bans them permanently.", "Ban permanently", async () => {
+      try{ await updateDoc(doc(db, "config/main"), {["nameFlags." + uid]:Object.assign({}, f, {active:false, bannedAt:Date.now()})}); await kick(uid); toast(who + " was banned permanently"); }catch(e){ toast("Couldn't ban: " + errMsg(e)); } });
+    return;
+  }
+  confirmBox("Not a real name: strike " + n + " of " + NAME_STRIKES, "“" + who + "” will be locked out until they change to their real name. If they don't within " + NAME_DAYS + " days they're removed from the server." + (n === NAME_STRIKES ? " This is their last chance — next time they're banned for good." : ""), "Send strike " + n, async () => {
+    try{ await updateDoc(doc(db, "config/main"), {["nameFlags." + uid]:{count:n, at:Date.now(), active:true, old:who}}); toast("Strike " + n + " sent to " + who); refreshOpenPane(); }catch(e){ toast("Couldn't flag: " + errMsg(e)); } }, true);
+}
+async function clearNameFlag(uid){ try{ await updateDoc(doc(db, "config/main"), {["nameFlags." + uid + ".active"]:false}); toast("Name flag removed"); refreshOpenPane(); }catch(e){ toast(errMsg(e)); } }
+function nameFlagLabel(uid){ const f = nameFlag(uid); if (!f || !f.count) return null;
+  if (nameLocked(uid)){ const left = f.at + NAME_DAYS * 864e5 - Date.now(); return "⚠ Name flagged · strike " + f.count + "/" + NAME_STRIKES + " · " + (left > 864e5 ? Math.ceil(left / 864e5) + "d" : Math.max(1, Math.ceil(left / 36e5)) + "h") + " left"; }
+  return "Name strikes: " + f.count + "/" + NAME_STRIKES; }
+// The lock screen a flagged person sees
+function enforceNameLock(){
+  const el = document.getElementById("namelock");
+  if (!S.uid || isOwner() || !nameLocked(S.uid)){ if (el) el.remove(); return; }
+  if (el) return;
+  const f = nameFlag(S.uid); const left = f.at + NAME_DAYS * 864e5 - Date.now();
+  const inp = h("input",{class:"inp", maxlength:"24", placeholder:"Your real name (e.g. Jordan Smith)"});
+  const err = h("div",{class:"note",style:{color:"#f0565c",minHeight:"18px"}});
+  const go = async () => { const v = cleanNick(inp.value);
+    if (nameKey(v) === nameKey(f.old || nickOf(S.uid))){ err.textContent = "That's the same name — use your real name."; return; }
+    try{ await changeNick(v, {force:true}); toast("Thanks! You're all set, " + v + " 👋"); }catch(e){ err.textContent = e.message || errMsg(e); } };
+  inp.onkeydown = e => { if (e.key === "Enter") go(); };
+  document.body.appendChild(h("div",{id:"namelock"}, h("div",{class:"nlbox"},
+    h("div",{class:"nlic",text:"🪪"}), h("h2",{text:"Please use your real name"}),
+    h("p",{text:"The owner flagged “" + (f.old || nickOf(S.uid)) + "” as not your real name. CampusCord is just for friends, so everyone uses their real name. Your account is paused until you change it."}),
+    h("div",{class:"nlstrike"}, "Strike ", h("b",{text:f.count + " of " + NAME_STRIKES}), " · ", h("b",{text: left > 0 ? (left > 864e5 ? Math.ceil(left / 864e5) + " days" : Math.max(1, Math.ceil(left / 36e5)) + " hours") + " left" : "time's up"}), " to change it",
+      f.count >= NAME_STRIKES ? h("div",{class:"nlwarn",text:"This is your last chance — another flag means a permanent ban."}) : null),
+    inp, err, h("button",{class:"btn", onclick:go}, "Change my name"))));
+  setTimeout(() => inp.focus(), 50);
 }
 async function kick(uid){
   try{ const upd = {banned:arrayUnion(uid), bannedNames:Object.assign({}, S.config.bannedNames||{}, {[uid]:nickOf(uid)})};

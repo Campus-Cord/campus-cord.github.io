@@ -22,6 +22,9 @@ let pass = 0, fail = 0;
 async function t(name, p){ try{ await p; pass++; console.log("  ✓", name); }catch(e){ fail++; console.log("  ✗", name, "—", e.message.split("\n")[0]); } }
 
 console.log("Membership");
+await t("claim a free name", assertSucceeds(setDoc(doc(as("carol"), "names/carol"), { uid: "carol", ts: now })));
+await t("can't claim a name someone has", assertFails(setDoc(doc(as("dave"), "names/carol"), { uid: "dave", ts: now })));
+await t("can't join with a name you didn't claim", assertFails(setDoc(doc(as("erin"), "members/erin"), { nick: "carol", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST" })));
 await t("new person joins with the right code", assertSucceeds(setDoc(doc(as("carol"), "members/carol"), { nick: "carol", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST" })));
 await t("wrong invite code is refused", assertFails(setDoc(doc(as("dave"), "members/dave"), { nick: "dave", color: "#fff", joinedAt: now, lastSeen: now, code: "NOPE" })));
 
@@ -111,6 +114,20 @@ await t("can't read someone else's push devices", assertFails(getDoc(doc(as("bob
 await t("can't add a device for someone else", assertFails(setDoc(doc(as("bob"), "push/alice/subs/d2"), { endpoint: "https://evil", keys: {}, ts: now })));
 await t("can't read the push private key", assertFails(getDoc(doc(as("alice"), "secret/vapid"))));
 await t("anyone signed in can read the push public key", assertSucceeds(getDoc(doc(as("alice"), "config/push"))));
+
+console.log("Names, strikes, vouch-only");
+await setDoc(doc(as("carol"), "names/carol 2"), { uid: "carol", ts: now });
+await t("rename to a name you claimed", assertSucceeds(updateDoc(doc(as("carol"), "members/carol"), { nick: "carol 2", nickAt: Date.now() })));
+await t("can't rename to someone else's name", assertFails(updateDoc(doc(as("carol"), "members/carol"), { nick: "carol", nickAt: Date.now() })));
+await env.withSecurityRulesDisabled(async c => { await setDoc(doc(c.firestore(), "rooms/vch"), { name: "vouches", type: "vouches", createdAt: 1 });
+  await setDoc(doc(c.firestore(), "config/main"), { nameFlags: { carol: { count: 1, at: Date.now() + 1000, active: true } } }, { merge: true }); });
+await t("only vouches can be posted in #vouches", assertFails(setDoc(doc(as("alice"), "rooms/vch/msgs/x1"), { uid: "alice", text: "hey", ts: Date.now() })));
+await t("a vouch can be posted in #vouches", assertSucceeds(setDoc(doc(as("alice"), "rooms/vch/msgs/x2"), { uid: "alice", text: "great friend", ts: Date.now(), vouch: { to: "bob", stars: 5, n: 1 } })));
+await t("a name-flagged person can't post", assertFails(setDoc(doc(as("carol"), "rooms/general/msgs/c1"), { uid: "carol", text: "hi", ts: Date.now() })));
+await t("can't unlock without actually changing your name", assertFails(updateDoc(doc(as("carol"), "members/carol"), { nickAt: Date.now() + 9000 })));
+await setDoc(doc(as("carol"), "names/carol parker"), { uid: "carol", ts: now });
+await updateDoc(doc(as("carol"), "members/carol"), { nick: "carol parker", nickAt: Date.now() + 5000 });
+await t("after changing their name they can post again", assertSucceeds(setDoc(doc(as("carol"), "rooms/general/msgs/c2"), { uid: "carol", text: "hi", ts: Date.now() })));
 
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);

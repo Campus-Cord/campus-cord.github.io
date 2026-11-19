@@ -18,6 +18,13 @@ service cloud.firestore {
     function ownsNew() { return request.resource.data.uid == request.auth.uid; }
     function ownsOld() { return resource.data.uid == request.auth.uid; }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    // Real-name strikes: the owner can flag a name; the person can't post until they change it.
+    function nameLocked() { let f = cfg().get('nameFlags', {}).get(request.auth.uid, null);
+      return f != null && f.get('active', false) && f.at > get(/databases/$(database)/documents/members/$(request.auth.uid)).data.get('nickAt', 0); }
+    // Unique names: names/{lowercased name} says who owns each name.
+    function nameKey(n) { return n.lower().replace('/', '_'); }
+    function nameMine(n) { return exists(/databases/$(database)/documents/names/$(nameKey(n)))
+      && get(/databases/$(database)/documents/names/$(nameKey(n))).data.uid == request.auth.uid; }
     function notTimedOut() { return !(request.auth.uid in cfg().get('timeouts', {})) || cfg().timeouts[request.auth.uid] < request.time.toMillis(); }
 
     // ---------------- server settings
@@ -79,16 +86,26 @@ service cloud.firestore {
     }
 
     // ---------------- people
+    match /names/{n} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['uid', 'ts'])
+        && (request.resource.data.uid == request.auth.uid || isOwner());
+      allow update: if isOwner();
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isOwner());
+    }
     match /members/{uid} {
       allow read: if signedIn();
       // The owner can always create or fix their own member profile.
       allow create, update: if isOwner() && uid == request.auth.uid;
       allow create: if signedIn() && uid == request.auth.uid && notBanned()
         && request.resource.data.nick is string && request.resource.data.nick.size() <= 24
-        && request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code;
+        && request.resource.data.code == get(/databases/$(database)/documents/secret/invite).data.code
+        && nameMine(request.resource.data.nick);
       allow update: if signedIn() && uid == request.auth.uid && notBanned()
-        && changed().hasOnly(['nick', 'color', 'lastSeen', 'away'])
-        && request.resource.data.nick.size() <= 24;
+        && changed().hasOnly(['nick', 'color', 'lastSeen', 'away', 'nickAt'])
+        && request.resource.data.nick.size() <= 24
+        && (!changed().hasAny(['nick']) || nameMine(request.resource.data.nick))
+        && (!changed().hasAny(['nickAt']) || changed().hasAny(['nick']));
       allow delete: if isOwner()
         || (isAdmin() && uid != cfg().ownerUid && !(uid in cfg().get('admins', [])));
     }
@@ -189,7 +206,8 @@ service cloud.firestore {
       match /msgs/{msgId} {
         allow read: if inRoom();
         allow create: if inRoom() && ownsNew() && request.resource.data.text.size() <= 4000
-          && (roomOpen() || isAdmin()) && notTimedOut()
+          && (roomOpen() || isAdmin()) && notTimedOut() && !nameLocked()
+          && (room().get('type', 'text') != 'vouches' || ('vouch' in request.resource.data))
           && (!('vouch' in request.resource.data) || (request.resource.data.vouch.stars is int
               && request.resource.data.vouch.stars >= 1 && request.resource.data.vouch.stars <= 5
               && request.resource.data.vouch.to is string && request.resource.data.vouch.to != request.auth.uid
@@ -233,7 +251,7 @@ service cloud.firestore {
 
       match /msgs/{msgId} {
         allow read: if inDm();
-        allow create: if inDm() && ownsNew() && request.resource.data.text.size() <= 4000;
+        allow create: if inDm() && ownsNew() && request.resource.data.text.size() <= 4000 && !nameLocked();
         allow update: if inDm() && ownsOld()
           && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])
           && request.resource.data.text.size() <= 4000;

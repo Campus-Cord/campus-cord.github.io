@@ -1190,3 +1190,12 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .pushcard{margin-bottom:14px}.pushhead{display:flex;align-items:center;gap:12px}
 .pushic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff7ac6,#a78bfa);color:#fff;flex:none}.pushic .i{width:20px;height:20px}
 .pushios{margin-top:10px;padding:8px 10px;border-radius:8px;background:color-mix(in srgb,#3fb8ff 12%,transparent);font-size:13px}
+/* v3.19 real-name lock + strikes */
+#namelock{position:fixed;inset:0;z-index:200;background:rgba(10,10,14,.92);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px}
+.nlbox{width:min(440px,94vw);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px 26px;text-align:center;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.nlbox h2{margin:0}.nlbox p{margin:0;color:var(--muted);line-height:1.45}.nlic{font-size:42px}
+.nlstrike{background:color-mix(in srgb,#f0565c 12%,var(--rail));border:1px solid color-mix(in srgb,#f0565c 40%,transparent);border-radius:10px;padding:8px 10px;font-size:13px}
+.nlwarn{margin-top:4px;color:#f0565c;font-weight:800}
+.rolepill.nameflag{color:#f0565c}.nfl{margin:6px 0 0!important;color:#f0565c!important;font-size:12px}
+.vbarw.vonly{padding:12px 14px;font-size:14px}.vbarw.vonly .btn{padding:8px 16px}
+.vbarw .btn{white-space:nowrap;flex:none}
