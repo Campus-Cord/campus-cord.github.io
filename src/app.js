@@ -329,6 +329,8 @@ function route(){
   }
   if (!S.membersLoaded) return;
   if (S.joining) return; // wait for Firebase to confirm the join before switching screens
+  if (S.holdBan) return; // showing "you've been unbanned + new code" until they click Rejoin
+  if (S.routed === "banned") return; // stay on the ban/appeal screen; only "Rejoin" (a reload) leaves it
   if ((isBanned(S.uid) || deviceBanned()) && !isOwner()){ kickedOut(); return; }
   if (!member(S.uid)){
     if (S.routed === "app"){ stopAppSubs(); S.routed = null; }
@@ -337,7 +339,7 @@ function route(){
   }
   if (S.routed !== "app"){ S.routed = "app"; show("app"); initApp(); }
 }
-function kickedOut(){ S.routed = "banned"; stopAppSubs(); gateMsg("You've been removed", "An admin kicked this account from CampusCord. If that's a mistake, ask the admin to unban you.", true); }
+function kickedOut(){ if (S.routed === "banned") return; showBanAppeal(); }
 
 // ---------------------------------------------------------------- setup + join
 $("su-go").onclick = async () => {
@@ -356,6 +358,7 @@ $("su-go").onclick = async () => {
   }catch(e){ $("su-err").textContent = "Couldn't save: " + errMsg(e); $("su-go").disabled = false; }
 };
 function setupJoin(){
+  try{ const jc = localStorage.getItem("ccJoinCode"); if (jc){ $("j-code").value = jc; localStorage.removeItem("ccJoinCode"); } }catch(e){}
   const wrap = $("j-colors"); wrap.innerHTML = "";
   S.joinColor = COLORS[Math.floor(Math.random()*COLORS.length)];
   COLORS.forEach(c => { const b = h("button",{class: c === S.joinColor ? "on" : "", style:{background:c}, onclick: () => { S.joinColor = c; [...wrap.children].forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); wrap.appendChild(b); });
@@ -524,7 +527,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -581,7 +584,7 @@ function renderRail(){
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
-  if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length : 0}));
+  if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
   r.append(top, bot);
 }
@@ -1927,6 +1930,7 @@ function openAdmin(start){
     {id:"members", label:"Members & roles", icon:"users", render:adminMembers},
     {header:"Monetization", hidden:!isOwner()},
     {id:"shop", label:"Shop & Stripe", icon:"bag", render:adminShop, hidden:!isOwner()},
+    {id:"appeals", icon:"alert", label:"Ban appeals" + (openAppeals().length ? " (" + openAppeals().length + ")" : ""), render:adminAppeals, hidden:!isOwner()},
     {id:"orders", icon:"receipt", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isOwner()},
   ], start || "overview");
 }
@@ -2068,7 +2072,7 @@ function adminMembers(p){
   p.append(h("label",{class:"f",text:"Kicked (" + banned.length + ")"}));
   if (!banned.length) p.append(h("p",{class:"note",style:{marginTop:0},text:"Nobody."}));
   p.append(h("div",{class:"list"}, banned.map(u => h("div",{class:"li"}, h("span",{class:"nm",text:names[u] || "Kicked member"}),
-    h("button",{class:"btn small ghost", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {banned:arrayRemove(u)}); toast("Unbanned"); }catch(e){ toast("Couldn't unban: " + errMsg(e)); } }}, "Unban")))));
+    h("button",{class:"btn small ghost", onclick:() => decideAppeal(Object.assign({id:u, nick:names[u]}, (S.appeals.find(a => a.id === u) || {}), {dev:(S.appeals.find(a => a.id === u) || {}).dev}), true)}, "Unban")))));
 }
 function grantModal(uid){
   modal((m, close) => {
@@ -2176,7 +2180,7 @@ function enforceNameLock(){
 }
 async function kick(uid){
   try{ const m = member(uid) || {}; const upd = {banned:arrayUnion(uid), bannedNames:Object.assign({}, S.config.bannedNames||{}, {[uid]:nickOf(uid)})};
-    if (m.dev) upd.bannedDevices = arrayUnion(m.dev);
+    if (m.dev){ upd.bannedDevices = arrayUnion(m.dev); upd["bannedDevNames." + m.dev] = nickOf(uid); }
     if (isOwner() && isDev(uid)) upd.admins = arrayRemove(uid);
     await updateDoc(doc(db, "config/main"), upd);
     await deleteDoc(doc(db, "members", uid));
@@ -2210,6 +2214,7 @@ function installApp(){
 }
 
 // __COSMETICS__
+// __APPEALS__
 // __PUSH__
 // __VOUCHES__
 // __FEEDBACK__

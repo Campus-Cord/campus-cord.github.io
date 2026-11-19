@@ -138,6 +138,24 @@ await t("banned person can't post in rooms", assertFails(setDoc(doc(as("bob"), "
 await setDoc(doc(as("frank"), "names/frank"), { uid: "frank", ts: now });
 await t("a banned browser can't join with a new account", assertFails(setDoc(doc(as("frank"), "members/frank"), { nick: "frank", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST", dev: "devX" })));
 
+console.log("Ban appeals");
+const ap = { startedAt: Date.now(), nick: "bob", dev: "devX", status: "pending" };
+await t("someone not banned can't open an appeal", assertFails(setDoc(doc(as("alice"), "appeals/alice"), { startedAt: Date.now(), nick: "alice", status: "pending" })));
+await t("can't open an appeal for someone else", assertFails(setDoc(doc(as("bob"), "appeals/alice"), ap)));
+await t("can't fake an older start time", assertFails(setDoc(doc(as("bob"), "appeals/bob"), { ...ap, startedAt: Date.now() - 3600000 })));
+await t("can't self-approve when opening", assertFails(setDoc(doc(as("bob"), "appeals/bob"), { ...ap, status: "approved" })));
+await t("banned person opens their appeal", assertSucceeds(setDoc(doc(as("bob"), "appeals/bob"), ap)));
+await t("other members can't read the appeal", assertFails(getDoc(doc(as("alice"), "appeals/bob"))));
+await t("can't approve your own appeal", assertFails(updateDoc(doc(as("bob"), "appeals/bob"), { status: "approved" })));
+await t("banned person submits answers", assertSucceeds(updateDoc(doc(as("bob"), "appeals/bob"), { answers: { names: "a, b", main: "bob", promise: "yes" }, submittedAt: Date.now() })));
+await t("can only submit once", assertFails(updateDoc(doc(as("bob"), "appeals/bob"), { answers: { names: "x", main: "x", promise: "x" }, submittedAt: Date.now() })));
+await t("owner reads the appeal", assertSucceeds(getDoc(doc(as("owner"), "appeals/bob"))));
+await t("owner approves the appeal", assertSucceeds(updateDoc(doc(as("owner"), "appeals/bob"), { status: "approved", code: "NEW123" })));
+await updateDoc(doc(as("owner"), "config/main"), { banned: ["bob", "gus"] });
+await setDoc(doc(as("gus"), "appeals/gus"), { startedAt: Date.now(), nick: "gus", status: "pending" });
+await updateDoc(doc(as("owner"), "appeals/gus"), { startedAt: Date.now() - 40 * 60000 });
+await t("can't submit after 30 minutes", assertFails(updateDoc(doc(as("gus"), "appeals/gus"), { answers: { names: "x", main: "x", promise: "x" }, submittedAt: Date.now() })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

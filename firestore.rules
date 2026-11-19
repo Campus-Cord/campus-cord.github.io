@@ -86,6 +86,20 @@ service cloud.firestore {
     }
 
     // ---------------- people
+    // Ban appeals: a banned person can open their own appeal and submit answers once, within 30 minutes. Owner decides.
+    match /appeals/{uid} {
+      function isBannedHere() { return request.auth.uid in cfg().get('banned', [])
+        || request.resource.data.get('dev', resource == null ? '' : resource.data.get('dev', '')) in cfg().get('bannedDevices', []); }
+      allow read: if signedIn() && (uid == request.auth.uid || isOwner());
+      allow create: if signedIn() && uid == request.auth.uid && isBannedHere()
+        && request.resource.data.keys().hasOnly(['startedAt', 'nick', 'dev', 'status', 'answers', 'submittedAt'])
+        && request.resource.data.startedAt <= request.time.toMillis() + 60000 && request.resource.data.startedAt >= request.time.toMillis() - 60000
+        && request.resource.data.get('status', 'pending') == 'pending';
+      allow update: if signedIn() && uid == request.auth.uid
+        && !('submittedAt' in resource.data) && changed().hasOnly(['answers', 'submittedAt'])
+        && request.time.toMillis() <= resource.data.startedAt + 1800000 + 60000;
+      allow update, delete: if isOwner();
+    }
     match /names/{n} {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.keys().hasOnly(['uid', 'ts'])
