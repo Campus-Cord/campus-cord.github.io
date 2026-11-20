@@ -21,8 +21,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
       - name: Build index.html from src/
         run: python3 src/build.py
+      - name: Safety check (never publish code that crashes)
+        run: |
+          python3 - <<'PY'
+          import re
+          h = open("index.html").read()
+          m = re.search(r'<script type="module">(.*?)</script>', h, re.S)
+          open("/tmp/site.mjs", "w").write(m.group(1) if m else "throw")
+          PY
+          if ! node --check /tmp/site.mjs; then
+            echo "::error::The new code has a mistake, so it was NOT published. The site stays on the last working version."
+            git checkout -- index.html version.json
+            exit 1
+          fi
       - name: Commit the build if it changed
         run: |
           git config user.name "github-actions[bot]"

@@ -46,6 +46,8 @@ jobs:
         run: |
           git pull -q origin main
           python3 src/build.py
+          python3 -c "import re;h=open('index.html').read();m=re.search(r'<script type=\"module\">(.*?)</script>',h,re.S);open('/tmp/site.mjs','w').write(m.group(1) if m else 'throw')"
+          if ! node --check /tmp/site.mjs; then echo "::error::Merged code has a mistake; NOT published."; git checkout -- index.html version.json; exit 1; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --quiet -- index.html; then exit 0; fi
