@@ -14,7 +14,9 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/members/$(request.auth.uid));
     }
     // Owner, or a member the owner made a developer.
-    function isAdmin() { return isOwner() || (isMember() && request.auth.uid in cfg().get('admins', [])); }
+    // Developers; temporary ones (devUntil) lose their powers when the time runs out.
+    function isAdmin() { return isOwner() || (isMember() && request.auth.uid in cfg().get('admins', [])
+      && (!(request.auth.uid in cfg().get('devUntil', {})) || cfg().devUntil[request.auth.uid] > request.time.toMillis())); }
     function ownsNew() { return request.resource.data.uid == request.auth.uid; }
     function ownsOld() { return resource.data.uid == request.auth.uid; }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }

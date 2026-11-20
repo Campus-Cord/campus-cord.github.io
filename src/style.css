@@ -1340,3 +1340,4 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .rchip:hover{border-color:#f0565c}.rchip.on{background:color-mix(in srgb,#f0565c 18%,var(--rail));border-color:#f0565c;color:#fff;font-weight:600}
 .banreason{background:color-mix(in srgb,#f0565c 10%,var(--rail));border:1px solid color-mix(in srgb,#f0565c 40%,transparent);border-radius:10px;padding:10px 12px;margin:10px 0;text-align:left;display:flex;flex-direction:column;gap:2px}
 .banreason span{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#f0565c}.banreason b{font-weight:600}.banreason small{color:var(--muted)}
+.devtimes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px}.devtimes .btn:last-child{grid-column:1/-1}

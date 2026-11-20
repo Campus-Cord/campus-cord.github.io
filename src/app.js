@@ -191,7 +191,8 @@ function copy(t, msg){ (navigator.clipboard ? navigator.clipboard.writeText(t) :
 // identity
 const isOwnerUid = uid => !!(S.config && S.config.ownerUid === uid);
 const isOwner = () => isOwnerUid(S.uid);
-const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid));
+const devUntil = uid => ((S.config && S.config.devUntil) || {})[uid] || 0;
+const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid)) && (!devUntil(uid) || devUntil(uid) > Date.now());
 // Designers made CampusCord's look (logo, role tags). A title + badge + ring; no extra admin powers.
 const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid));
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
@@ -439,6 +440,8 @@ async function ownerHousekeeping(){
   if (!isOwner() || housekeeping || !S.config) return; housekeeping = true;
   try{
     if (!S.config.launchAt) await updateDoc(doc(db, "config/main"), {launchAt:Date.now()});
+    const expired = Object.entries(S.config.devUntil || {}).filter(([, t]) => t && t <= Date.now()).map(([u]) => u);
+    if (expired.length){ const upd = {admins:arrayRemove(...expired)}; expired.forEach(u => upd["devUntil." + u] = deleteField()); await updateDoc(doc(db, "config/main"), upd).catch(() => {}); }
     if (!S.config.vouchRoomMade && !GIFTED.has("#vouches") && !S.allRooms.some(r => r.type === "vouches")){ GIFTED.add("#vouches");
       await setDoc(doc(db, "rooms", "vouches-" + rid().slice(-4)), {name:"vouches", topic:"Vouch for friends and for CampusCord with /vouch ⭐", category:"Text rooms", readonly:false, type:"vouches", order:S.rooms.length, createdAt:Date.now()});
       await updateDoc(doc(db, "config/main"), {vouchRoomMade:true}); }
@@ -1206,7 +1209,7 @@ function memberMenu(ev, uid){
     uid !== S.uid && S.kind === "room" && canPost() ? {label:"Mention", icon:"message", run:() => insertAt("@" + nickOf(uid) + " ")} : null,
     isOwner() && uid !== S.uid ? "-" : null,
     isOwner() && uid !== S.uid ? (nameLocked(uid) ? {label:"Remove name flag", icon:"check", run:() => clearNameFlag(uid)} : {label:"Not their real name…", icon:"alert", danger:true, run:() => flagName(uid)}) : null,
-    isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" : "Make developer", icon:"code", run:() => setDev(uid, !isDev(uid))} : null,
+    isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" + (devUntil(uid) ? " (until " + devTimeLabel(devUntil(uid)) + ")" : "") : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     ...modMenuItems(uid),
     isOwner() && uid !== S.uid ? {label:"Give 2 more vouch tries (" + vouchTries(uid).left + " left)", icon:"star", run:() => giveVouchTries(uid, 2)} : null,
@@ -1365,7 +1368,7 @@ function openProfile(uid, anchor, self){
         uid === S.uid ? statusPicker() : null,
         isAdmin() && uid !== S.uid && !isOwnerUid(uid) && !(isDev(uid) && !isOwner()) ? h("button",{class:"btn small danger", onclick:() => { closeLayer("profile"); kickWithReason(uid); }}, "Kick") : null),
       isOwner() && uid !== S.uid ? h("div",{class:"proles"}, h("span",{class:"pl",text:"Roles"}),
-        h("button",{class:"rolepill dev" + (isDev(uid) ? " on" : ""), title: isDev(uid) ? "Remove developer" : "Make developer", onclick:() => { closeLayer("profile"); isDev(uid) ? confirmBox("Remove " + nickOf(uid) + " as developer?", "They'll go back to being a regular member.", "Remove", () => setDev(uid, false)) : confirmBox("Make " + nickOf(uid) + " a developer?", "Developers can manage rooms, delete messages, pin, kick regular members, and see the invite code. Only you can add or remove developers.", "Make developer", () => setDev(uid, true), true); }}, isDev(uid) ? "✓ DEV" : "+ DEV"),
+        h("button",{class:"rolepill dev" + (isDev(uid) ? " on" : ""), title: isDev(uid) ? "Remove developer" : "Make developer", onclick:() => { closeLayer("profile"); devModal(uid); }}, isDev(uid) ? (devUntil(uid) ? "⏱ DEV" : "✓ DEV") : "+ DEV"),
         h("button",{class:"rolepill design" + (isDesigner(uid) ? " on" : ""), title: isDesigner(uid) ? "Remove designer" : "Make designer", onclick:() => { closeLayer("profile"); setDesigner(uid, !isDesigner(uid)); }}, isDesigner(uid) ? "✓ DESIGN" : "+ DESIGN"),
         nameLocked(uid) ? h("button",{class:"rolepill nameflag on", title:"Remove the name flag", onclick:() => { closeLayer("profile"); clearNameFlag(uid); }}, "✓ FLAGGED")
           : h("button",{class:"rolepill nameflag", title:"This isn't their real name", onclick:() => { closeLayer("profile"); flagName(uid); }}, "NOT REAL NAME")) : null,
@@ -2069,7 +2072,7 @@ function adminMembers(p){
           isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
           !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null,
           nameFlagLabel(u) ? h("span",{class:"s",style:{color: nameLocked(u) ? "#f0565c" : ""},text:nameFlagLabel(u)}) : null)),
-      isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "✓ DEV" : "+ DEV") : null,
+      isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => devModal(u)}, isDev(u) ? (devUntil(u) ? "⏱ DEV" : "✓ DEV") : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
       u !== S.uid && !isOwnerUid(u) && (isOwner() || !isDev(u)) ? h("button",{class:"btn small danger", onclick:() => kickWithReason(u)}, "Kick") : null));
@@ -2140,9 +2143,24 @@ async function setDesigner(uid, on){
   try{ await updateDoc(doc(db, "config/main"), {designers: on ? arrayUnion(uid) : arrayRemove(uid)}); toast(on ? nickOf(uid) + " is now a Designer ✏️" : nickOf(uid) + " is no longer a designer"); refreshOpenPane(); }
   catch(e){ toast("Couldn't update: " + errMsg(e)); }
 }
-async function setDev(uid, on){
-  try{ await updateDoc(doc(db, "config/main"), {admins: on ? arrayUnion(uid) : arrayRemove(uid)}); toast(on ? nickOf(uid) + " is now a developer 💻" : nickOf(uid) + " is no longer a developer"); refreshOpenPane(); }
+async function setDev(uid, on, ms){
+  try{ const until = on && ms ? Date.now() + ms : 0;
+    await updateDoc(doc(db, "config/main"), {admins: on ? arrayUnion(uid) : arrayRemove(uid), ["devUntil." + uid]: until ? until : deleteField()});
+    toast(on ? nickOf(uid) + " is now a developer 💻" + (until ? " until " + devTimeLabel(until) : "") : nickOf(uid) + " is no longer a developer"); refreshOpenPane(); need("members", "side"); }
   catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+function devTimeLabel(t){ const d = new Date(t), today = new Date().toDateString() === d.toDateString();
+  return (today ? "" : d.toLocaleDateString([], {weekday:"short", month:"short", day:"numeric"}) + " ") + d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); }
+const DEV_TIMES = [{label:"1 hour", ms:36e5}, {label:"1 day", ms:864e5}, {label:"3 days", ms:3 * 864e5}, {label:"1 week", ms:7 * 864e5}, {label:"Forever", ms:0}];
+function devModal(uid){
+  const who = nickOf(uid);
+  if (isDev(uid)) return confirmBox("Remove " + who + " as developer?", devUntil(uid) ? "Their developer access would end on its own at " + devTimeLabel(devUntil(uid)) + "." : "They'll go back to being a regular member.", "Remove", () => setDev(uid, false));
+  modal((m, close) => {
+    m.append(h("h3",{text:"Make " + who + " a developer"}),
+      h("p",{class:"note",text:"Developers get the </> Dev panel, can manage rooms, delete and pin messages, and kick regular members. Pick how long. It turns off by itself when the time's up."}),
+      h("div",{class:"devtimes"}, DEV_TIMES.map(t => h("button",{class:"btn" + (t.ms ? " ghost" : ""), onclick:() => { close(); setDev(uid, true, t.ms); }}, t.ms ? "For " + t.label : "Forever"))),
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel")));
+  });
 }
 // ---- real-name strikes
 // The owner flags a name that isn't someone's real name. That person's account locks until they change it, and they

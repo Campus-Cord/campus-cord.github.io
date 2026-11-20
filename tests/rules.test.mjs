@@ -171,6 +171,14 @@ await t("developer still can't ban the owner", assertFails(updateDoc(doc(as("dev
 await t("regular member can't write ban reasons", assertFails(updateDoc(doc(as("alice"), "config/main"), { "banReasons.zed": { reason: "lol", by: "alice", at: Date.now() } })));
 await t("developer can't change other settings while kicking", assertFails(updateDoc(doc(as("dev"), "config/main"), { "banReasons.zed": why, serverName: "Hacked" })));
 
+console.log("Temporary developers");
+await t("owner makes someone a developer for 1 hour", assertSucceeds(updateDoc(doc(as("owner"), "config/main"), { admins: ["dev", "carol"], "devUntil.carol": Date.now() + 3600000 })));
+await t("temporary developer can use developer powers", assertSucceeds(updateDoc(doc(as("carol"), "config/main"), { timeouts: { timed: Date.now() + 3600000, alice: Date.now() + 60000 } })));
+await t("temporary developer can't extend their own time", assertFails(updateDoc(doc(as("carol"), "config/main"), { "devUntil.carol": Date.now() + 999999999 })));
+await updateDoc(doc(as("owner"), "config/main"), { "devUntil.carol": Date.now() - 1000 });
+await t("when the time runs out, developer powers stop", assertFails(updateDoc(doc(as("carol"), "config/main"), { timeouts: { timed: Date.now() + 3600000 } })));
+await updateDoc(doc(as("owner"), "config/main"), { admins: ["dev"], timeouts: { timed: Date.now() + 3600000 } });
+
 console.log("Site changes");
 const sha = "a".repeat(40);
 await t("owner approves a site change", assertSucceeds(setDoc(doc(as("owner"), "devApprovals/5"), { sha, status: "queued", title: "Purple button", by: "owner", at: Date.now() })));
