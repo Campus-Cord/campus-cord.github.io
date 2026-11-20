@@ -94,8 +94,8 @@ await t("claim the free decoration", assertSucceeds(updateDoc(doc(as("alice"), "
 await t("can't buy without enough Sparks", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 700, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
 await t("can't underpay", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 1, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
 await t("can't add Sparks to yourself", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 99999 })));
-await t("daily reward works", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 150, lastDaily: Date.now() })));
-await t("daily reward can't be claimed twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 200, lastDaily: Date.now() + 1000 })));
+await t("daily reward works", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 210, lastDaily: Date.now() })));
+await t("daily reward can't be claimed twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 260, lastDaily: Date.now() + 1000 })));
 await t("owner can gift Sparks", assertSucceeds(updateDoc(doc(as("owner"), "wallet/alice"), { earned: 1150 })));
 await t("buy at the catalog price", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 700, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
 await t("others can't touch your wallet", assertFails(updateDoc(doc(as("bob"), "wallet/alice"), { spent: 0 })));
