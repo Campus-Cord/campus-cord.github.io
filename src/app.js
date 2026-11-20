@@ -1721,7 +1721,7 @@ function bigModal(sections, start, title){
     m.append(nav, pane);
     const draw = () => {
       nav.innerHTML = "";
-      sections.forEach(s => { if (s.header){ nav.appendChild(h("div",{class:"h",text:s.header})); return; } if (s.hidden) return;
+      sections.forEach(s => { if (s.hidden) return; if (s.header){ nav.appendChild(h("div",{class:"h",text:s.header})); return; }
         nav.appendChild(h("button",{class: (s.id === cur ? "on" : "") + (s.action ? " navshop" : ""), onclick:() => { if (s.action) return s.action(close); cur = s.id; draw(); }}, s.icon ? ic(s.icon) : null, s.label)); });
       pane.innerHTML = ""; const sec = sections.find(s => s.id === cur);
       pane.append(h("button",{class:"ib close",title:"Close (Esc)",onclick:close}, ic("x")), sec.noTitle ? null : h("h2",{text:sec.label}));
@@ -1927,15 +1927,15 @@ function handleReturnFromCheckout(){ if (location.hash === "#thanks"){ history.r
 function openAdmin(start){
   bigModal([
     {header:(S.config && S.config.serverName) || "CampusCord"},
-    {id:"overview", label:"Overview", icon:"grid", render:adminOverview},
+    {id:"overview", label:"Overview", icon:"grid", render:adminOverview, hidden:!isOwner()},
     {id:"changes", label:"Site changes" + (S.openChanges ? " (" + S.openChanges + ")" : ""), icon:"code", render:adminChanges, hidden:!(isOwner() || isDev(S.uid))},
     {id:"rooms", label:"Rooms", icon:"hash", render:adminRooms},
-    {id:"members", label:"Members & roles", icon:"users", render:adminMembers},
+    {id:"members", label:"Members & roles", icon:"users", render:adminMembers, hidden:!isOwner()},
     {header:"Monetization", hidden:!isOwner()},
     {id:"shop", label:"Shop & Stripe", icon:"bag", render:adminShop, hidden:!isOwner()},
     {id:"appeals", icon:"alert", label:"Ban appeals" + (openAppeals().length ? " (" + openAppeals().length + ")" : ""), render:adminAppeals, hidden:!isOwner()},
     {id:"orders", icon:"receipt", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isOwner()},
-  ], start || "overview");
+  ], isOwner() ? (start || "overview") : (start === "rooms" ? "rooms" : "changes"));
 }
 async function downloadBackup(btn, st){
   const old = btn.innerHTML; btn.disabled = true;
