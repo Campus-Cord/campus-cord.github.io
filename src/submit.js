@@ -63,7 +63,15 @@ function aiStarter(){
   const me = nickOf(S.uid), head = isOwner() || /elliott/i.test(me);
   return `I'm ${me}, helping build CampusCord, a Discord-style chat app for my friends (made by Massimo). I'm not a coder, so explain things simply and keep it short.
 
-Below this message is ALL of CampusCord's current code. It's plain JavaScript, HTML and CSS (no frameworks) with a Firebase Firestore database. The files in src/ are joined into one page by a build script, and the .js files all share one scope.
+IMPORTANT: This file already contains ALL of CampusCord's code, below these instructions. NEVER ask me to paste code or "sections" of the file. Search this file yourself whenever you need to see something.
+
+HOW CAMPUSCORD WORKS (don't guess):
+- There is NO backend server, NO SQL tables, NO API endpoints and NO routes. It's a single web page: plain JavaScript in the browser, talking straight to a Firebase Firestore database (collections and documents, not tables).
+- Who can read or write what is enforced in firestore.rules, which I'm not allowed to change. So any idea that needs a NEW kind of data in the database (a new collection, like group chats) can't be done by me: tell me "That needs Massimo" and help me pick something else.
+- Good ideas for me: how things look (src/style.css), new buttons, animations, sounds, emojis, themes, small features that use data that already exists.
+- Where things are in src/app.js: messages are drawn in "function messageEl", sending is "function send", DMs are "function openDM" and "function renderDMList", the left list is "function renderSide", the top bar is "function renderHeader". The shop is src/cosmetics.js.
+
+Below these instructions is ALL of CampusCord's current code. It's plain JavaScript, HTML and CSS (no frameworks) with a Firebase Firestore database. The files in src/ are joined into one page by a build script, and the .js files all share one scope.
 
 YOU ARE NOT ALLOWED TO CHANGE THESE, EVEN IF I ASK:
 - Real-money payments, Stripe links or the CATALOG list
