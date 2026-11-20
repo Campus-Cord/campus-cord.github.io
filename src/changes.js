@@ -220,15 +220,16 @@ let srcCache = null, srcLoading = null;
 function loadSources(){
   if (srcCache) return Promise.resolve(srcCache);
   if (srcLoading) return srcLoading;
-  srcLoading = Promise.all(SRC_FILES.map(f => fetch("https://raw.githubusercontent.com/" + GH_REPO + "/main/src/" + f, {cache:"no-cache"})
-      .then(r => r.ok ? r.text() : "").catch(() => "").then(t => ({file:f, text:t}))))
-    .then(list => { srcCache = list.filter(x => x.text).map(x => ({file:x.file, lines:x.text.split("\n"), blocks:codeBlocks(x.file, x.text.split("\n"))})); srcLoading = null; return srcCache; });
+  const paths = [...SRC_FILES.map(f => "src/" + f), "firestore.rules", "tests/rules.test.mjs"];
+  srcLoading = Promise.all(paths.map(p => fetch("https://raw.githubusercontent.com/" + GH_REPO + "/main/" + p, {cache:"no-cache"})
+      .then(r => r.ok ? r.text() : "").catch(() => "").then(t => ({path:p, text:t}))))
+    .then(list => { srcCache = list.filter(x => x.text).map(x => { const lines = x.text.split("\n"); return {file:x.path.split("/").pop(), path:x.path, lines, blocks:codeBlocks(x.path, lines)}; }); srcLoading = null; return srcCache; });
   return srcLoading;
 }
 // Split a file into named top-level pieces: functions and consts in JS, rules in CSS, the whole file for HTML.
 function codeBlocks(file, lines){
   const out = [];
-  if (file.endsWith(".js")){
+  if (/\.m?js$/.test(file)){
     const starts = [];
     lines.forEach((l, i) => { const m = l.match(/^(async function|function|const|let|class)\s+([A-Za-z_$][\w$]*)/); if (m) starts.push({i, kind:m[1].replace("async ", "async "), name:m[2]}); else if (/^\/\/ -{8,}/.test(l)) starts.push({i, sep:true}); });
     starts.forEach((st, k) => { if (st.sep) return; let end = (starts[k + 1] ? starts[k + 1].i : lines.length) - 1; while (end > st.i && !lines[end].trim()) end--;
@@ -275,7 +276,7 @@ function findCode(q, fileFilter){
   return {best, more:more.filter((b, k, a) => a.indexOf(b) === k).slice(0, 8)};
 }
 function aiCopyText(b){
-  const what = b.kind === "css" ? "this CSS from src/" + b.file : b.kind === "file" ? "the whole file src/" + b.file : b.kind + " " + b.name + " from src/" + b.file;
+  const what = b.kind === "css" ? "this CSS from " + b.file : b.kind === "file" ? "the whole file " + b.file : b.kind + " " + b.name + " from " + b.file;
   return "Here's " + what + " (line" + (b.a === b.b ? " " + b.a : "s " + b.a + "–" + b.b) + "). This is the current code on the real site:\n\n```" + (b.file.endsWith(".css") ? "css" : b.file.endsWith(".html") ? "html" : "js") + "\n" + b.code + "\n```";
 }
 function codeFinderEl(){
@@ -284,7 +285,7 @@ function codeFinderEl(){
   const out = h("div",{class:"cfout"});
   const hitEl = (b, open) => { const pre = h("pre",{class:"cfcode" + (open ? "" : " hidden"), text:b.code.length > 4000 ? b.code.slice(0, 4000) + "\n… (Copy gets all of it)" : b.code});
     return h("div",{class:"cfhit"}, h("div",{class:"cfrow"}, h("span",{class:"cfkind",text: b.kind === "css" ? "CSS" : b.kind === "file" ? "FILE" : b.kind}), h("b",{class:"cfname",text:b.name}),
-      h("span",{class:"note",style:{margin:0},text:"src/" + b.file + " · line " + b.a + (b.b > b.a ? "–" + b.b : "")}), h("span",{class:"sp"}),
+      h("span",{class:"note",style:{margin:0},text:b.file + " · line " + b.a + (b.b > b.a ? "–" + b.b : "")}), h("span",{class:"sp"}),
       h("button",{class:"btn small ghost", onclick:() => pre.classList.toggle("hidden")}, open ? "Hide" : "Show")), pre); };
   const run = () => { const v = q.value; out.innerHTML = ""; if (!v.trim()) return;
     if (!srcCache){ out.append(h("p",{class:"note",text:"Loading the code…"})); loadSources().then(run).catch(() => { out.innerHTML = ""; out.append(h("p",{class:"note",text:"Couldn't load the code. Check your internet and try again."})); }); return; }

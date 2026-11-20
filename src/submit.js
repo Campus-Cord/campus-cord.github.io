@@ -4,17 +4,18 @@
 // 3. devSubs/{id} is checked by the GitHub robot (scripts/devsubs.mjs, every few minutes): it applies the
 //    blocks, builds the site and checks the code. The owner then presses Approve and the robot puts it live.
 // The block format and how blocks are applied MUST stay the same as in scripts/devsubs.mjs.
+// Helpers may change anything in the app (src/). Database security rules (firestore.rules) go through Massimo.
 const SUB_FILES_RE = /^src\/[\w-]+\.(js|css|html)$/;
 const SUB_NO_FILES = new Set(["src/build.py", "src/firebase-config.js"]);
-const SUB_FLAGS = ["STRIPE_LINKS", "buy.stripe.com", "const CATALOG", "ownerUid", "giveSparks", "earned:", "firestore.rules"];
+const SUB_FLAGS = ["STRIPE_LINKS", "buy.stripe.com", "const CATALOG", "ownerUid", "giveSparks", "earned:", "allow ", "isOwner"];
 
 function parseEdits(text){
   const lines = String(text || "").replace(/\r/g, "").split("\n"), blocks = [];
   let file = null, mode = null, find = [], rep = [];
   const clean = arr => { while (arr.length && /^\s*```/.test(arr[0])) arr.shift(); while (arr.length && /^\s*```\s*$/.test(arr[arr.length - 1])) arr.pop(); return arr.join("\n"); };
   for (const l of lines){
-    const fm = mode === null && l.match(/^[\s#*>`_-]*FILE:\s*[`*"']*\s*((?:src\/)?[\w.\/-]+?)[`*"']*\s*$/i);
-    if (fm){ file = fm[1].startsWith("src/") ? fm[1] : "src/" + fm[1]; continue; }
+    const fm = mode === null && l.match(/^[\s#*>`_-]*FILE:\s*[`*"']*\s*([\w.\/-]+?)[`*"']*\s*$/i);
+    if (fm){ const f = fm[1].replace(/^\.?\//, ""); file = /^(src|tests)\//.test(f) || f === "firestore.rules" ? f : f === "rules.test.mjs" ? "tests/rules.test.mjs" : "src/" + f; continue; }
     if (/^\s*<{5,}\s*FIND\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
     if (mode === "find" && /^\s*={5,}\s*$/.test(l)){ mode = "rep"; continue; }
     if (mode === "rep" && /^\s*>{5,}\s*REPLACE\s*$/i.test(l)){ blocks.push({file, find:clean(find), rep:clean(rep)}); mode = null; continue; }
@@ -39,10 +40,10 @@ function applyEdit(content, b){
 function checkEdits(text){
   const {blocks, unfinished} = parseEdits(text), problems = [], files = {}, flags = new Set();
   if (!blocks.length) return {ok:false, count:0, problems:[unfinished ? "The AI's answer got cut off in the middle of a change." : "There are no changes in this answer. The AI has to use the FIND / REPLACE format."], files, flags:[]};
-  const src = {}; (srcCache || []).forEach(f => src["src/" + f.file] = f.lines.join("\n"));
+  const src = {}; (srcCache || []).forEach(f => src[f.path] = f.lines.join("\n"));
   blocks.forEach((b, i) => { const no = "Change " + (i + 1);
     if (!b.file){ problems.push(no + " doesn't say which FILE it's for."); return; }
-    if (!SUB_FILES_RE.test(b.file) || SUB_NO_FILES.has(b.file)){ problems.push(no + " changes " + b.file + ", which isn't allowed. Only files in src/ like app.js and style.css."); return; }
+    if (!SUB_FILES_RE.test(b.file) || SUB_NO_FILES.has(b.file)){ problems.push(no + " changes " + b.file + ". From here you can change any file in src/. Changes to " + b.file + " have to go through Massimo."); return; }
     const cur = files[b.file] != null ? files[b.file] : src[b.file];
     if (cur == null){ problems.push(no + " is for " + b.file + ", but that file doesn't exist. Add new code to an existing file instead."); return; }
     const r = applyEdit(cur, b);
@@ -60,28 +61,23 @@ function fixMessageForAI(problems){
 
 // ---- the instructions + all the code, for the AI
 function aiStarter(){
-  const me = nickOf(S.uid), head = isOwner() || /elliott/i.test(me);
-  return `I'm ${me}, helping build CampusCord, a Discord-style chat app for my friends (made by Massimo). I'm not a coder, so explain things simply and keep it short.
+  const me = nickOf(S.uid);
+  return `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
 
 IMPORTANT: This file already contains ALL of CampusCord's code, below these instructions. NEVER ask me to paste code or "sections" of the file. Search this file yourself whenever you need to see something.
 
+YOU CAN CHANGE ANYTHING IN src/ (the whole app: looks, features, the shop, everything). Massimo reviews every change before it goes live and turns down what he doesn't want, so don't refuse ideas because they seem big or touch something important. Just do them well.
+
 HOW CAMPUSCORD WORKS (don't guess):
-- There is NO backend server, NO SQL tables, NO API endpoints and NO routes. It's a single web page: plain JavaScript in the browser, talking straight to a Firebase Firestore database (collections and documents, not tables).
-- Who can read or write what is enforced in firestore.rules, which I'm not allowed to change. So any idea that needs a NEW kind of data in the database (a new collection, like group chats) can't be done by me: tell me "That needs Massimo" and help me pick something else.
-- Good ideas for me: how things look (src/style.css), new buttons, animations, sounds, emojis, themes, small features that use data that already exists.
-- Where things are in src/app.js: messages are drawn in "function messageEl", sending is "function send", DMs are "function openDM" and "function renderDMList", the left list is "function renderSide", the top bar is "function renderHeader". The shop is src/cosmetics.js.
+- There is NO backend server, NO SQL tables, NO API endpoints and NO routes. It's ONE web page: plain JavaScript in the browser (no React or frameworks) that talks straight to a Firebase Firestore database (collections and documents) using the Firebase modular SDK v10.12.2. Images are stored inside documents as data URLs.
+- The files in src/ are joined into one page by a build script. All the .js files share ONE scope (no imports or exports between them), so a function in one file can be used in another. Before adding a function, search this file to make sure the name isn't already used, or the whole app crashes.
+- Security lives in firestore.rules (who can read and write each collection). You can read it below, but I can't send changes to it from here. If a feature needs a NEW collection or new fields the rules don't allow yet (for example group chats), do this: give me the src/ changes as usual, AND write the exact firestore.rules changes plus tests for tests/rules.test.mjs in a separate section titled "FOR MASSIMO: DATABASE RULES". I'll send that part to Massimo, who adds it. Copy how the existing "dms" rules and tests work.
+- Useful helpers: h(tag, attrs, ...children) builds HTML elements; S is the app state (S.uid = me, S.members, S.rooms, S.dms); nickOf(uid) gives a name; avatar(uid, "sm") gives an avatar; toast(text) shows a message; need("side","msgs") redraws parts of the screen; openChat(kind, id) opens a chat; modal((m, close) => {...}) opens a pop-up; isOwner() and isAdmin() check roles.
+- Where things are in src/app.js: messages are drawn in "function messageEl", sending is "function send", chats open in "function openChat", DMs are "function openDM" and "function renderDMList", the left list is "function renderSide", the top bar is "function renderHeader", the right panel is "function renderRPanel". The shop is src/cosmetics.js, styles are src/style.css.
 
-Below these instructions is ALL of CampusCord's current code. It's plain JavaScript, HTML and CSS (no frameworks) with a Firebase Firestore database. The files in src/ are joined into one page by a build script, and the .js files all share one scope.
-
-YOU ARE NOT ALLOWED TO CHANGE THESE, EVEN IF I ASK:
-- Real-money payments, Stripe links or the CATALOG list
-- Anything that gives out free Sparks or free items, or Sparks reward amounts
-- Owner/admin powers, roles, badges, bans
-- firestore.rules, the .github or scripts folders, src/build.py, index.html
-${head ? "(Exception: I'm the head developer, so I MAY redesign the Shop in src/cosmetics.js and src/style.css and add or price shop items. When adding or re-pricing items, increase CAT_V by 1.)\n" : "- The Shop's items or prices (you may only change how it looks)\n"}If I ask for one of these, say no and tell me to ask Massimo.
-
-HOW TO GIVE ME CHANGES (very important):
-When we've agreed on a change, give me the changes in EXACTLY this format. I paste your whole answer into CampusCord and it applies them automatically:
+HOW TO WORK WITH ME:
+1. When I give you an idea, first explain your plan in 2-4 simple sentences and ask if it's OK.
+2. Then give me ALL the changes at once in EXACTLY this format. I paste your whole answer into CampusCord, which applies it automatically. I do NOT edit any files myself:
 
 FILE: src/app.js
 <<<<<<< FIND
@@ -91,17 +87,17 @@ FILE: src/app.js
 >>>>>>> REPLACE
 
 Rules for the format:
-- One block per change. You can use many blocks and many files. Put a FILE: line before each block.
+- Put a FILE: line before each block. Use as many blocks and files in src/ as you need.
 - The FIND lines must match the code below character for character. Never shorten them with "..." and never make them up.
-- To add brand new code (like a new function or new CSS), leave the FIND part EMPTY and it gets added to the end of that file.
-- Only change files in src/ (like app.js, style.css). Keep changes small and only do what I asked.
-- Use existing helpers: h(tag, attrs, ...children) builds elements, S is the app state, S.uid is me, nickOf(uid) gives a name, toast(text) shows a message, need("msgs") redraws.
+- To add brand-new code (a new function, new CSS), leave the FIND part EMPTY and it gets added to the END of that file.
+- Don't change index.html or src/build.py.
+3. If CampusCord tells me your changes have a problem, I'll paste you its message. Fix it and send ALL the changes again.
 
 Got it? Ask me what I'd like to work on.
 
 `;
 }
-function allCodeText(){ return "I attached CampusCord's code. Read the instructions at the top of the file and follow them.\n\n" + aiStarter() + "======================== ALL OF CAMPUSCORD'S CODE ========================\n\n" + (srcCache || []).map(f => "===== src/" + f.file + " =====\n" + f.lines.join("\n")).join("\n\n"); }
+function allCodeText(){ return "I attached CampusCord's code. Read the instructions at the top of the file and follow them.\n\n" + aiStarter() + "======================== ALL OF CAMPUSCORD'S CODE ========================\n\n" + (srcCache || []).map(f => "===== " + f.path + " =====\n" + f.lines.join("\n")).join("\n\n"); }
 
 // ---- submissions
 S.subs = [];
