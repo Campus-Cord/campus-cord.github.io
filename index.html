@@ -1374,6 +1374,12 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .cfname{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;word-break:break-all}
 .cfcode{margin:8px 0 0;max-height:260px;overflow:auto;background:#0d1117;color:#c9d1d9;border-radius:8px;padding:10px;font-size:12px;line-height:1.5;white-space:pre}
 .cfcode.hidden{display:none}
+
+.cfq{width:100%;box-sizing:border-box;resize:vertical;min-height:70px}
+.cfbig{display:flex;align-items:center;gap:12px;background:color-mix(in srgb,#3fdc7a 10%,var(--card));border:1px solid color-mix(in srgb,#3fdc7a 45%,transparent);border-radius:10px;padding:10px 12px}
+.cfbig>div{flex:1;min-width:0}.cfcopy{flex:none;background:#3ba55d;color:#fff;font-weight:700}
+.cfmore summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}.cfmore .cfhit{margin-top:6px}
+.cfbig .cfcopy{width:auto;margin:0;white-space:nowrap}.cfbig>div{flex:1 1 auto}
 </style>
 </head>
 <body>
@@ -1486,7 +1492,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-19.2303";
+const APP_VERSION = "2026-11-19.2310";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -4564,16 +4570,38 @@ function codeBlocks(file, lines){
   } else out.push({file, kind:"file", name:file, a:1, b:lines.length, code:lines.join("\n")});
   return out;
 }
+// Pull out what the AI is asking for from whatever it said: `backticked` names, "function x", x(), .css-classes, camelCase words.
+function wantedNames(text){
+  const out = new Set(), add = n => { n = (n || "").trim().replace(/^(async\s+)?(function|const|let|class)\s+/, "").replace(/\(.*$/, "").replace(/[;,:'"]+$/, ""); if (n.length > 1) out.add(n); };
+  (text.match(/`([^`\n]{2,60})`/g) || []).forEach(x => add(x.slice(1, -1)));
+  (text.match(/\b(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/g) || []).forEach(add);
+  (text.match(/\b([A-Za-z_$][\w$]{2,})\s*\(/g) || []).forEach(add);
+  (text.match(/(^|\s)(\.[a-z][\w-]{1,30})/g) || []).forEach(x => add(x.trim()));
+  (text.match(/\b([a-z]+[A-Z][\w]*)\b/g) || []).forEach(add);
+  if (!out.size){ const STOP = new Set("show me how the a an and or of to for in on it is are was this that what where which who why can you please need see look find get give make let lets code file function part work works working does do send paste copy into with from there here about like just want would could should open search".split(" "));
+    text.toLowerCase().replace(/[^a-z0-9_.\s-]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP.has(w)).forEach(w => add(w.length > 4 && w.endsWith("s") ? w.slice(0, -1) : w)); }
+  return [...out];
+}
+const SKIP_NAMES = new Set(["src", "app.js", "style.css", "Ctrl", "Cmd", "GitHub", "Commit", "done", "querySelector", "getElementById", "addEventListener", "appendChild", "console.log"]);
 function findCode(q, fileFilter){
-  const raw = q.trim(); if (!raw || !srcCache) return [];
-  const name = raw.replace(/^(async\s+)?(function|const|let|class)\s+/, "").replace(/\(.*$/, "").trim().toLowerCase();
-  const low = raw.toLowerCase(), hits = [];
-  srcCache.forEach(f => { if (fileFilter && f.file !== fileFilter) return;
-    f.blocks.forEach(b => { const n = b.name.toLowerCase(); let score = 0;
-      if (n === name) score = 100; else if (n.startsWith(name)) score = 60; else if (n.includes(name)) score = 40;
-      else if (b.code.toLowerCase().includes(low)) score = b.kind === "css" ? 15 : 10;
-      if (score) hits.push(Object.assign({score}, b)); }); });
-  return hits.sort((x, y) => y.score - x.score || x.code.length - y.code.length).slice(0, 20);
+  if (!q.trim() || !srcCache) return {best:[], more:[]};
+  const all = []; srcCache.forEach(f => { if (!fileFilter || f.file === fileFilter) f.blocks.forEach(b => all.push(b)); });
+  const names = wantedNames(q).filter(n => !SKIP_NAMES.has(n));
+  const best = [], seen = new Set(), more = [];
+  // 1) exact name matches, one per name the AI asked for (in the order it asked)
+  names.forEach(n => { const low = n.toLowerCase();
+    const hit = all.find(b => b.kind !== "css" && b.name.toLowerCase() === low) || (n.startsWith(".") ? null : null);
+    if (hit && !seen.has(hit)){ seen.add(hit); best.push(hit); return; }
+    if (n.startsWith(".")){ const css = all.filter(b => b.kind === "css" && b.code.includes(n)); if (css.length){ const merged = {file:css[0].file, kind:"css", name:n + " styles", a:css[0].a, b:css[css.length - 1].b, code:css.map(c => c.code).join("\n")}; best.push(merged); css.forEach(c => seen.add(c)); } } });
+  // 2) nothing exact: best partial match on the longest word
+  if (!best.length){ const words = names.length ? names : [q.trim()];
+    words.sort((a, b) => b.length - a.length).forEach(w => { const low = w.toLowerCase();
+      all.forEach(b => { if (seen.has(b)) return; const n = b.name.toLowerCase(); let sc = n.startsWith(low) ? 60 : n.includes(low) ? 40 : b.code.toLowerCase().includes(low) ? 10 : 0; if (sc) more.push(Object.assign({score:sc}, b)); }); });
+    more.sort((x, y) => y.score - x.score || x.code.length - y.code.length);
+    const top = more.shift(); if (top){ best.push(top); seen.add(top); } }
+  // 3) other things that mention the same words, for "not it?"
+  names.forEach(n => { const low = n.toLowerCase(); all.forEach(b => { if (!seen.has(b) && b.kind !== "css" && (b.name.toLowerCase().includes(low) || b.code.includes(n))) { seen.add(b); more.push(b); } }); });
+  return {best, more:more.filter((b, k, a) => a.indexOf(b) === k).slice(0, 8)};
 }
 function aiCopyText(b){
   const what = b.kind === "css" ? "this CSS from src/" + b.file : b.kind === "file" ? "the whole file src/" + b.file : b.kind + " " + b.name + " from src/" + b.file;
@@ -4581,29 +4609,29 @@ function aiCopyText(b){
 }
 function codeFinderEl(){
   const box = h("div",{class:"cfind"});
-  const q = h("input",{class:"inp", placeholder:"Type what the AI asked for, like messageEl or reactionRow or .icard"});
-  const sel = h("select",{class:"inp cfsel"}, h("option",{value:""}, "All files"), SRC_FILES.map(f => h("option",{value:f}, f)));
-  const out = h("div",{class:"cfout"}, h("p",{class:"note",style:{margin:0},text:"Tip: you can paste exactly what the AI said, like \"function messageEl\". It finds it and copies it ready to paste back."}));
-  const run = () => { const v = q.value; out.innerHTML = "";
-    if (!v.trim()) return;
-    if (!srcCache){ out.append(h("p",{class:"note",text:"Loading the code from GitHub…"})); loadSources().then(run).catch(() => { out.innerHTML = ""; out.append(h("p",{class:"note",text:"Couldn't load the code. Check your internet and try again."})); }); return; }
-    const hits = findCode(v, sel.value);
-    if (!hits.length){ out.append(h("p",{class:"note",text:"Nothing found for \"" + v.trim() + "\". Try a shorter word, or ask the AI what the function is called."})); return; }
-    hits.forEach((b, i) => { const pre = h("pre",{class:"cfcode" + (i === 0 && b.score >= 60 ? "" : " hidden"), text:b.code.length > 6000 ? b.code.slice(0, 6000) + "\n… (the copy button copies all of it)" : b.code});
-      const big = b.code.length > 15000;
-      out.append(h("div",{class:"cfhit"},
-        h("div",{class:"cfrow"}, h("span",{class:"cfkind",text: b.kind === "css" ? "CSS" : b.kind === "file" ? "FILE" : b.kind}), h("b",{class:"cfname",text:b.name}),
-          h("span",{class:"note",style:{margin:0},text:"src/" + b.file + " · line " + b.a + (b.b > b.a ? "–" + b.b : "")}),
-          h("span",{class:"sp"}),
-          h("button",{class:"btn small ghost", onclick:() => pre.classList.toggle("hidden")}, "Show"),
-          h("button",{class:"btn small", onclick:() => copy(aiCopyText(b), big ? "Copied! It's very long, so the AI might only need part of it." : "Copied! Paste it to your AI.")}, ic("copy","sm"), " Copy for AI")),
-        pre)); });
-  };
-  let t = null; q.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 250); });
-  q.addEventListener("keydown", e => { if (e.key === "Enter") run(); }); sel.onchange = run;
+  const q = h("textarea",{class:"inp cfq", rows:"3", placeholder:"Paste what your AI said here (the whole message is fine), or just type a name like messageEl"});
+  const out = h("div",{class:"cfout"});
+  const hitEl = (b, open) => { const pre = h("pre",{class:"cfcode" + (open ? "" : " hidden"), text:b.code.length > 4000 ? b.code.slice(0, 4000) + "\n… (Copy gets all of it)" : b.code});
+    return h("div",{class:"cfhit"}, h("div",{class:"cfrow"}, h("span",{class:"cfkind",text: b.kind === "css" ? "CSS" : b.kind === "file" ? "FILE" : b.kind}), h("b",{class:"cfname",text:b.name}),
+      h("span",{class:"note",style:{margin:0},text:"src/" + b.file + " · line " + b.a + (b.b > b.a ? "–" + b.b : "")}), h("span",{class:"sp"}),
+      h("button",{class:"btn small ghost", onclick:() => pre.classList.toggle("hidden")}, open ? "Hide" : "Show")), pre); };
+  const run = () => { const v = q.value; out.innerHTML = ""; if (!v.trim()) return;
+    if (!srcCache){ out.append(h("p",{class:"note",text:"Loading the code…"})); loadSources().then(run).catch(() => { out.innerHTML = ""; out.append(h("p",{class:"note",text:"Couldn't load the code. Check your internet and try again."})); }); return; }
+    const r = findCode(v);
+    if (!r.best.length){ out.append(h("p",{class:"note",text:"Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); return; }
+    const text = r.best.map(aiCopyText).join("\n\n");
+    out.append(h("div",{class:"cfbig"},
+      h("div",null, h("b",{text: r.best.length === 1 ? "Found it: " + r.best[0].name : "Found " + r.best.length + " things: " + r.best.map(b => b.name).join(", ")}),
+        h("div",{class:"note",style:{margin:0},text:"Press the button, then paste into your AI."})),
+      h("button",{class:"btn cfcopy", onclick:() => copy(text, "Copied! Now paste it into your AI.")}, ic("copy"), " Copy for AI")));
+    r.best.forEach(b => out.append(hitEl(b, r.best.length === 1)));
+    if (r.more.length){ const d = h("details",{class:"cfmore"}, h("summary",{text:"Not the right code? See " + r.more.length + " other matches"}));
+      r.more.forEach(b => { const one = hitEl(b, false); one.querySelector(".cfrow").append(h("button",{class:"btn small ghost", onclick:() => copy(aiCopyText(b), "Copied! Now paste it into your AI.")}, "Copy this one")); d.append(one); });
+      out.append(d); } };
+  let t = null; q.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 300); });
   q.addEventListener("focus", () => loadSources().catch(() => {}), {once:true});
-  box.append(h("div",{class:"cfhead"}, h("span",{class:"cfic"}, ic("search")), h("div",null, h("b",{text:"Code Finder"}), h("div",{class:"note",style:{margin:0},text:"When the AI asks to see some code, find it here and press Copy for AI. No GitHub needed."}))),
-    h("div",{class:"row"}, q, sel), out);
+  box.append(h("div",{class:"cfhead"}, h("span",{class:"cfic"}, ic("search")), h("div",null, h("b",{text:"Code Finder"}), h("div",{class:"note",style:{margin:0},text:"When your AI asks to see some code, paste what it said here. Then press Copy for AI."}))),
+    q, out);
   return box;
 }
 

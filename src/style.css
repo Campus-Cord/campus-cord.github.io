@@ -1359,3 +1359,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .cfname{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;word-break:break-all}
 .cfcode{margin:8px 0 0;max-height:260px;overflow:auto;background:#0d1117;color:#c9d1d9;border-radius:8px;padding:10px;font-size:12px;line-height:1.5;white-space:pre}
 .cfcode.hidden{display:none}
+
+.cfq{width:100%;box-sizing:border-box;resize:vertical;min-height:70px}
+.cfbig{display:flex;align-items:center;gap:12px;background:color-mix(in srgb,#3fdc7a 10%,var(--card));border:1px solid color-mix(in srgb,#3fdc7a 45%,transparent);border-radius:10px;padding:10px 12px}
+.cfbig>div{flex:1;min-width:0}.cfcopy{flex:none;background:#3ba55d;color:#fff;font-weight:700}
+.cfmore summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}.cfmore .cfhit{margin-top:6px}
+.cfbig .cfcopy{width:auto;margin:0;white-space:nowrap}.cfbig>div{flex:1 1 auto}
