@@ -13,7 +13,10 @@ import { join } from "node:path";
 initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
 const db = getFirestore();
 const ROOT = process.cwd();
-const FILES_RE = /^src\/[\w-]+\.(js|css|html)$/;
+const FILES_RE = /^(src\/[\w-]+\.(js|css|html)|firestore\.rules|tests\/rules\.test\.mjs)$/;
+// Changes to the database rules never go live from here: they become a GitHub pull request that
+// Massimo merges himself; deploy-rules.yml then tests the rules before they go live.
+const NEEDS_PR = f => f === "firestore.rules" || f.startsWith("tests/");
 const NO_FILES = new Set(["src/build.py", "src/firebase-config.js"]);
 const FLAGS = ["STRIPE_LINKS", "buy.stripe.com", "const CATALOG", "ownerUid", "giveSparks", "earned:", "firestore.rules"];
 
@@ -77,6 +80,26 @@ function diffOf(base, files){
     try{ execFileSync("diff", ["-u", "--label", "a/" + f, "--label", "b/" + f, join(base, f), tmp]); }catch(e){ d += String(e.stdout || ""); } }
   return d.slice(0, 250000);
 }
+async function openPR(id, x, r){
+  const branch = "helper-" + id.slice(0, 12);
+  git("checkout", "-q", "-B", branch);
+  for (const [f, t] of Object.entries(r.files)) writeFileSync(join(ROOT, f), t);
+  try{ buildAndCheck(ROOT, join(tmpdir(), "pr-check.html")); }
+  catch(e){ git("checkout", "-q", "--", "."); git("checkout", "-q", "main"); throw e; }
+  git("add", ...Object.keys(r.files));
+  git("-c", "user.name=github-actions[bot]", "-c", "user.email=41898282+github-actions[bot]@users.noreply.github.com",
+    "commit", "-q", "-m", x.title + " (by " + (x.nick || "a helper") + ", approved in CampusCord)");
+  git("push", "-q", "-f", "origin", branch); git("checkout", "-q", "main");
+  const res = await fetch("https://api.github.com/repos/" + process.env.GITHUB_REPOSITORY + "/pulls", {method:"POST",
+    headers:{Authorization:"Bearer " + process.env.GITHUB_TOKEN, Accept:"application/vnd.github+json"},
+    body:JSON.stringify({title:x.title + " (by " + (x.nick || "a helper") + ")", head:branch, base:"main",
+      body:"Sent from CampusCord's Dev panel and approved by Massimo. It changes the database rules, so it waits for Massimo to press **Merge** here. After the merge, deploy-rules.yml tests the rules and only puts them live if every test passes."})});
+  const pr = await res.json();
+  if (!pr.html_url) throw new Error("Couldn't open the GitHub pull request: " + String(pr.message || res.status));
+  await d_set(id, {status:"pr", prUrl:pr.html_url, files:Object.keys(r.files)});
+  console.log(id, "pull request", pr.html_url);
+}
+const d_set = (id, patch) => db.collection("devSubs").doc(id).set(Object.assign({checkedAt:Date.now()}, patch), {merge:true});
 const git = (...a) => execFileSync("git", a, {cwd:ROOT, stdio:"pipe"}).toString().trim();
 
 const snap = await db.collection("devSubs").where("status", "in", ["new", "approved", "rejecting"]).get();
@@ -87,7 +110,7 @@ for (const d of snap.docs){
     if (x.status === "rejecting"){ await set({status:"rejected"}); console.log(d.id, "rejected"); continue; }
     if (x.status === "new"){
       // test on a throwaway copy
-      const tmp = mkdtempSync(join(tmpdir(), "sub-")); cpSync(join(ROOT, "src"), join(tmp, "src"), {recursive:true});
+      const tmp = mkdtempSync(join(tmpdir(), "sub-")); cpSync(join(ROOT, "src"), join(tmp, "src"), {recursive:true}); cpSync(join(ROOT, "tests"), join(tmp, "tests"), {recursive:true}); cpSync(join(ROOT, "firestore.rules"), join(tmp, "firestore.rules"));
       const r = applyAll(tmp, x.answer);
       for (const [f, t] of Object.entries(r.files)) writeFileSync(join(tmp, f), t);
       buildAndCheck(tmp, join(tmp, "out.html"));
@@ -98,6 +121,7 @@ for (const d of snap.docs){
     if (x.status === "approved"){
       git("pull", "-q", "--rebase", "origin", "main");
       const r = applyAll(ROOT, x.answer);
+      if (Object.keys(r.files).some(NEEDS_PR)){ await openPR(d.id, x, r); continue; }
       for (const [f, t] of Object.entries(r.files)) writeFileSync(join(ROOT, f), t);
       try{ buildAndCheck(ROOT, join(tmpdir(), "live-check.html")); }
       catch(e){ git("checkout", "--", "src"); throw e; }

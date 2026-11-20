@@ -5,7 +5,7 @@
 //    blocks, builds the site and checks the code. The owner then presses Approve and the robot puts it live.
 // The block format and how blocks are applied MUST stay the same as in scripts/devsubs.mjs.
 // Helpers may change anything in the app (src/). Database security rules (firestore.rules) go through Massimo.
-const SUB_FILES_RE = /^src\/[\w-]+\.(js|css|html)$/;
+const SUB_FILES_RE = /^(src\/[\w-]+\.(js|css|html)|firestore\.rules|tests\/rules\.test\.mjs)$/;
 const SUB_NO_FILES = new Set(["src/build.py", "src/firebase-config.js"]);
 const SUB_FLAGS = ["STRIPE_LINKS", "buy.stripe.com", "const CATALOG", "ownerUid", "giveSparks", "earned:", "allow ", "isOwner"];
 
@@ -44,7 +44,7 @@ function checkEdits(text){
   const src = {}; (srcCache || []).forEach(f => src[f.path] = f.lines.join("\n"));
   blocks.forEach((b, i) => { const no = "Change " + (i + 1);
     if (!b.file){ problems.push(no + " doesn't say which FILE it's for."); return; }
-    if (!SUB_FILES_RE.test(b.file) || SUB_NO_FILES.has(b.file)){ problems.push(no + " changes " + b.file + ". From here you can change any file in src/. Changes to " + b.file + " have to go through Massimo."); return; }
+    if (!SUB_FILES_RE.test(b.file) || SUB_NO_FILES.has(b.file)){ problems.push(no + " changes " + b.file + ". You can change any file in src/, firestore.rules and tests/rules.test.mjs, but not " + b.file + "."); return; }
     const cur = files[b.file] != null ? files[b.file] : src[b.file];
     if (cur == null){ problems.push(no + " is for " + b.file + ", but that file doesn't exist. Add new code to an existing file instead."); return; }
     const r = applyEdit(cur, b);
@@ -68,12 +68,12 @@ function aiStarter(){
 IMPORTANT: The full code is too big to send at once, so at the end of this file is a MAP of CampusCord's code: every function and setting, with its file and line number. You have NOT seen the code itself yet. Never guess or invent code.
 When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once.
 
-YOU CAN CHANGE ANYTHING IN src/ (the whole app: looks, features, the shop, everything). Massimo reviews every change before it goes live and turns down what he doesn't want, so don't refuse ideas because they seem big or touch something important. Just do them well.
+YOU CAN CHANGE ANYTHING: every file in src/ plus the database rules (firestore.rules and tests/rules.test.mjs). That means the whole app: looks, features, the shop, everything). Massimo reviews every change before it goes live and turns down what he doesn't want, so don't refuse ideas because they seem big or touch something important. Just do them well.
 
 HOW CAMPUSCORD WORKS (don't guess):
 - There is NO backend server, NO SQL tables, NO API endpoints and NO routes. It's ONE web page: plain JavaScript in the browser (no React or frameworks) that talks straight to a Firebase Firestore database (collections and documents) using the Firebase modular SDK v10.12.2. Images are stored inside documents as data URLs.
 - The files in src/ are joined into one page by a build script. All the .js files share ONE scope (no imports or exports between them), so a function in one file can be used in another. Before adding a function, search this file to make sure the name isn't already used, or the whole app crashes.
-- Security lives in firestore.rules (who can read and write each collection). You can read it, but you can NOT change it from here, so never write rules changes or tests. If an idea needs a NEW collection or new fields the rules don't allow yet (for example group chats), say so in ONE short sentence: "This needs a database change first. Ask Massimo to get Claude to add it." Then stop, or offer a smaller version that works with the rules that already exist.
+- Security lives in firestore.rules (who can read and write each collection). You CAN change it, the same way as any other file (FILE: firestore.rules). If a feature needs a NEW collection or new fields (for example group chats), add the rules for them AND add tests for them to tests/rules.test.mjs (FILE: tests/rules.test.mjs), copying how the existing "dms" rules and tests work. Ask me for those parts of the files first (for example "the dms part of firestore.rules"). Keep everyone's data safe: people should only be able to read and change what they're allowed to. Put the rules changes in the SAME answer as the app changes, all in the normal FILE: format.
 - Useful helpers: h(tag, attrs, ...children) builds HTML elements; S is the app state (S.uid = me, S.members, S.rooms, S.dms); nickOf(uid) gives a name; avatar(uid, "sm") gives an avatar; toast(text) shows a message; need("side","msgs") redraws parts of the screen; openChat(kind, id) opens a chat; modal((m, close) => {...}) opens a pop-up; isOwner() and isAdmin() check roles.
 - Use the MAP to find what you need. Some starting points in src/app.js: messages are drawn in "function messageEl", sending is "function send", chats open in "function openChat", DMs are "function openDM" and "function renderDMList", the left list is "function renderSide", the top bar is "function renderHeader", the right panel is "function renderRPanel". The shop is src/cosmetics.js, styles are src/style.css.
 
@@ -150,6 +150,7 @@ const SUB_STATUS = {
   failed:["❌", "Didn't pass the tests."],
   approved:["🚀", "Approved! Going live in a few minutes…"],
   live:["🎉", "Live on CampusCord!"],
+  pr:["🧩", "Changes the database rules, so it needs one more click: open it on GitHub and press Merge. The rules get tested before they go live."],
   error:["⚠️", "Couldn't put it live."],
   rejecting:["✖", "Turned down."], rejected:["✖", "Turned down."],
 };
@@ -166,6 +167,7 @@ function subCard(x){
     btns.append(h("button",{class:"btn approve", onclick:e => { e.currentTarget.disabled = true; decideSub(x, true); }}, ic("check"), " Approve & put it live"),
       h("button",{class:"btn ghost", onclick:() => confirmBox("Turn down \"" + x.title + "\"?", (x.nick || "They") + " can send a new version.", "Turn down", () => decideSub(x, false))}, "Turn down"));
   }
+  if (x.status === "pr" && x.prUrl && isOwner()) btns.append(h("a",{class:"btn approve", href:x.prUrl, target:"_blank", rel:"noopener"}, "Open on GitHub to merge"));
   if (x.diff) btns.append(h("button",{class:"btn small ghost", onclick:() => diffModal(x)}, "See the code"));
   if (!isOwner() && (x.status === "failed" || x.status === "error") && x.error) btns.append(h("button",{class:"btn small", onclick:() => copy(fixMessageForAI([x.error]), "Copied! Paste it to your AI so it can fix it.")}, ic("copy","sm"), " Copy a fix message for your AI"));
   if (["new", "failed", "error", "rejected", "live"].includes(x.status) && (isOwner() || x.uid === S.uid)) btns.append(h("button",{class:"btn small ghost", onclick:() => deleteDoc(doc(db, "devSubs", x.id)).catch(e => toast(errMsg(e)))}, x.status === "live" ? "Clear" : "Remove"));
