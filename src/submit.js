@@ -154,10 +154,12 @@ function easyPanelEl(){
   const box = h("div",{class:"easy"});
   const step = (n, title, text, ...rest) => h("div",{class:"estep"}, h("div",{class:"gnum",text:String(n)}), h("div",{class:"gbody"}, h("b",{text:title}), text ? h("p",{text}) : null, ...rest));
   // 1
-  const copyAll = h("button",{class:"btn", onclick:async () => { copyAll.disabled = true; const old = copyAll.innerHTML; copyAll.textContent = "Loading the code…";
-      try{ await loadSources(); copy(allCodeText(), "Copied! Paste it into a NEW Gemini chat."); }catch(e){ toast("Couldn't load the code. Try again."); }
-      copyAll.disabled = false; copyAll.innerHTML = old; }}, ic("copy"), " Copy everything for AI");
-  const dl = h("button",{class:"btn ghost", onclick:async () => { try{ await loadSources(); const a = h("a",{href:URL.createObjectURL(new Blob([allCodeText()], {type:"text/plain"})), download:"campuscord-for-ai.txt"}); document.body.appendChild(a); a.click(); a.remove(); }catch(e){ toast("Couldn't load the code."); } }}, ic("arrowdown","sm"), " Download as a file");
+  const dl = h("button",{class:"btn", onclick:async () => { const old = dl.innerHTML; dl.disabled = true; dl.textContent = "Getting the code…";
+      try{ await loadSources(); const a = h("a",{href:URL.createObjectURL(new Blob([allCodeText()], {type:"text/plain"})), download:"campuscord-for-ai.txt"}); document.body.appendChild(a); a.click(); a.remove(); toast("Downloaded! Now attach it in Gemini."); }
+      catch(e){ toast("Couldn't get the code. Check your internet and try again."); }
+      dl.disabled = false; dl.innerHTML = old; }}, ic("arrowdown","sm"), " Download the code file");
+  const FIRST_MSG = "I attached CampusCord's code. Read the instructions at the top of the file and follow them.";
+  const first = h("button",{class:"btn ghost", onclick:() => copy(FIRST_MSG, "Copied! Paste it in Gemini next to the file.")}, ic("copy","sm"), " Copy the first message");
   // 3
   const title = h("input",{class:"inp", maxlength:"100", placeholder:"What does it do? e.g. Purple send button"});
   const ans = h("textarea",{class:"inp eans", rows:"6", placeholder:"Paste the AI's whole answer here (the part with <<<<<<< FIND in it). Extra text around it is fine."});
@@ -178,8 +180,13 @@ function easyPanelEl(){
     catch(e){ toast("Couldn't send: " + errMsg(e)); }
     send.textContent = "Send to Massimo"; };
   box.append(h("div",{class:"ehead"}, h("h3",{text:"Make a change in 3 steps"}), h("span",{class:"note",style:{margin:0},text:"No GitHub needed. Massimo approves every change."})),
-    step(1, "Give your AI all the code", "Press the button, open Gemini, start a NEW chat and paste. (If Gemini says it's too long, use Download and attach the file instead.)",
-      h("div",{class:"gbtns"}, copyAll, dl, h("a",{class:"btn ghost", href:"https://gemini.google.com/app", target:"_blank", rel:"noopener"}, "Open Gemini"))),
+    step(1, "Give your AI all the code", null,
+      h("ol",{class:"esub"},
+        h("li",null, "Press ", h("b",{text:"Download the code file"}), "."),
+        h("li",null, "Open Gemini and start a ", h("b",{text:"new chat"}), "."),
+        h("li",null, "Click the ", h("b",{text:"+"}), " next to the message box and attach ", h("b",{text:"campuscord-for-ai.txt"}), " (it's in your Downloads)."),
+        h("li",null, "Paste the first message next to it and send.")),
+      h("div",{class:"gbtns"}, dl, first, h("a",{class:"btn ghost", href:"https://gemini.google.com/app", target:"_blank", rel:"noopener"}, "Open Gemini"))),
     step(2, "Tell the AI your idea", "Just chat in normal words, like \"make the send button purple\" or \"add a dark green theme\". When it's ready, it gives you the changes in a special format with <<<<<<< FIND in it."),
     step(3, "Paste the AI's answer and send it", null, title, ans, res, h("div",{class:"gbtns"}, send)));
   return box;
