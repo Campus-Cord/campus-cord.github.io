@@ -1418,9 +1418,11 @@ function renderComposer(){
   const bars = $("cbars"); bars.innerHTML = "";
   $("composer").classList.toggle("hidden", isPage(S.kind)); if (isPage(S.kind)) return;
   const dmGone = S.kind === "dm" && (isBanned(dmOther({id:S.cur})) || !member(dmOther({id:S.cur})));
-  const ok = canPost() && !dmGone; const vroom = S.kind === "room" && isVouchRoom(curRoom());
-  // #vouches is vouch-only: no regular chatting, just the Write a vouch button
-  $("cbox").classList.toggle("hidden", !ok || vroom); $("locked").classList.toggle("hidden", ok);
+const ok = canPost() && !dmGone; const vroom = S.kind === "room" && isVouchRoom(curRoom());
+const proom = S.kind === "room" && isPollRoom(curRoom());
+if (proom) ensureDailyPoll(curRoom());
+// #vouches and #daily-poll: no regular chatting, just voting / vouches
+$("cbox").classList.toggle("hidden", !ok || vroom || proom); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
     lk.append(ic(tu ? "hourglass" : "lock"), dmGone ? "This person isn't in CampusCord anymore." : tu ? "You're timed out until " + fmtTime(tu) + ". You can still read and use DMs." : "Only admins can post in this announcement room."); }
   if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
