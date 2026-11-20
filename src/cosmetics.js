@@ -239,15 +239,29 @@ function renderShopPage(box){
     const spot = spotlightItems();
     body.appendChild(h("div",{class:"ssec spot"}, h("div",{class:"ssh"}, h("h3",null, ic("sparkles"), " Today's Spotlight"), h("span",{class:"spottimer"}, ic("hourglass","sm"), " New picks in " + untilNextDay())),
       h("div",{class:"igrid"}, spot.map(itemCard))));
-    body.append(shopSection("Bundles", [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]], "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
-      shopSection("Animated Banners", COSM.filter(c => c.type === "pban").slice(0, 4), "pban"),
-      shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));
-    body.appendChild(h("div",{class:"earnbar"}, ic("spark"), h("div",{style:{flex:"1"}}, h("b",{text:"Get Sparks"}), h("div",{class:"note",style:{margin:0},text:"Sparks are bought with real money and spent on anything in the Shop. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
-      h("button",{class:"btn small", onclick:() => openSparks()}, "Buy Sparks")));
+    const categories = [
+      { name: "Bundles", items: [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]].filter(Boolean), type: "bundle" },
+      { name: "Avatar Decorations", items: COSM.filter(c => c.type === "deco"), type: "deco" },
+      { name: "Animated Banners", items: COSM.filter(c => c.type === "pban"), type: "pban" },
+      { name: "Profile Effects", items: COSM.filter(c => c.type === "pfx"), type: "pfx" },
+      { name: "Nameplates", items: COSM.filter(c => c.type === "plate"), type: "plate" }
+    ];
+    categories.forEach(cat => {
+      const displayItems = cat.items.slice(0, 4);
+      if (displayItems.length) body.appendChild(shopSection(cat.name, displayItems, cat.type));
+    });
+    
+    body.appendChild(h("div",{class:"earnbar"}, ic("spark"), h("div",{style:{flex:"1"}}, h("b",{text:"Need more Sparks?"}), h("div",{class:"note",style:{margin:0},text:"You currently have " + sparks(S.uid).toLocaleString() + " Sparks available. Sparks can be used on anything in the Shop."})),
+      h("button",{class:"btn small", onclick:() => openSparks()}, "Get Sparks")));
   } else {
     const all = [...BUNDLES, ...COSM];
     const list = filterItems(tab === "featured" ? all : all.filter(c => c.type === tab));
-    if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"40px",textAlign:"center"},text: S.wishOnly ? "Your wishlist is empty. Tap the heart on anything you like." : "Nothing matches that search."}));
+    if (!list.length) {
+      body.appendChild(h("div",{class:"empty-note",style:{padding:"60px 20px",textAlign:"center",display:"flex",flexDirection:"column",alignItems:"center",gap:"8px",color:"var(--t2)"}},
+        h("div",{style:{transform:"scale(1.5)",marginBottom:"10px"}}, ic(S.wishOnly ? "heart" : "search")),
+        h("b",{text: S.wishOnly ? "Your wishlist is empty" : "No matches found", style:{fontSize:"16px",color:"var(--t1)"}}),
+        h("div",{text: S.wishOnly ? "Browse the shop and tap the heart on items you love to save them here." : "Try adjusting your search terms to find what you're looking for."})));
+    }
     else body.appendChild(h("div",{class:"ssec"}, h("div",{class:"ssh"}, h("h3",{text: tab === "featured" ? (S.wishOnly ? "Wishlist" : "Results") : SHOP_TABS.find(t => t.id === tab).name})), h("div",{class:"igrid"}, list.map(itemCard))));
   }
   box.appendChild(wrap); box.scrollTop = keep;
