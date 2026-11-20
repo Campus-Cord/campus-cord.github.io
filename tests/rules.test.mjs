@@ -43,11 +43,24 @@ await t("can't vouch for yourself", assertFails(vouch("alice", "general", "v2", 
 await t("can't give 6 stars", assertFails(vouch("alice", "general", "v3", { uid: "alice", text: "wow", ts: now, vouch: { to: "server", stars: 6, n: 3 } })));
 await t("timed-out member can't post", assertFails(setDoc(doc(as("timed"), "rooms/general/msgs/m2"), { uid: "timed", text: "hi", ts: now })));
 await t("invited member reads private room", assertSucceeds(getDoc(doc(as("alice"), "rooms/secret/msgs/x"))));
-await t("uninvited member can't read private room", assertFails(getDoc(doc(as("bob"), "rooms/secret"))));
+await t("uninvited member can't read private room", assertFails(getDoc(doc(as("bob"), "rooms/secret/msgs/x"))));
 
 console.log("Groups");
 await t("create a group", assertSucceeds(setDoc(doc(as("alice"), "groups/g1"), { uid: "alice", users: ["alice", "bob"], ts: now })));
-await t("non-member can't read group", assertFails(getDoc(doc(as("carol"), "groups/g1"))));/msgs/x"))));
+await t("group member can read the group", assertSucceeds(getDoc(doc(as("bob"), "groups/g1"))));
+await t("non-member can't read group", assertFails(getDoc(doc(as("dev"), "groups/g1"))));
+await t("member lists their groups", assertSucceeds(getDocs(query(collection(as("bob"), "groups"), where("users", "array-contains", "bob")))));
+await t("can't make a group for someone else", assertFails(setDoc(doc(as("alice"), "groups/g2"), { uid: "bob", users: ["alice", "bob"], ts: now })));
+await t("can't make a group you're not in", assertFails(setDoc(doc(as("alice"), "groups/g3"), { uid: "alice", users: ["bob", "dev"], ts: now })));
+await t("group member sends a message", assertSucceeds(setDoc(doc(as("bob"), "groups/g1/msgs/m1"), { uid: "bob", text: "hey", ts: now })));
+await t("group member reads messages", assertSucceeds(getDoc(doc(as("alice"), "groups/g1/msgs/m1"))));
+await t("non-member can't read group messages", assertFails(getDoc(doc(as("dev"), "groups/g1/msgs/m1"))));
+await t("non-member can't post in a group", assertFails(setDoc(doc(as("dev"), "groups/g1/msgs/m2"), { uid: "dev", text: "hi", ts: now })));
+await t("can't post as someone else in a group", assertFails(setDoc(doc(as("alice"), "groups/g1/msgs/m3"), { uid: "bob", text: "fake", ts: now })));
+await t("can't edit someone else's group message", assertFails(updateDoc(doc(as("alice"), "groups/g1/msgs/m1"), { text: "changed" })));
+await t("member updates the group (last message)", assertSucceeds(updateDoc(doc(as("bob"), "groups/g1"), { lastTs: now, lastUid: "bob" })));
+await t("member adds a friend to the group", assertSucceeds(updateDoc(doc(as("alice"), "groups/g1"), { users: ["alice", "bob", "dev"] })));
+await t("non-member can't add themselves", assertFails(updateDoc(doc(as("timed"), "groups/g1"), { users: ["alice", "bob", "dev", "timed"] })));
 
 console.log("Presence & voice");
 await t("set yourself as away", assertSucceeds(updateDoc(doc(as("alice"), "members/alice"), { away: true, lastSeen: now })));
@@ -74,6 +87,8 @@ await t("can't inflate a quest reward", assertFails(updateDoc(doc(as("alice"), "
 const dqDay = Math.floor((Date.now() - 18000000) / 86400000);
 const dqId = `dq_${dqDay}_dq_chat5`;
 await t("claim today's daily quest for Sparks", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 160, quests: ["q_first", dqId], lastQuest: dqId })));
+await t("can't remove a claimed quest to claim it again", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 260, quests: [dqId, "q_first"].slice(1).concat([]), lastQuest: "q_first" })));
+await t("can't swap out an old quest for a new one", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 310, quests: [dqId, "q_react"], lastQuest: "q_react" })));
 await t("can't claim yesterday's daily quest", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 220, quests: ["q_first", dqId, `dq_${dqDay - 1}_dq_chat5`], lastQuest: `dq_${dqDay - 1}_dq_chat5` })));
 await t("claim the free decoration", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 0, items: ["d_bubble"], lastItem: "d_bubble" })));
 await t("can't buy without enough Sparks", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 700, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
