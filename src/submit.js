@@ -66,7 +66,7 @@ function aiStarter(){
   return `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
 
 IMPORTANT: The full code is too big to send at once, so at the end of this file is a MAP of CampusCord's code: every function and setting, with its file and line number. You have NOT seen the code itself yet. Never guess or invent code.
-When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once. Ask for only what you really need, at most 6 names at a time. The map shows each piece's starting line, so you can see how big it is: keep each request under 1000 lines in total. CampusCord never sends more than 1000 lines at once. If you need more, ask in your next message.
+When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once. Ask for only what you really need, at most 4 names at a time. The map shows how many lines each piece has: add them up and keep each request under 1000 lines. Never ask for whole big files like src/app.js or src/style.css. If the code comes in parts (\"PART 1 OF 3\"), just reply \"OK, next\" until you have the last part.
 
 YOU CAN CHANGE ANYTHING: every file in src/ plus the database rules (firestore.rules and tests/rules.test.mjs). That means the whole app: looks, features, the shop, everything). Massimo reviews every change before it goes live and turns down what he doesn't want, so don't refuse ideas because they seem big or touch something important. Just do them well.
 
@@ -110,7 +110,7 @@ function codeMapText(){
     if (/\.m?js$/.test(f.file)){ out.push("\n## " + f.path);
       f.blocks.forEach(b => { const first = (b.code.split("\n").find(l => /^(async function|function|const|let|class)\s/.test(l)) || "").trim();
         const sig = /function/.test(b.kind) ? (first.match(/^(async\s+)?function\s+[\w$]+\s*\([^)]*\)/) || [first.slice(0, 70)])[0] : b.kind + " " + b.name;
-        out.push("L" + b.a + "  " + sig); }); }
+        out.push("L" + b.a + "  " + sig + "  (" + (b.b - b.a + 1) + " lines)"); }); }
     else if (f.file.endsWith(".css")){ out.push("\n## " + f.path + " (ask for CSS by class name, like `.icard`; sections:)");
       f.lines.forEach((l, i) => { const m = l.match(/^\/\*\s*(.{3,60}?)\s*\*\//); if (m) out.push("L" + (i + 1) + "  /* " + m[1] + " */"); }); }
     else out.push("\n## " + f.path + " (" + f.lines.length + " lines; ask for it by file name if you need it)"); });

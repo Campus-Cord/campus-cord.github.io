@@ -1388,3 +1388,8 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .easy .gbtns .btn,.subcard .btn{width:auto;margin:0}
 .esub{margin:2px 0 4px;padding-left:20px;color:var(--muted);font-size:13.5px;line-height:1.6}.esub b{color:var(--text)}
 .cfind.inline{margin:4px 0 0;background:var(--card)}
+
+/* Code finder parts */
+.cfparts{display:flex;flex-wrap:wrap;gap:8px}
+.cfparts .cfcopy.done{opacity:.6}
+.cfparts .cfcopy.done::after{content:" ✓"}

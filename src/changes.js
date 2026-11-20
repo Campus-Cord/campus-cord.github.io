@@ -304,17 +304,23 @@ function codeFinderEl(){
     const r = findCode(v);
     const miss = (r.missing || []).length ? "\n\n(These names don't exist in CampusCord's code, so they're not included: " + r.missing.join(", ") + ". Check the map for the right name.)" : "";
     if (!r.best.length){ out.append(h("p",{class:"note",text: miss ? "None of these exist in the code: " + r.missing.join(", ") + ". Ask your AI to check the map for the right names." : "Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); if (miss) out.append(h("button",{class:"btn small", onclick:() => copy(miss.trim(), "Copied! Paste it to your AI.")}, ic("copy","sm"), " Copy a note for your AI")); return; }
-    // Never hand the AI more than CF_MAX_LINES at once; the rest waits for its next message.
-    const sent = [], later = []; let used = 0;
-    r.best.forEach(b => { const n = b.code.split("\n").length; if (!sent.length || used + n <= CF_MAX_LINES){ sent.push(b); used += n; } else later.push(b); });
-    if (sent.length === 1 && used > CF_MAX_LINES){ const b = sent[0]; sent[0] = Object.assign({}, b, {b:b.a + CF_MAX_LINES - 1, code:b.code.split("\n").slice(0, CF_MAX_LINES).join("\n")}); }
-    r.best = sent;
-    const tooMuch = later.length ? "\n\n(That was a lot of code at once, so I'm sending the rest in my next message: " + later.map(b => b.name).join(", ") + ". Work with this first, or tell me which of those you really need.)" : "";
-    const text = r.best.map(aiCopyText).join("\n\n") + miss + tooMuch;
+    // Split into parts of at most CF_MAX_LINES lines each (a huge piece gets cut into several parts).
+    const pieces = [];
+    r.best.forEach(b => { const ls = b.code.split("\n");
+      for (let k = 0; k < ls.length; k += CF_MAX_LINES) pieces.push(ls.length <= CF_MAX_LINES ? b : Object.assign({}, b, {a:b.a + k, b:Math.min(b.b, b.a + k + CF_MAX_LINES - 1), code:ls.slice(k, k + CF_MAX_LINES).join("\n")})); });
+    const parts = []; let cur = [], used = 0;
+    pieces.forEach(b => { const n = b.code.split("\n").length; if (cur.length && used + n > CF_MAX_LINES){ parts.push(cur); cur = []; used = 0; } cur.push(b); used += n; });
+    if (cur.length) parts.push(cur);
+    const N = parts.length;
+    const partText = (k) => (N > 1 ? "PART " + (k + 1) + " OF " + N + (k + 1 < N ? ". More code is coming, so just reply \"OK, next\" and wait for the next part." : ". That's all the code you asked for. Now continue.") + "\n\n" : "") +
+      parts[k].map(aiCopyText).join("\n\n") + (k === N - 1 ? miss : "");
+    const btnRow = h("div",{class:"cfparts"});
+    parts.forEach((p, k) => btnRow.append(h("button",{class:"btn cfcopy", onclick:e => { copy(partText(k), N > 1 ? "Copied part " + (k + 1) + "! Paste it into your AI." : "Copied! Now paste it into your AI."); e.currentTarget.classList.add("done"); }},
+      ic("copy"), N > 1 ? " Copy part " + (k + 1) + " of " + N : " Copy for AI")));
     out.append(h("div",{class:"cfbig"},
       h("div",null, h("b",{text: r.best.length === 1 ? "Found it: " + r.best[0].name : "Found " + r.best.length + " things: " + r.best.map(b => b.name).join(", ")}),
-        h("div",{class:"note",style:{margin:0},text: later.length ? "That's too much at once, so this copies " + used + " lines. After you paste it, paste the AI's next message here again to get the rest (" + later.map(b => b.name).join(", ") + ")." : "Press the button, then paste into your AI."})),
-      h("button",{class:"btn cfcopy", onclick:() => copy(text, "Copied! Now paste it into your AI.")}, ic("copy"), " Copy for AI")));
+        h("div",{class:"note",style:{margin:0},text: N > 1 ? "That's a lot of code, so it's split into " + N + " parts. Copy part 1 and paste it into your AI, then part 2, and so on." : "Press the button, then paste into your AI."})),
+      btnRow));
     r.best.forEach(b => out.append(hitEl(b, r.best.length === 1)));
     if (r.more.length){ const d = h("details",{class:"cfmore"}, h("summary",{text:"Not the right code? See " + r.more.length + " other matches"}));
       r.more.forEach(b => { const one = hitEl(b, false); one.querySelector(".cfrow").append(h("button",{class:"btn small ghost", onclick:() => copy(aiCopyText(b), "Copied! Now paste it into your AI.")}, "Copy this one")); d.append(one); });
