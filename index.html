@@ -1356,6 +1356,52 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .banreason{background:color-mix(in srgb,#f0565c 10%,var(--rail));border:1px solid color-mix(in srgb,#f0565c 40%,transparent);border-radius:10px;padding:10px 12px;margin:10px 0;text-align:left;display:flex;flex-direction:column;gap:2px}
 .banreason span{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#f0565c}.banreason b{font-weight:600}.banreason small{color:var(--muted)}
 .devtimes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 4px}.devtimes .btn:last-child{grid-column:1/-1}
+
+/* daily poll */
+.dailypoll .dpav{background:linear-gradient(135deg,#7c5cff,#3fb8ff);font-size:20px;display:flex;align-items:center;justify-content:center}
+.dailypoll .dpname{color:#c9b8ff;font-weight:800}
+.dailypoll .poll{max-width:460px}
+.dpnext{margin:6px 0 0;font-size:12px}
+
+/* Code Finder */
+.cfind{border:1px solid color-mix(in srgb,#3fdc7a 35%,var(--line));border-radius:12px;background:var(--rail);padding:12px 14px;margin:0 0 14px}
+.cfhead{display:flex;gap:10px;align-items:center;margin-bottom:10px}.cfic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#0d1117;color:#3fdc7a;flex:none}
+.cfind .row{display:flex;gap:8px}.cfsel{width:150px;flex:none}
+.cfout{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.cfhit{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}
+.cfrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cfrow .sp{flex:1}
+.cfkind{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#3fdc7a;background:#0d1117;border-radius:5px;padding:2px 6px}
+.cfname{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;word-break:break-all}
+.cfcode{margin:8px 0 0;max-height:260px;overflow:auto;background:#0d1117;color:#c9d1d9;border-radius:8px;padding:10px;font-size:12px;line-height:1.5;white-space:pre}
+.cfcode.hidden{display:none}
+
+.cfq{width:100%;box-sizing:border-box;resize:vertical;min-height:70px}
+.cfbig{display:flex;align-items:center;gap:12px;background:color-mix(in srgb,#3fdc7a 10%,var(--card));border:1px solid color-mix(in srgb,#3fdc7a 45%,transparent);border-radius:10px;padding:10px 12px}
+.cfbig>div{flex:1;min-width:0}.cfcopy{flex:none;background:#3ba55d;color:#fff;font-weight:700}
+.cfmore summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}.cfmore .cfhit{margin-top:6px}
+.cfbig .cfcopy{width:auto;margin:0;white-space:nowrap}.cfbig>div{flex:1 1 auto}
+
+/* Easy changes */
+.easy{border:1px solid color-mix(in srgb,#3fdc7a 40%,var(--line));border-radius:14px;background:var(--rail);padding:14px 16px;margin:0 0 14px;display:flex;flex-direction:column;gap:14px}
+.ehead h3{margin:0 0 2px;font-size:18px}
+.estep{display:flex;gap:12px;align-items:flex-start}.estep .gbody{flex:1;min-width:0;gap:6px}
+.estep .gnum{background:#1f8f4e;width:30px;height:30px;font-size:15px}
+.eans{width:100%;box-sizing:border-box;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;resize:vertical}
+.eok{background:color-mix(in srgb,#3ba55d 14%,var(--card));border:1px solid color-mix(in srgb,#3ba55d 50%,transparent);border-radius:10px;padding:8px 12px;font-size:14px}
+.ebad{background:color-mix(in srgb,#f0565c 10%,var(--card));border:1px solid color-mix(in srgb,#f0565c 45%,transparent);border-radius:10px;padding:8px 12px;font-size:13.5px}
+.ebad ul{margin:6px 0 8px;padding-left:18px}
+.subs{margin:0 0 14px}
+.subcard{border:1px solid var(--line);border-left:4px solid #ffd166;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--rail)}
+.subcard.s-ready{border-left-color:#3ba55d}.subcard.s-live{border-left-color:#7c5cff}.subcard.s-failed,.subcard.s-error{border-left-color:#f0565c}.subcard.s-rejected,.subcard.s-rejecting{opacity:.6;border-left-color:var(--line)}
+.subtop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.subtop b{font-size:15px}
+.subst{display:flex;gap:6px;font-size:14px;margin-top:4px;font-weight:600}
+.suberr{margin-top:6px;font-size:13px;color:#f0565c;white-space:pre-wrap}
+.advanced{margin-top:6px}
+.diffmodal{max-width:880px;width:94vw}
+.diffview{max-height:60vh;overflow:auto;background:#0d1117;color:#c9d1d9;border-radius:8px;padding:10px;font-size:12px;line-height:1.45;white-space:pre}
+.diffview .dadd{color:#3fdc7a;background:rgba(63,220,122,.08)}.diffview .ddel{color:#ff7b72;background:rgba(255,123,114,.08)}.diffview .dhunk{color:#79c0ff}
+.easy .gbtns .btn,.subcard .btn{width:auto;margin:0}
+.esub{margin:2px 0 4px;padding-left:20px;color:var(--muted);font-size:13.5px;line-height:1.6}.esub b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -1468,7 +1514,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-19.2155";
+const APP_VERSION = "2026-11-20.0856";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1656,15 +1702,18 @@ const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid)) && (!de
 // Designers made CampusCord's look (logo, role tags). A title + badge + ring; no extra admin powers.
 const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid));
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
-function member(uid){ return S.members[uid] || null; }
-function profile(uid){ return S.profiles[uid] || {}; }
+// Linked accounts: an old account's uid points at the new one (config/main.aliases), so its messages show the new person.
+function realUid(uid){ const al = (S.config && S.config.aliases) || {}; let u = uid, n = 0; while (al[u] && n++ < 5) u = al[u]; return u; }
+function member(uid){ uid = realUid(uid); const m = S.members[uid]; if (!m) return null;
+  const lj = ((S.config && S.config.linkedJoined) || {})[uid]; return lj && (!m.joinedAt || lj < m.joinedAt) ? Object.assign({}, m, {joinedAt:lj}) : m; }
+function profile(uid){ return S.profiles[realUid(uid)] || {}; }
 function nickOf(uid){ const m = member(uid); return (m && m.nick) || "Former member"; }
 function colorOf(uid){ const m = member(uid); return (m && m.color) || "#6f7480"; }
 function isBanned(uid){ return !!(S.config && Array.isArray(S.config.banned) && S.config.banned.includes(uid)); }
 function perkActive(entry){ return !!entry && (!entry.until || entry.until > Date.now()); }
 function hasPerk(uid, key){
   if (isOwnerUid(uid)) return true;
-  const items = (S.perks[uid] && S.perks[uid].items) || {};
+  uid = realUid(uid); const items = (S.perks[uid] && S.perks[uid].items) || {};
   if (perkActive(items[key])) return true;
   if (PLUS_INCLUDES.includes(key) && perkActive(items.plus)) return true;
   if (PLUSPLUS_INCLUDES.includes(key) && perkActive(items.plusplus)) return true;
@@ -1672,7 +1721,7 @@ function hasPerk(uid, key){
 }
 function hasPlus(uid){ return hasPerk(uid, "plus"); }
 // rank for display: "plusplus" | "plus" | "supporter" | null (the owner shows ADMIN instead)
-function rankOf(uid){ const items = ((S.perks[uid]||{}).items)||{};
+function rankOf(uid){ const items = ((S.perks[realUid(uid)]||{}).items)||{};
   if (perkActive(items.plusplus)) return "plusplus"; if (perkActive(items.plus)) return "plus"; if (perkActive(items.supporter)) return "supporter"; return null; }
 // Freshness on *our* clock: the first time we see a timestamp we trust it (capped at now); after that, whenever it
 // changes we record when we saw the change. Friends whose computer clocks are off no longer look offline.
@@ -1767,7 +1816,7 @@ function start(){
   onSnapshot(doc(db, "config/main"), snap => {
     S.config = snap.exists() ? snap.data() : null; S.configLoaded = true;
     if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
-    route(); applyPrefs(); need("rail","side","header","msgs","rpanel","me","composer");
+    route(); applyPrefs(); adoptLinkedProfile(); need("rail","side","header","msgs","rpanel","me","composer");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   onSnapshot(collection(db, "members"), snap => {
     const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.members = m; S.membersLoaded = true;
@@ -1775,7 +1824,7 @@ function start(){
     route(); need("side","msgs","rpanel","me","header","typing");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   // optional collections (need v3 rules) — fail quietly
-  onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; need("side","msgs","rpanel","me","header"); }, () => {});
+  onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; adoptLinkedProfile(); need("side","msgs","rpanel","me","header"); }, () => {});
   onSnapshot(collection(db, "wallet"), snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); S.wallets = w; S.walletsLoaded = true;
     if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane();
     const mw = w[S.uid]; if (mw && mw.welcomed && prefs.sawWelcome !== mw.welcomed){ prefs.sawWelcome = mw.welcomed; savePrefs(); setTimeout(() => welcomeGiftPopup(), 1200); } }, () => {});
@@ -1905,6 +1954,9 @@ async function ownerHousekeeping(){
     if (!S.config.vouchRoomMade && !GIFTED.has("#vouches") && !S.allRooms.some(r => r.type === "vouches")){ GIFTED.add("#vouches");
       await setDoc(doc(db, "rooms", "vouches-" + rid().slice(-4)), {name:"vouches", topic:"Vouch for friends and for CampusCord with /vouch ⭐", category:"Text rooms", readonly:false, type:"vouches", order:S.rooms.length, createdAt:Date.now()});
       await updateDoc(doc(db, "config/main"), {vouchRoomMade:true}); }
+    if (!S.config.pollRoomMade && !GIFTED.has("#poll") && !S.allRooms.some(r => r.type === "poll")){ GIFTED.add("#poll");
+      await setDoc(doc(db, "rooms", "daily-poll-" + rid().slice(-4)), {name:"daily-poll", topic:"A new poll every day 📊 Click an answer to vote", category:"Text rooms", readonly:false, type:"poll", order:S.rooms.length, createdAt:Date.now()});
+      await updateDoc(doc(db, "config/main"), {pollRoomMade:true}); }
     const flags = S.config.nameFlags || {};
     for (const [u, f] of Object.entries(flags)){ if (!f.active || !member(u) || !nameLocked(u) || Date.now() < f.at + NAME_DAYS * 864e5) continue;
       await updateDoc(doc(db, "config/main"), {["nameFlags." + u + ".active"]:false, ["nameFlags." + u + ".removedAt"]:Date.now()});
@@ -1990,7 +2042,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge(); watchSubs();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -2047,7 +2099,7 @@ function renderRail(){
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
-  if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: S.openChanges || 0}));
+  if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: (S.openChanges || 0) + (isOwner() ? subsWaiting() : 0)}));
   if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
   r.append(top, bot);
@@ -2106,7 +2158,7 @@ function renderSide(){
       list.appendChild(h("div",{class:"ch" + (on ? " on" : "") + (un ? " unread" : "") + (isMuted(r.id) ? " muted" : "") + (vr ? " voice" : "") + (inV ? " invoice" : ""),
           "data-room": r.id, "data-in": opts.pinned ? "pins" : c, draggable: (opts.pinned || isAdmin()) ? "true" : null,
           onclick:() => { if (vr){ joinVoice(r.id); bumpStat("voice"); } openChat("room", r.id); }, oncontextmenu:e => roomMenu(e, r), title: vr ? (inV ? "You're in this voice channel" : "Click to join voice") : null},
-        h("span",{class:"ic"}, isVouchRoom(r) ? h("span",{class:"vico",text:"★"}) : ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
+        h("span",{class:"ic"}, isVouchRoom(r) ? h("span",{class:"vico",text:"★"}) : isPollRoom(r) ? h("span",{class:"vico",text:"📊"}) : ic(vr ? "volume" : r.private ? "lock" : r.readonly ? "megaphone" : "hash")), h("span",{class:"nm",text:r.name}),
         vr && vn ? h("span",{class:"vcount",text:vn + "/" + VOICE_MAX}) : null,
         h("button",{class:"x pinb" + (opts.pinned ? " on" : ""), title: opts.pinned ? "Unpin" : "Pin to top", onclick:e => { e.stopPropagation(); togglePinRoom(r.id); }}, ic("pin")),
         isAdmin() && (isOwner() || !r.private) ? h("button",{class:"x edit", title:"Edit room", onclick:e => { e.stopPropagation(); roomModal(r); }}, ic("settings")) : null,
@@ -2391,6 +2443,7 @@ function subscribeMsgs(first){
       if (!S.stickBottom && !document.hidden) $("jump").classList.remove("hidden");
     });
     S.msgs = msgs; S.roomLoaded = true;
+    if (kind === "room" && isPollRoom(curRoom())) ensureDailyPoll(curRoom());
     if (!document.hidden) markRead();
     need("msgs");
   }, e => toast("Lost connection to this chat: " + errMsg(e)));
@@ -2526,6 +2579,7 @@ function reactionRow(m, reacts){
   return wrap;
 }
 function messageEl(m, first, reacts){
+  if (m.daily && m.poll) return dailyPollEl(m, reacts);
   if (m.vouch){ const el = vouchEl(m); const rw = reactionRow(m, reacts); if (rw) el.querySelector(".body").appendChild(rw); el.oncontextmenu = e => msgMenu(e, m); return el; }
   if (m.join){ const line = JOIN_LINES[parseInt(m.id.replace(/\D/g, "").slice(-3) || "0", 10) % JOIN_LINES.length];
     return h("div",{class:"msg joinmsg first", id:"m-" + m.id}, h("div",{class:"gut"}, h("span",{class:"joinic"}, ic("arrowdown"))),
@@ -2672,6 +2726,7 @@ function memberMenu(ev, uid){
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" + (devUntil(uid) ? " (until " + devTimeLabel(devUntil(uid)) + ")" : "") : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     ...modMenuItems(uid),
+    isOwner() && !isOwnerUid(uid) ? {label:"Link an old account…", icon:"users", run:() => linkAccountModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label:"Give 2 more vouch tries (" + vouchTries(uid).left + " left)", icon:"star", run:() => giveVouchTries(uid, 2)} : null,
     canModerate(uid) ? "-" : null,
     canModerate(uid) && !tu ? {label:"Timeout 5 minutes", icon:"hourglass", run:() => setTimeoutFor(uid, 5)} : null,
@@ -2879,14 +2934,17 @@ function renderComposer(){
   $("composer").classList.toggle("hidden", isPage(S.kind)); if (isPage(S.kind)) return;
   const dmGone = S.kind === "dm" && (isBanned(dmOther({id:S.cur})) || !member(dmOther({id:S.cur})));
   const ok = canPost() && !dmGone; const vroom = S.kind === "room" && isVouchRoom(curRoom());
-  // #vouches is vouch-only: no regular chatting, just the Write a vouch button
-  $("cbox").classList.toggle("hidden", !ok || vroom); $("locked").classList.toggle("hidden", ok);
+  const proom = S.kind === "room" && isPollRoom(curRoom());
+  if (proom) ensureDailyPoll(curRoom());
+  // #vouches and #daily-poll: no regular chatting, just vouches / voting
+  $("cbox").classList.toggle("hidden", !ok || vroom || proom); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
     lk.append(ic(tu ? "hourglass" : "lock"), dmGone ? "This person isn't in CampusCord anymore." : tu ? "You're timed out until " + fmtTime(tu) + ". You can still read and use DMs." : "Only admins can post in this announcement room."); }
   if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
   if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"ib", title:"Remove", onclick:() => setPending(null)}, ic("x"))));
   const r = curRoom();
   input.placeholder = S.kind === "dm" ? "Message @" + nickOf(dmOther({id:S.cur})) : isVouchRoom(r) ? "Type /vouch or click Write a vouch" : "Message #" + (r ? r.name : "");
+  if (isPollRoom(r) && ok) bars.appendChild(h("div",{class:"cbar vbarw vonly"}, h("span",{text:"📊"}), h("span",{text:"This channel is for the daily poll — click an answer to vote. A new poll drops every day at midnight."})));
   if (isVouchRoom(r) && ok) bars.appendChild(h("div",{class:"cbar vbarw vonly"}, h("span",{text:"🎉"}), h("span",{text:"This channel is for vouches only — rate a friend or CampusCord with stars, a short review and optional proof."}), h("span",{class:"sp"}), h("button",{class:"btn small", onclick:() => openVouchModal()}, "Write a vouch")));
   $("hintline").textContent = "";
   requestAnimationFrame(autoGrow);
@@ -3150,12 +3208,13 @@ function roomModal(room, cat){
     const t = h("input",{class:"inp", placeholder:"What's this room for?", value: room ? room.topic || "" : ""});
     const c = h("input",{class:"inp", placeholder:"Text rooms", value: room ? room.category || "Text rooms" : (cat || "Text rooms"), list:"catlist"});
     const dl = h("datalist",{id:"catlist"}, [...new Set(S.rooms.map(r => r.category || "Text rooms"))].map(x => h("option",{value:x})));
-    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice"), vch = !!(room && room.type === "vouches");
+    let ro = !!(room && room.readonly), vc = !!(room && room.type === "voice"), vch = !!(room && room.type === "vouches"), pch = !!(room && room.type === "poll");
     const sw = h("button",{class:"sw" + (ro ? " on" : ""), onclick:() => { ro = !ro; sw.classList.toggle("on", ro); }});
     const vsw = h("button",{class:"sw" + (vc ? " on" : ""), onclick:() => { vc = !vc; vsw.classList.toggle("on", vc); if (vc && !room && (c.value === "Text rooms" || !c.value)) c.value = "Voice rooms"; }});
     m.append(h("label",{class:"f",text:"Room name"}), n, h("label",{class:"f",text:"Topic"}), t, h("label",{class:"f",text:"Category"}), c, dl,
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 20). It also has a text chat."})), vsw),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, "🎉 Vouches channel"), h("span",{text:"People post star-rated vouch cards with /vouch"})), (() => { const b = h("button",{class:"sw" + (vch ? " on" : ""), onclick:() => { vch = !vch; b.classList.toggle("on", vch); }}); return b; })()),
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, "📊 Daily poll channel"), h("span",{text:"A new poll every day; people just vote, no chatting"})), (() => { const b = h("button",{class:"sw" + (pch ? " on" : ""), onclick:() => { pch = !pch; b.classList.toggle("on", pch); }}); return b; })()),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
     let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
     const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
@@ -3171,7 +3230,7 @@ function roomModal(room, cat){
       drawPeople();
     }
     const save = async () => { const s = slug(n.value); if (!s){ toast("Give the room a name"); return; }
-      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : vch ? "vouches" : "text"};
+      const data = {name:s, topic:t.value.trim().slice(0,120), category:(c.value.trim() || "Text rooms").slice(0,32), readonly:ro, type: vc ? "voice" : vch ? "vouches" : pch ? "poll" : "text"};
       if (isOwner()){ data.private = priv; data.allowed = priv ? [...allowed] : []; }
       try{ if (room) await updateDoc(doc(db, "rooms", room.id), data);
         else { const id = s + "-" + rid().slice(-4); await setDoc(doc(db, "rooms", id), Object.assign(data, {order:S.rooms.length, createdAt:Date.now()})); close(); openChat("room", id); return; }
@@ -3788,7 +3847,7 @@ function catalogDoc(){ const prices = {}; Object.values(COSM_BY).filter(c => !c.
 
 // ---- wallet + ownership
 const EMPTY_WALLET = {earned:0, spent:0, items:[], quests:[], lastDaily:0, lastItem:"", lastQuest:""};
-function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[uid] || {}); }
+function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[realUid(uid)] || {}); }
 function sparks(uid){ const w = wal(uid); return Math.max(0, (w.earned || 0) - (w.spent || 0)); }
 function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid).items || [];
   if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }
@@ -4093,7 +4152,7 @@ const SPECIAL_BADGES = [
   {id:"hype", name:"Hype Squad", how:"Given by the owner to the people who keep chat alive.", rarity:"Rare"},
   {id:"event", name:"Event Winner", how:"Given by the owner to whoever won a server event.", rarity:"Epic"},
 ];
-function specialOf(uid){ return ((S.config && S.config.badges) || {})[uid] || []; }
+function specialOf(uid){ return ((S.config && S.config.badges) || {})[realUid(uid)] || []; }
 // Evolving badges: [threshold, tier]
 const SPEND_TIERS = [[500,"bronze"],[1500,"silver"],[3000,"gold"],[6000,"platinum"],[10000,"diamond"],[20000,"emerald"],[35000,"ruby"],[60000,"opal"]];
 const LOYAL_TIERS = [[7,"bronze"],[30,"silver"],[90,"gold"],[180,"platinum"],[365,"diamond"]];
@@ -4420,6 +4479,9 @@ YOU ARE NOT ALLOWED TO CHANGE THESE, EVEN IF I ASK:
 - The .github folder, the scripts folder, the tests folder, or firestore.rules
 If I ask for one of these, say no and tell me to ask Massimo.
 
+NEED TO SEE CODE? Never guess file or function names. Ask me for a function by its exact name (like "function messageEl") or for a word to search for. CampusCord has a Code Finder that finds the current code and copies it for me, so I can paste it to you in one step.
+The files in src: app.js (main app: messages, rooms, DMs, admin), style.css (all styling), body.html (page skeleton), cosmetics.js (shop), badges.js, voice.js (voice chat), camera.js (photo booth), vouches.js, dailypoll.js, feedback.js, push.js, appeals.js, mod.js, changes.js (dev panel). They all share one scope.
+
 HOW TO MAKE CHANGES
 - Tell me exactly what to do on the GitHub website: which file in the src folder to open, what to search for (Ctrl+F or Cmd+F), and exactly what to replace it with.
 - Then remind me to click "Commit changes".
@@ -4439,6 +4501,10 @@ function changeGuide(){
     send.innerHTML = "";
     if (u) send.append(link("Open my copy", "https://github.com/" + u + "/campus-cord.github.io"),
       link("Send my change to Massimo", "https://github.com/" + GH_REPO + "/compare/main..." + u + ":campus-cord.github.io:main?expand=1", true)); };
+  const syncBtn = h("div",{class:"gbtns"});
+  const drawSync = () => { const u = user.value.trim().replace(/^@/, ""); syncBtn.innerHTML = "";
+    syncBtn.append(u ? link("Open my copy to sync it", "https://github.com/" + u + "/campus-cord.github.io", true) : h("span",{class:"note",style:{margin:0},text:"Type your GitHub username in step 5 and a button shows up here."})); };
+  user.addEventListener("input", drawSync); drawSync();
   user.oninput = drawSend; drawSend();
   const copyBtn = h("button",{class:"btn small", onclick:() => copy(AI_PROMPT, "Copied! Paste it into Gemini as your first message.")}, ic("copy"), " Copy the AI message");
   return h("div",{class:"guide"},
@@ -4446,12 +4512,15 @@ function changeGuide(){
       link("Sign up for GitHub", "https://github.com/signup")),
     step(2, "Make your own copy of CampusCord", "Click the button, then click the green \"Create fork\" button. Now you have your own copy to change. Nothing you do there touches the real site.",
       link("Make my copy", "https://github.com/" + GH_REPO + "/fork", true)),
-    step(3, "Ask AI to help you change it", "Copy the AI message, paste it into Gemini as your first message, then just chat. Tell it your idea (like \"make the send button purple\") and do what it says. You don't need to know how to code.",
+    h("div",{class:"gstep"}, h("div",{class:"gnum",text:"3"}), h("div",{class:"gbody"}, h("b",{text:"Every time: update your copy first"}),
+      h("p",{text:"Before each new change, open your copy and click \"Sync fork\" → \"Update branch\", so you're working on the newest code. If it says \"Discard commits\", that's only safe once Massimo has approved or turned down your last change."}),
+      syncBtn)),
+    step(4, "Ask AI to help you change it", "Copy the AI message, paste it into Gemini as your first message, then just chat. Tell it your idea (like \"make the send button purple\") and do what it says. When the AI asks to see some code, use the Code Finder at the top of this page.",
       copyBtn, link("Open Gemini", "https://gemini.google.com/")),
-    h("div",{class:"gstep"}, h("div",{class:"gnum",text:"4"}), h("div",{class:"gbody"}, h("b",{text:"Send your change to Massimo"}),
+    h("div",{class:"gstep"}, h("div",{class:"gnum",text:"5"}), h("div",{class:"gbody"}, h("b",{text:"Send your change to Massimo"}),
       h("p",{text:"Type your GitHub username once, then press the purple button. On the page that opens, write what you changed in normal words and click the green \"Create pull request\" button."}),
       user, send)),
-    step(5, "Wait for Massimo to approve it", "Your change shows up right below this guide. Green light = it passed the safety tests. When Massimo approves it, it's live on CampusCord about 5 minutes later."));
+    step(6, "Wait for Massimo to approve it", "Your change shows up right below this guide. Green light = it passed the safety tests. When Massimo approves it, it's live on CampusCord about 5 minutes later."));
 }
 
 // Owner: count waiting changes once at startup so the Admin button shows a red number.
@@ -4481,20 +4550,121 @@ function adminChanges(p, noIntro){
 
 // The Dev panel: its own page on the left bar (</> button), only for developers and the owner.
 function renderDevPage(box){
+  watchSubs();
+  const keep = box.scrollTop, focus = document.activeElement && box.contains(document.activeElement);
+  if (focus && box.querySelector(".easy")){ const old = box.querySelector(".subs"); if (old) old.replaceWith(subsListEl()); return; } // don't wipe what they're typing
   box.innerHTML = "";
   const wrap = h("div",{class:"devpage"});
   if (!(isOwner() || isDev(S.uid))){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
-  const who = isOwner() ? "owner" : "developer";
+  const who = isOwner() ? "owner" : "developer", waiting = S.subs.filter(x => x.status === "ready").length;
   wrap.append(h("div",{class:"devhero"},
     h("div",{class:"devterm"},
       h("div",{class:"devbar"}, h("i"), h("i"), h("i"), h("span",{text:"campuscord — dev"})),
       h("pre",null, h("span",{class:"c1",text:"$ "}), "whoami\n", h("span",{class:"c2",text: nickOf(S.uid) + " (" + who + ")"}), "\n",
-        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: (S.openChanges || 0) + " change" + (S.openChanges === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
+        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: waiting + " change" + (waiting === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
     h("div",{class:"devtxt"}, h("h2",{text:"Dev panel"}),
-      h("p",{text: isOwner() ? "Changes Elliott and other developers send to CampusCord show up here. Green = safe. Press Approve and it's live in about 5 minutes."
-        : "This is where you change CampusCord. Follow the steps, chat with Gemini, and send your change. Massimo approves it and it goes live."}))));
-  const p = h("div",{class:"devbody"}); adminChanges(p, true); wrap.append(p);
-  box.append(wrap);
+      h("p",{text: isOwner() ? "Your helpers' changes show up below. Green check = it passed the tests. Press Approve and it's live in a few minutes."
+        : "Change CampusCord with an AI in 3 steps. Massimo approves it, then it's live for everyone."}))));
+  if (isOwner()) wrap.append(subsListEl(), easyPanelEl());
+  else wrap.append(easyPanelEl(), subsListEl());
+  const adv = h("details",{class:"gwrap advanced"}, h("summary",null, ic("code"), " Advanced: Code Finder and GitHub"));
+  adv.append(h("div",{style:{padding:"10px 12px"}}, codeFinderEl(), (() => { const p = h("div",{class:"devbody"}); adminChanges(p, true); return p; })()));
+  wrap.append(adv);
+  box.append(wrap); box.scrollTop = keep;
+}
+
+// ---------------------------------------------------------------- Code Finder
+// Find any piece of CampusCord's code by name or by a word in it, and copy it ready to paste into an AI.
+// Reads the newest code straight from GitHub (public), so it always matches the live site.
+const SRC_FILES = ["app.js", "style.css", "body.html", "cosmetics.js", "badges.js", "voice.js", "camera.js", "vouches.js", "dailypoll.js", "feedback.js", "push.js", "appeals.js", "mod.js", "changes.js"];
+let srcCache = null, srcLoading = null;
+function loadSources(){
+  if (srcCache) return Promise.resolve(srcCache);
+  if (srcLoading) return srcLoading;
+  srcLoading = Promise.all(SRC_FILES.map(f => fetch("https://raw.githubusercontent.com/" + GH_REPO + "/main/src/" + f, {cache:"no-cache"})
+      .then(r => r.ok ? r.text() : "").catch(() => "").then(t => ({file:f, text:t}))))
+    .then(list => { srcCache = list.filter(x => x.text).map(x => ({file:x.file, lines:x.text.split("\n"), blocks:codeBlocks(x.file, x.text.split("\n"))})); srcLoading = null; return srcCache; });
+  return srcLoading;
+}
+// Split a file into named top-level pieces: functions and consts in JS, rules in CSS, the whole file for HTML.
+function codeBlocks(file, lines){
+  const out = [];
+  if (file.endsWith(".js")){
+    const starts = [];
+    lines.forEach((l, i) => { const m = l.match(/^(async function|function|const|let|class)\s+([A-Za-z_$][\w$]*)/); if (m) starts.push({i, kind:m[1].replace("async ", "async "), name:m[2]}); else if (/^\/\/ -{8,}/.test(l)) starts.push({i, sep:true}); });
+    starts.forEach((st, k) => { if (st.sep) return; let end = (starts[k + 1] ? starts[k + 1].i : lines.length) - 1; while (end > st.i && !lines[end].trim()) end--;
+      // pull in the comment lines right above it
+      let a = st.i; while (a > 0 && /^\/\/(?! -{8})/.test(lines[a - 1])) a--;
+      out.push({file, kind:st.kind, name:st.name, a:a + 1, b:end + 1, code:lines.slice(a, end + 1).join("\n")}); });
+  } else if (file.endsWith(".css")){
+    lines.forEach((l, i) => { if (!l.trim() || l.trim().startsWith("/*") && l.trim().endsWith("*/")) return; const sel = l.split("{")[0].trim().slice(0, 80);
+      out.push({file, kind:"css", name:sel || "(css)", a:i + 1, b:i + 1, code:l}); });
+  } else out.push({file, kind:"file", name:file, a:1, b:lines.length, code:lines.join("\n")});
+  return out;
+}
+// Pull out what the AI is asking for from whatever it said: `backticked` names, "function x", x(), .css-classes, camelCase words.
+function wantedNames(text){
+  const out = new Set(), add = n => { n = (n || "").trim().replace(/^(async\s+)?(function|const|let|class)\s+/, "").replace(/\(.*$/, "").replace(/[;,:'"]+$/, ""); if (n.length > 1) out.add(n); };
+  (text.match(/`([^`\n]{2,60})`/g) || []).forEach(x => add(x.slice(1, -1)));
+  (text.match(/\b(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/g) || []).forEach(add);
+  (text.match(/\b([A-Za-z_$][\w$]{2,})\s*\(/g) || []).forEach(add);
+  (text.match(/(^|\s)(\.[a-z][\w-]{1,30})/g) || []).forEach(x => add(x.trim()));
+  (text.match(/\b([a-z]+[A-Z][\w]*)\b/g) || []).forEach(add);
+  if (!out.size){ const STOP = new Set("show me how the a an and or of to for in on it is are was this that what where which who why can you please need see look find get give make let lets code file function part work works working does do send paste copy into with from there here about like just want would could should open search".split(" "));
+    text.toLowerCase().replace(/[^a-z0-9_.\s-]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP.has(w)).forEach(w => add(w.length > 4 && w.endsWith("s") ? w.slice(0, -1) : w)); }
+  return [...out];
+}
+const SKIP_NAMES = new Set(["src", "app.js", "style.css", "Ctrl", "Cmd", "GitHub", "Commit", "done", "querySelector", "getElementById", "addEventListener", "appendChild", "console.log"]);
+function findCode(q, fileFilter){
+  if (!q.trim() || !srcCache) return {best:[], more:[]};
+  const all = []; srcCache.forEach(f => { if (!fileFilter || f.file === fileFilter) f.blocks.forEach(b => all.push(b)); });
+  const names = wantedNames(q).filter(n => !SKIP_NAMES.has(n));
+  const best = [], seen = new Set(), more = [];
+  // 1) exact name matches, one per name the AI asked for (in the order it asked)
+  names.forEach(n => { const low = n.toLowerCase();
+    const hit = all.find(b => b.kind !== "css" && b.name.toLowerCase() === low) || (n.startsWith(".") ? null : null);
+    if (hit && !seen.has(hit)){ seen.add(hit); best.push(hit); return; }
+    if (n.startsWith(".")){ const css = all.filter(b => b.kind === "css" && b.code.includes(n)); if (css.length){ const merged = {file:css[0].file, kind:"css", name:n + " styles", a:css[0].a, b:css[css.length - 1].b, code:css.map(c => c.code).join("\n")}; best.push(merged); css.forEach(c => seen.add(c)); } } });
+  // 2) nothing exact: best partial match on the longest word
+  if (!best.length){ const words = names.length ? names : [q.trim()];
+    words.sort((a, b) => b.length - a.length).forEach(w => { const low = w.toLowerCase();
+      all.forEach(b => { if (seen.has(b)) return; const n = b.name.toLowerCase(); let sc = n.startsWith(low) ? 60 : n.includes(low) ? 40 : b.code.toLowerCase().includes(low) ? 10 : 0; if (sc) more.push(Object.assign({score:sc}, b)); }); });
+    more.sort((x, y) => y.score - x.score || x.code.length - y.code.length);
+    const top = more.shift(); if (top){ best.push(top); seen.add(top); } }
+  // 3) other things that mention the same words, for "not it?"
+  names.forEach(n => { const low = n.toLowerCase(); all.forEach(b => { if (!seen.has(b) && b.kind !== "css" && (b.name.toLowerCase().includes(low) || b.code.includes(n))) { seen.add(b); more.push(b); } }); });
+  return {best, more:more.filter((b, k, a) => a.indexOf(b) === k).slice(0, 8)};
+}
+function aiCopyText(b){
+  const what = b.kind === "css" ? "this CSS from src/" + b.file : b.kind === "file" ? "the whole file src/" + b.file : b.kind + " " + b.name + " from src/" + b.file;
+  return "Here's " + what + " (line" + (b.a === b.b ? " " + b.a : "s " + b.a + "–" + b.b) + "). This is the current code on the real site:\n\n```" + (b.file.endsWith(".css") ? "css" : b.file.endsWith(".html") ? "html" : "js") + "\n" + b.code + "\n```";
+}
+function codeFinderEl(){
+  const box = h("div",{class:"cfind"});
+  const q = h("textarea",{class:"inp cfq", rows:"3", placeholder:"Paste what your AI said here (the whole message is fine), or just type a name like messageEl"});
+  const out = h("div",{class:"cfout"});
+  const hitEl = (b, open) => { const pre = h("pre",{class:"cfcode" + (open ? "" : " hidden"), text:b.code.length > 4000 ? b.code.slice(0, 4000) + "\n… (Copy gets all of it)" : b.code});
+    return h("div",{class:"cfhit"}, h("div",{class:"cfrow"}, h("span",{class:"cfkind",text: b.kind === "css" ? "CSS" : b.kind === "file" ? "FILE" : b.kind}), h("b",{class:"cfname",text:b.name}),
+      h("span",{class:"note",style:{margin:0},text:"src/" + b.file + " · line " + b.a + (b.b > b.a ? "–" + b.b : "")}), h("span",{class:"sp"}),
+      h("button",{class:"btn small ghost", onclick:() => pre.classList.toggle("hidden")}, open ? "Hide" : "Show")), pre); };
+  const run = () => { const v = q.value; out.innerHTML = ""; if (!v.trim()) return;
+    if (!srcCache){ out.append(h("p",{class:"note",text:"Loading the code…"})); loadSources().then(run).catch(() => { out.innerHTML = ""; out.append(h("p",{class:"note",text:"Couldn't load the code. Check your internet and try again."})); }); return; }
+    const r = findCode(v);
+    if (!r.best.length){ out.append(h("p",{class:"note",text:"Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); return; }
+    const text = r.best.map(aiCopyText).join("\n\n");
+    out.append(h("div",{class:"cfbig"},
+      h("div",null, h("b",{text: r.best.length === 1 ? "Found it: " + r.best[0].name : "Found " + r.best.length + " things: " + r.best.map(b => b.name).join(", ")}),
+        h("div",{class:"note",style:{margin:0},text:"Press the button, then paste into your AI."})),
+      h("button",{class:"btn cfcopy", onclick:() => copy(text, "Copied! Now paste it into your AI.")}, ic("copy"), " Copy for AI")));
+    r.best.forEach(b => out.append(hitEl(b, r.best.length === 1)));
+    if (r.more.length){ const d = h("details",{class:"cfmore"}, h("summary",{text:"Not the right code? See " + r.more.length + " other matches"}));
+      r.more.forEach(b => { const one = hitEl(b, false); one.querySelector(".cfrow").append(h("button",{class:"btn small ghost", onclick:() => copy(aiCopyText(b), "Copied! Now paste it into your AI.")}, "Copy this one")); d.append(one); });
+      out.append(d); } };
+  let t = null; q.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 300); });
+  q.addEventListener("focus", () => loadSources().catch(() => {}), {once:true});
+  box.append(h("div",{class:"cfhead"}, h("span",{class:"cfic"}, ic("search")), h("div",null, h("b",{text:"Code Finder"}), h("div",{class:"note",style:{margin:0},text:"When your AI asks to see some code, paste what it said here. Then press Copy for AI."}))),
+    q, out);
+  return box;
 }
 
 // ---------------------------------------------------------------- strikes, warnings, suspensions
@@ -4625,6 +4795,338 @@ function enforceMod(){
       : h("p",{text:"This is just a warning from the owner. Please keep CampusCord fun for everyone."}),
     h("p",{class:"note",text:"From the owner · " + fmtDay(n.at)}),
     ok)));
+}
+
+// ---------------------------------------------------------------- #daily-poll
+// A room of type "poll": no regular chatting, just one new poll every day (midnight Eastern).
+// The first person to open the room that day posts it. Its message id is fixed for the day
+// ("daily-<day>"), so two people opening it at once can't post it twice.
+const DAILY_POLLS = [
+  ["Best way to spend a Saturday?", "Gaming all day", "Out with friends", "Sleeping in", "Sports"],
+  ["Pizza or burgers?", "Pizza 🍕", "Burgers 🍔"],
+  ["Which superpower would you pick?", "Flying", "Invisibility", "Teleporting", "Mind reading"],
+  ["Best school subject?", "Math", "Science", "English", "Gym", "Lunch 😂"],
+  ["Cats or dogs?", "Cats 🐱", "Dogs 🐶", "Both", "Neither"],
+  ["Morning person or night owl?", "Morning ☀️", "Night 🌙"],
+  ["Best snack?", "Chips", "Candy", "Fruit", "Cookies"],
+  ["If you could live anywhere?", "Beach", "Big city", "Mountains", "Space 🚀"],
+  ["Best season?", "Summer", "Fall", "Winter", "Spring"],
+  ["Would you rather be able to talk to animals or speak every language?", "Talk to animals", "Every language"],
+  ["Favorite way to listen to music?", "Headphones", "Speaker", "In the car", "Live concert"],
+  ["Best fast food place?", "McDonald's", "Chick-fil-A", "Taco Bell", "Wendy's", "Chipotle"],
+  ["Would you rather never do homework again or never have a test again?", "No homework", "No tests"],
+  ["What's the best kind of game?", "Shooters", "Sports games", "Minecraft-type", "Racing", "Board games"],
+  ["Ice cream flavor?", "Chocolate", "Vanilla", "Cookies & cream", "Mint chip", "Strawberry"],
+  ["Would you rather time travel to the past or the future?", "Past", "Future"],
+  ["Best day of the week?", "Friday", "Saturday", "Sunday", "Any day off"],
+  ["Hot or cold weather?", "Hot 🔥", "Cold ❄️"],
+  ["What would you do with $1,000?", "Save it", "Games/tech", "Clothes/shoes", "Food", "Give some away"],
+  ["Best pet that isn't a cat or dog?", "Fish", "Hamster", "Snake", "Bird", "Lizard"],
+  ["Would you rather be the funniest or the smartest person in the room?", "Funniest", "Smartest"],
+  ["Which would you give up for a month?", "Phone", "Video games", "Sweets", "YouTube"],
+  ["Best breakfast?", "Pancakes", "Cereal", "Eggs & bacon", "Waffles", "Skip it"],
+  ["Movie night pick?", "Comedy", "Action", "Horror", "Animated"],
+  ["Would you rather explore the ocean or outer space?", "Ocean 🌊", "Space 🌌"],
+  ["Best sport to watch?", "Football", "Basketball", "Soccer", "Baseball", "Hockey"],
+  ["Rate CampusCord today", "10/10 🔥", "Pretty good", "It's okay", "Needs work"],
+  ["What should CampusCord add next?", "Group chats", "More games", "More shop items", "More voice stuff"],
+];
+const isPollRoom = r => !!r && r.type === "poll";
+function dailyPollFor(day){ const p = DAILY_POLLS[((day % DAILY_POLLS.length) + DAILY_POLLS.length) % DAILY_POLLS.length]; return {q:p[0], opts:p.slice(1)}; }
+const dailyTried = new Set();
+async function ensureDailyPoll(r){
+  if (!r || !isPollRoom(r) || S.cur !== r.id || !S.roomLoaded) return;
+  const day = etDay(), key = r.id + ":" + day;
+  if (dailyTried.has(key) || S.msgs.some(m => m.daily === day)) return;
+  dailyTried.add(key);
+  const id = "daily-" + day, ref = doc(db, "rooms", r.id, "msgs", id);
+  try{
+    if ((await getDoc(ref)).exists()) return;
+    const p = dailyPollFor(day), ts = Date.now();
+    await setDoc(ref, {uid:S.uid, text:"📊 Daily Poll: " + p.q, ts, poll:p, daily:day});
+    setDoc(doc(db, "meta", r.id), {lastTs:ts, lastUid:S.uid, lastNick:"Daily Poll", lastPreview:"📊 " + p.q, lastMentions:[], lastEveryone:false}).catch(() => {});
+  }catch(e){ /* someone else posted it first, or no permission: fine */ }
+}
+// The daily poll shows as posted by "Daily Poll", not by whoever happened to open the room first.
+function dailyPollEl(m, reacts){
+  return h("div",{class:"msg first dailypoll", id:"m-" + m.id},
+    h("div",{class:"gut"}, h("div",{class:"av dpav"}, "📊")),
+    h("div",{class:"body"}, h("div",{class:"meta"}, h("span",{class:"n dpname",text:"Daily Poll"}), h("span",{class:"tag dev noi"}, h("b",{text:"BOT"})), h("span",{class:"t",text:fmtDay(m.ts)})),
+      pollEl(m, reacts || {}),
+      h("div",{class:"note dpnext",text:"A new poll drops every day at midnight."})));
+}
+
+// ---------------------------------------------------------------- Easy changes (no GitHub needed)
+// 1. "Copy everything for AI": the instructions + ALL of CampusCord's code, ready for Gemini.
+// 2. The AI answers with FIND/REPLACE blocks. The helper pastes that answer here and presses Send.
+// 3. devSubs/{id} is checked by the GitHub robot (scripts/devsubs.mjs, every few minutes): it applies the
+//    blocks, builds the site and checks the code. The owner then presses Approve and the robot puts it live.
+// The block format and how blocks are applied MUST stay the same as in scripts/devsubs.mjs.
+const SUB_FILES_RE = /^src\/[\w-]+\.(js|css|html)$/;
+const SUB_NO_FILES = new Set(["src/build.py", "src/firebase-config.js"]);
+const SUB_FLAGS = ["STRIPE_LINKS", "buy.stripe.com", "const CATALOG", "ownerUid", "giveSparks", "earned:", "firestore.rules"];
+
+function parseEdits(text){
+  const lines = String(text || "").replace(/\r/g, "").split("\n"), blocks = [];
+  let file = null, mode = null, find = [], rep = [];
+  const clean = arr => { while (arr.length && /^\s*```/.test(arr[0])) arr.shift(); while (arr.length && /^\s*```\s*$/.test(arr[arr.length - 1])) arr.pop(); return arr.join("\n"); };
+  for (const l of lines){
+    const fm = mode === null && l.match(/^[\s#*>`_-]*FILE:\s*[`*"']*\s*((?:src\/)?[\w.\/-]+?)[`*"']*\s*$/i);
+    if (fm){ file = fm[1].startsWith("src/") ? fm[1] : "src/" + fm[1]; continue; }
+    if (/^\s*<{5,}\s*FIND\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
+    if (mode === "find" && /^\s*={5,}\s*$/.test(l)){ mode = "rep"; continue; }
+    if (mode === "rep" && /^\s*>{5,}\s*REPLACE\s*$/i.test(l)){ blocks.push({file, find:clean(find), rep:clean(rep)}); mode = null; continue; }
+    if (mode === "find") find.push(l); else if (mode === "rep") rep.push(l);
+  }
+  return {blocks, unfinished: mode !== null};
+}
+// Apply one block to a file's text. Exact match first; then the same lines ignoring spaces at the ends.
+function applyEdit(content, b){
+  if (!b.find.trim()) return {text: content.replace(/\s*$/, "\n") + b.rep + "\n"};
+  const n = content.split(b.find).length - 1;
+  if (n === 1) return {text: content.replace(b.find, () => b.rep)};
+  if (n > 1) return {err:"matches " + n + " places"};
+  const cl = content.split("\n"), fl = b.find.split("\n").map(x => x.trim());
+  while (fl.length && !fl[0]) fl.shift(); while (fl.length && !fl[fl.length - 1]) fl.pop();
+  const hits = [];
+  for (let i = 0; i + fl.length <= cl.length && hits.length < 2; i++){ let ok = true; for (let k = 0; k < fl.length; k++) if (cl[i + k].trim() !== fl[k]){ ok = false; break; } if (ok) hits.push(i); }
+  if (hits.length === 1){ cl.splice(hits[0], fl.length, ...b.rep.split("\n")); return {text: cl.join("\n")}; }
+  return {err: hits.length ? "matches more than one place" : "isn't in the code"};
+}
+// Check a whole AI answer against the current code. Returns {ok, files, count, problems, flags}.
+function checkEdits(text){
+  const {blocks, unfinished} = parseEdits(text), problems = [], files = {}, flags = new Set();
+  if (!blocks.length) return {ok:false, count:0, problems:[unfinished ? "The AI's answer got cut off in the middle of a change." : "There are no changes in this answer. The AI has to use the FIND / REPLACE format."], files, flags:[]};
+  const src = {}; (srcCache || []).forEach(f => src["src/" + f.file] = f.lines.join("\n"));
+  blocks.forEach((b, i) => { const no = "Change " + (i + 1);
+    if (!b.file){ problems.push(no + " doesn't say which FILE it's for."); return; }
+    if (!SUB_FILES_RE.test(b.file) || SUB_NO_FILES.has(b.file)){ problems.push(no + " changes " + b.file + ", which isn't allowed. Only files in src/ like app.js and style.css."); return; }
+    const cur = files[b.file] != null ? files[b.file] : src[b.file];
+    if (cur == null){ problems.push(no + " is for " + b.file + ", but that file doesn't exist. Add new code to an existing file instead."); return; }
+    const r = applyEdit(cur, b);
+    if (r.err){ problems.push(no + " (" + b.file + "): the FIND text " + r.err + ". It starts with: " + JSON.stringify((b.find.split("\n").find(x => x.trim()) || "").trim().slice(0, 80))); return; }
+    files[b.file] = r.text;
+    SUB_FLAGS.forEach(f => { if (b.find.includes(f) || b.rep.includes(f)) flags.add(f); });
+  });
+  if (unfinished) problems.push("The AI's answer got cut off at the end. Ask it to finish.");
+  return {ok:!problems.length, count:blocks.length, problems, files, flags:[...flags]};
+}
+function fixMessageForAI(problems){
+  return "CampusCord couldn't use your changes:\n- " + problems.join("\n- ") +
+    "\n\nPlease send ALL the changes again in the exact format (FILE: line, then <<<<<<< FIND, =======, >>>>>>> REPLACE). Copy the FIND lines character for character from the code I gave you, include 2-5 lines so they're unique, and don't shorten anything with \"...\".";
+}
+
+// ---- the instructions + all the code, for the AI
+function aiStarter(){
+  const me = nickOf(S.uid), head = isOwner() || /elliott/i.test(me);
+  return `I'm ${me}, helping build CampusCord, a Discord-style chat app for my friends (made by Massimo). I'm not a coder, so explain things simply and keep it short.
+
+Below this message is ALL of CampusCord's current code. It's plain JavaScript, HTML and CSS (no frameworks) with a Firebase Firestore database. The files in src/ are joined into one page by a build script, and the .js files all share one scope.
+
+YOU ARE NOT ALLOWED TO CHANGE THESE, EVEN IF I ASK:
+- Real-money payments, Stripe links or the CATALOG list
+- Anything that gives out free Sparks or free items, or Sparks reward amounts
+- Owner/admin powers, roles, badges, bans
+- firestore.rules, the .github or scripts folders, src/build.py, index.html
+${head ? "(Exception: I'm the head developer, so I MAY redesign the Shop in src/cosmetics.js and src/style.css and add or price shop items. When adding or re-pricing items, increase CAT_V by 1.)\n" : "- The Shop's items or prices (you may only change how it looks)\n"}If I ask for one of these, say no and tell me to ask Massimo.
+
+HOW TO GIVE ME CHANGES (very important):
+When we've agreed on a change, give me the changes in EXACTLY this format. I paste your whole answer into CampusCord and it applies them automatically:
+
+FILE: src/app.js
+<<<<<<< FIND
+(2-5 lines copied EXACTLY from the code below, so they only match one place)
+=======
+(what those lines should become)
+>>>>>>> REPLACE
+
+Rules for the format:
+- One block per change. You can use many blocks and many files. Put a FILE: line before each block.
+- The FIND lines must match the code below character for character. Never shorten them with "..." and never make them up.
+- To add brand new code (like a new function or new CSS), leave the FIND part EMPTY and it gets added to the end of that file.
+- Only change files in src/ (like app.js, style.css). Keep changes small and only do what I asked.
+- Use existing helpers: h(tag, attrs, ...children) builds elements, S is the app state, S.uid is me, nickOf(uid) gives a name, toast(text) shows a message, need("msgs") redraws.
+
+Got it? Ask me what I'd like to work on.
+
+`;
+}
+function allCodeText(){ return "I attached CampusCord's code. Read the instructions at the top of the file and follow them.\n\n" + aiStarter() + "======================== ALL OF CAMPUSCORD'S CODE ========================\n\n" + (srcCache || []).map(f => "===== src/" + f.file + " =====\n" + f.lines.join("\n")).join("\n\n"); }
+
+// ---- submissions
+S.subs = [];
+function watchSubs(){
+  if (S.subsSub || !(isOwner() || isDev(S.uid))) return; S.subsSub = true;
+  const q = isOwner() ? collection(db, "devSubs") : query(collection(db, "devSubs"), where("uid", "==", S.uid));
+  onSnapshot(q, s => { S.subs = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a, b) => b.ts - a.ts); need("rail"); if (S.kind === "dev") need("msgs"); }, () => {});
+}
+const subsWaiting = () => S.subs.filter(x => x.status === "ready").length;
+async function sendSub(title, answer, check){
+  const id = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+  await setDoc(doc(db, "devSubs", id), {uid:S.uid, nick:nickOf(S.uid), title:title.slice(0, 100), answer:answer.slice(0, 300000), ts:Date.now(), status:"new"});
+  return id;
+}
+async function decideSub(x, ok){
+  try{ await updateDoc(doc(db, "devSubs", x.id), {status: ok ? "approved" : "rejecting", decidedAt:Date.now()}); toast(ok ? "Approved! It goes live in a few minutes." : "Turned down."); }
+  catch(e){ toast("Couldn't save: " + errMsg(e)); }
+}
+function diffModal(x){
+  modal((m, close) => {
+    const pre = h("pre",{class:"diffview"});
+    (x.diff || "No details yet.").split("\n").forEach(l => pre.append(h("span",{class: l.startsWith("+") && !l.startsWith("+++") ? "dadd" : l.startsWith("-") && !l.startsWith("---") ? "ddel" : l.startsWith("@@") ? "dhunk" : "", text:l + "\n"})));
+    m.append(h("h3",{text:x.title}), h("p",{class:"note",text:"Green lines are added, red lines are removed. From " + (x.nick || "someone") + "."}), pre,
+      h("div",{class:"foot"}, h("button",{class:"btn small",onclick:close},"Close")));
+  }, "diffmodal");
+}
+const SUB_STATUS = {
+  new:["⏳", "Testing it… this takes up to 10 minutes."],
+  ready:["✅", "Passed the tests."],
+  failed:["❌", "Didn't pass the tests."],
+  approved:["🚀", "Approved! Going live in a few minutes…"],
+  live:["🎉", "Live on CampusCord!"],
+  error:["⚠️", "Couldn't put it live."],
+  rejecting:["✖", "Turned down."], rejected:["✖", "Turned down."],
+};
+function subCard(x){
+  const st = SUB_STATUS[x.status] || ["•", x.status];
+  const card = h("div",{class:"subcard s-" + x.status},
+    h("div",{class:"subtop"}, h("b",{text:x.title}), h("span",{class:"note",style:{margin:0},text:(isOwner() ? "from " + (x.nick || "someone") + " · " : "") + fmtDay(x.ts)})),
+    h("div",{class:"subst"}, h("span",{text:st[0]}), h("span",{text: x.status === "ready" && !isOwner() ? "Passed the tests. Waiting for Massimo to approve it." : st[1]})),
+    x.files ? h("div",{class:"note",style:{margin:"2px 0 0"},text:"Changes " + x.files.join(", ")}) : null,
+    x.error ? h("div",{class:"suberr",text:x.error}) : null,
+    x.flags && x.flags.length && isOwner() ? h("div",{class:"chalert",text:"⚠️ This touches payments or owner stuff (" + x.flags.join(", ") + "). Look at the code carefully before approving."}) : null);
+  const btns = h("div",{class:"foot",style:{justifyContent:"flex-start",marginTop:"8px",flexWrap:"wrap",gap:"8px"}});
+  if (isOwner() && x.status === "ready"){
+    btns.append(h("button",{class:"btn approve", onclick:e => { e.currentTarget.disabled = true; decideSub(x, true); }}, ic("check"), " Approve & put it live"),
+      h("button",{class:"btn ghost", onclick:() => confirmBox("Turn down \"" + x.title + "\"?", (x.nick || "They") + " can send a new version.", "Turn down", () => decideSub(x, false))}, "Turn down"));
+  }
+  if (x.diff) btns.append(h("button",{class:"btn small ghost", onclick:() => diffModal(x)}, "See the code"));
+  if (!isOwner() && (x.status === "failed" || x.status === "error") && x.error) btns.append(h("button",{class:"btn small", onclick:() => copy(fixMessageForAI([x.error]), "Copied! Paste it to your AI so it can fix it.")}, ic("copy","sm"), " Copy a fix message for your AI"));
+  if (["new", "failed", "error", "rejected", "live"].includes(x.status) && (isOwner() || x.uid === S.uid)) btns.append(h("button",{class:"btn small ghost", onclick:() => deleteDoc(doc(db, "devSubs", x.id)).catch(e => toast(errMsg(e)))}, x.status === "live" ? "Clear" : "Remove"));
+  if (btns.children.length) card.append(btns);
+  return card;
+}
+
+// ---- the easy panel
+function easyPanelEl(){
+  const box = h("div",{class:"easy"});
+  const step = (n, title, text, ...rest) => h("div",{class:"estep"}, h("div",{class:"gnum",text:String(n)}), h("div",{class:"gbody"}, h("b",{text:title}), text ? h("p",{text}) : null, ...rest));
+  // 1
+  const dl = h("button",{class:"btn", onclick:async () => { const old = dl.innerHTML; dl.disabled = true; dl.textContent = "Getting the code…";
+      try{ await loadSources(); const a = h("a",{href:URL.createObjectURL(new Blob([allCodeText()], {type:"text/plain"})), download:"campuscord-for-ai.txt"}); document.body.appendChild(a); a.click(); a.remove(); toast("Downloaded! Now attach it in Gemini."); }
+      catch(e){ toast("Couldn't get the code. Check your internet and try again."); }
+      dl.disabled = false; dl.innerHTML = old; }}, ic("arrowdown","sm"), " Download the code file");
+  // 3
+  const title = h("input",{class:"inp", maxlength:"100", placeholder:"What does it do? e.g. Purple send button"});
+  const ans = h("textarea",{class:"inp eans", rows:"6", placeholder:"Paste the AI's whole answer here (the part with <<<<<<< FIND in it). Extra text around it is fine."});
+  const res = h("div",{class:"eres"});
+  const send = h("button",{class:"btn approve", disabled:""}, "Send to Massimo");
+  let last = null;
+  const check = async () => { res.innerHTML = ""; send.disabled = true; last = null; const v = ans.value; if (!v.trim()) return;
+    try{ await loadSources(); }catch(e){ res.append(h("p",{class:"note",text:"Couldn't load the code to check it. Check your internet."})); return; }
+    const c = checkEdits(v); last = c;
+    if (c.ok){ res.append(h("div",{class:"eok"}, "✓ ", h("b",{text:c.count + " change" + (c.count === 1 ? "" : "s")}), " in " + Object.keys(c.files).join(", ") + " look good.")); send.disabled = !title.value.trim(); if (!title.value.trim()) res.append(h("p",{class:"note",style:{margin:"4px 0 0"},text:"Now type what it does above, then press Send."})); }
+    else res.append(h("div",{class:"ebad"}, h("b",{text:"The AI made a mistake, so this can't be sent yet:"}), h("ul",null, c.problems.map(p => h("li",{text:p}))),
+      h("button",{class:"btn small", onclick:() => copy(fixMessageForAI(c.problems), "Copied! Paste it to your AI, then paste its new answer here.")}, ic("copy","sm"), " Copy a fix message for your AI")));
+  };
+  let t = null; ans.addEventListener("input", () => { clearTimeout(t); t = setTimeout(check, 350); });
+  title.addEventListener("input", () => { if (last && last.ok) send.disabled = !title.value.trim(); });
+  send.onclick = async () => { if (!last || !last.ok || !title.value.trim()) return; send.disabled = true; send.textContent = "Sending…";
+    try{ await sendSub(title.value.trim(), ans.value, last); toast("Sent! It's being tested now. You'll see it below."); ans.value = ""; title.value = ""; res.innerHTML = ""; last = null; }
+    catch(e){ toast("Couldn't send: " + errMsg(e)); }
+    send.textContent = "Send to Massimo"; };
+  box.append(h("div",{class:"ehead"}, h("h3",{text:"Make a change in 3 steps"}), h("span",{class:"note",style:{margin:0},text:"No GitHub needed. Massimo approves every change."})),
+    step(1, "Give your AI all the code", null,
+      h("ol",{class:"esub"},
+        h("li",null, "Press ", h("b",{text:"Download the code file"}), "."),
+        h("li",null, "Open Gemini and start a ", h("b",{text:"new chat"}), "."),
+        h("li",null, "Click the ", h("b",{text:"+"}), " next to the message box and attach ", h("b",{text:"campuscord-for-ai.txt"}), " (it's in your Downloads)."),
+        h("li",null, "Press send. If Gemini wants you to type something, just type ", h("b",{text:"go"}), ".")),
+      h("div",{class:"gbtns"}, dl, h("a",{class:"btn ghost", href:"https://gemini.google.com/app", target:"_blank", rel:"noopener"}, "Open Gemini"))),
+    step(2, "Tell the AI your idea", "Just chat in normal words, like \"make the send button purple\" or \"add a dark green theme\". When it's ready, it gives you the changes in a special format with <<<<<<< FIND in it."),
+    step(3, "Paste the AI's answer and send it", null, title, ans, res, h("div",{class:"gbtns"}, send)));
+  return box;
+}
+function subsListEl(){
+  const list = S.subs.filter(x => isOwner() || x.uid === S.uid);
+  const wrap = h("div",{class:"subs"}, h("div",{class:"chtop"}, h("h4",{text: isOwner() ? "Changes from your helpers" : "Your changes"})));
+  if (!list.length) wrap.append(h("p",{class:"note",text: isOwner() ? "Nothing yet. When a helper sends a change, it shows up here with an Approve button." : "Nothing sent yet. Your changes show up here after you send them."}));
+  list.slice(0, 15).forEach(x => wrap.append(subCard(x)));
+  return wrap;
+}
+
+// ---------------------------------------------------------------- linked accounts
+// The owner can link a friend's OLD account into their NEW one. The new account gets the old one's Sparks,
+// shop items, perks and special badges, and keeps the earliest "member since" date. Everything the old account
+// ever posted shows up under the new name and avatar (config/main.aliases: {oldUid: newUid}).
+// The old account is removed from the member list. Old DMs stay readable only by the old account.
+function linkCandidates(newUid){
+  const al = (S.config && S.config.aliases) || {}, names = (S.config && S.config.bannedNames) || {};
+  const ids = new Set([...Object.keys(S.members), ...Object.keys(S.wallets), ...((S.config && S.config.banned) || [])]);
+  return [...ids].filter(u => u !== newUid && !isOwnerUid(u) && !al[u] && realUid(u) === u)
+    .map(u => ({uid:u, name: (S.members[u] && S.members[u].nick) || names[u] || "Former member (" + u.slice(0, 6) + ")", sparks:sparks(u), items:(wal(u).items || []).length, here:!!S.members[u], joined:(S.members[u] || {}).joinedAt || 0}))
+    .sort((a, b) => b.sparks - a.sparks || a.name.localeCompare(b.name));
+}
+function linkAccountModal(newUid){
+  const who = nickOf(newUid);
+  modal((m, close) => {
+    const f = h("input",{class:"inp", placeholder:"Search by name, or paste the old account's ID"});
+    const list = h("div",{class:"list"});
+    const draw = () => { list.innerHTML = ""; const q = f.value.trim().toLowerCase();
+      const rows = linkCandidates(newUid).filter(c => !q || c.name.toLowerCase().includes(q) || c.uid.toLowerCase() === q);
+      if (!rows.length) list.append(h("div",{class:"note",text:"No accounts found."}));
+      rows.slice(0, 40).forEach(c => list.append(h("div",{class:"li", style:{cursor:"pointer"}, onclick:() => { close(); confirmLink(c, newUid); }},
+        c.here ? avatar(c.uid, "sm") : h("div",{class:"av sm",text:"?"}),
+        h("span",{class:"nm"}, h("b",{text:c.name}), h("span",{class:"s",text:"  · " + c.sparks.toLocaleString() + " Sparks · " + c.items + " items" + (c.here ? "" : " · not in the server")}))))); };
+    f.oninput = draw; draw();
+    m.append(h("h3",{text:"Link an old account to " + who}),
+      h("p",{class:"note",text:"Pick " + who + "'s OLD account. Its Sparks, shop items, perks and badges move to " + who + ", and its old messages will show as " + who + "."}),
+      f, list, h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel")));
+  });
+}
+function confirmLink(c, newUid){
+  const who = nickOf(newUid);
+  confirmBox("Link " + c.name + " into " + who + "?",
+    who + " gets " + c.sparks.toLocaleString() + " Sparks, " + c.items + " shop items, and all of " + c.name + "'s perks and badges. Messages " + c.name + " sent will show as " + who + ". " + c.name + " is removed from the member list. Only do this if they're really the same person.",
+    "Link accounts", () => linkAccounts(c.uid, newUid), true);
+}
+async function linkAccounts(oldUid, newUid){
+  try{
+    const ow = wal(oldUid), nw = wal(newUid), uni = (a, b) => [...new Set([...(a || []), ...(b || [])])];
+    // 1) Sparks + items
+    const merged = Object.assign({}, nw, {earned:(nw.earned || 0) + (ow.earned || 0), spent:(nw.spent || 0) + (ow.spent || 0),
+      items:uni(nw.items, ow.items), quests:uni(nw.quests, ow.quests), lastDaily:Math.max(nw.lastDaily || 0, ow.lastDaily || 0)});
+    await setDoc(doc(db, "wallet", newUid), merged);
+    if (S.wallets[oldUid]) await setDoc(doc(db, "wallet", oldUid), Object.assign({}, EMPTY_WALLET, {linkedTo:newUid}));
+    // 2) perks: keep whichever lasts longer
+    const op = ((S.perks[oldUid] || {}).items) || {}, np = ((S.perks[newUid] || {}).items) || {}, items = Object.assign({}, np);
+    Object.entries(op).forEach(([k, v]) => { const cur = items[k]; if (!cur || (cur.until && (!v.until || v.until > cur.until))) items[k] = v; });
+    if (Object.keys(op).length) await setDoc(doc(db, "perks", newUid), {items}, {merge:true});
+    // 3) config: alias (and re-point any older aliases), badges, earliest join date
+    const al = (S.config && S.config.aliases) || {}, upd = {["aliases." + oldUid]:newUid};
+    Object.entries(al).forEach(([a, b]) => { if (b === oldUid) upd["aliases." + a] = newUid; });
+    const ob = specialOf(oldUid); if (ob.length) upd["badges." + newUid] = uni(specialOf(newUid), ob);
+    const oj = Math.min(...[(S.members[oldUid] || {}).joinedAt, ((S.config.linkedJoined || {})[oldUid])].filter(Boolean)), nj = (S.members[newUid] || {}).joinedAt;
+    if (isFinite(oj) && (!nj || oj < nj)) upd["linkedJoined." + newUid] = Math.min(oj, (S.config.linkedJoined || {})[newUid] || oj);
+    await updateDoc(doc(db, "config/main"), upd);
+    // 4) take the old account out of the member list and free its name
+    const om = S.members[oldUid];
+    if (om){ await deleteDoc(doc(db, "members", oldUid)).catch(() => {});
+      try{ const ref = doc(db, "names", nameKey(om.nick)); const cur = await getDoc(ref); if (cur.exists() && cur.data().uid === oldUid) await deleteDoc(ref); }catch(e){} }
+    toast("Linked! " + nickOf(newUid) + " now has everything from the old account.", 6000);
+    refreshOpenPane(); need("side", "msgs", "rpanel");
+  }catch(e){ toast("Couldn't link: " + errMsg(e)); }
+}
+// On the new account's own device: copy the old profile (avatar, bio, decorations…) once, for anything not set yet.
+function adoptLinkedProfile(){
+  if (!S.uid || !S.config || !S.config.aliases) return;
+  const olds = Object.entries(S.config.aliases).filter(([, n]) => n === S.uid).map(([o]) => o);
+  prefs.adopted = prefs.adopted || {};
+  olds.forEach(o => { if (prefs.adopted[o]) return; const p = S.profiles[o]; if (!p) return;
+    const mine = S.profiles[S.uid] || {}, patch = {};
+    ["avatar", "bio", "customStatus", "nameFx", "banner", "deco", "pfx", "plate", "pban", "showcase"].forEach(k => { if (p[k] != null && mine[k] == null) patch[k] = p[k]; });
+    prefs.adopted[o] = Date.now(); savePrefs();
+    if (Object.keys(patch).length) setMyProfile(patch).then(() => toast("Your old account's profile was added to this one ✨")).catch(() => {}); });
 }
 
 // ---------------------------------------------------------------- phone & desktop push notifications

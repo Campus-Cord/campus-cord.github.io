@@ -115,6 +115,21 @@ service cloud.firestore {
           && changed().hasOnly(['ackAt']) && request.resource.data.ackAt is int;
       }
     }
+    // Easy changes from the Dev panel: developers send an AI's answer; the robot tests it;
+    // only the owner can approve or turn it down. Nobody but the owner and the sender can read it.
+    match /devSubs/{id} {
+      allow read: if isOwner() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['uid', 'nick', 'title', 'answer', 'ts', 'status'])
+        && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'new'
+        && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 100
+        && request.resource.data.answer is string && request.resource.data.answer.size() <= 300000
+        && request.resource.data.ts is int;
+      allow update: if isOwner() && changed().hasOnly(['status', 'decidedAt'])
+        && ((resource.data.status == 'ready' && request.resource.data.status in ['approved', 'rejecting'])
+          || (resource.data.status in ['new', 'failed'] && request.resource.data.status == 'rejecting'));
+      allow delete: if isOwner() || (signedIn() && resource.data.uid == request.auth.uid
+        && resource.data.status in ['new', 'failed', 'error', 'rejected', 'live']);
+    }
     // Site changes: the owner approves or turns down a pull request by number; the merge.yml
     // GitHub Action (service account) does the merge and records the result. Devs can see status.
     match /devApprovals/{n} {

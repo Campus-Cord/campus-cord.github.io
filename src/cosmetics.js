@@ -73,7 +73,7 @@ function catalogDoc(){ const prices = {}; Object.values(COSM_BY).filter(c => !c.
 
 // ---- wallet + ownership
 const EMPTY_WALLET = {earned:0, spent:0, items:[], quests:[], lastDaily:0, lastItem:"", lastQuest:""};
-function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[uid] || {}); }
+function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[realUid(uid)] || {}); }
 function sparks(uid){ const w = wal(uid); return Math.max(0, (w.earned || 0) - (w.spent || 0)); }
 function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid).items || [];
   if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }

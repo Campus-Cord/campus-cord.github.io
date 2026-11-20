@@ -118,6 +118,9 @@ YOU ARE NOT ALLOWED TO CHANGE THESE, EVEN IF I ASK:
 - The .github folder, the scripts folder, the tests folder, or firestore.rules
 If I ask for one of these, say no and tell me to ask Massimo.
 
+NEED TO SEE CODE? Never guess file or function names. Ask me for a function by its exact name (like "function messageEl") or for a word to search for. CampusCord has a Code Finder that finds the current code and copies it for me, so I can paste it to you in one step.
+The files in src: app.js (main app: messages, rooms, DMs, admin), style.css (all styling), body.html (page skeleton), cosmetics.js (shop), badges.js, voice.js (voice chat), camera.js (photo booth), vouches.js, dailypoll.js, feedback.js, push.js, appeals.js, mod.js, changes.js (dev panel). They all share one scope.
+
 HOW TO MAKE CHANGES
 - Tell me exactly what to do on the GitHub website: which file in the src folder to open, what to search for (Ctrl+F or Cmd+F), and exactly what to replace it with.
 - Then remind me to click "Commit changes".
@@ -137,6 +140,10 @@ function changeGuide(){
     send.innerHTML = "";
     if (u) send.append(link("Open my copy", "https://github.com/" + u + "/campus-cord.github.io"),
       link("Send my change to Massimo", "https://github.com/" + GH_REPO + "/compare/main..." + u + ":campus-cord.github.io:main?expand=1", true)); };
+  const syncBtn = h("div",{class:"gbtns"});
+  const drawSync = () => { const u = user.value.trim().replace(/^@/, ""); syncBtn.innerHTML = "";
+    syncBtn.append(u ? link("Open my copy to sync it", "https://github.com/" + u + "/campus-cord.github.io", true) : h("span",{class:"note",style:{margin:0},text:"Type your GitHub username in step 5 and a button shows up here."})); };
+  user.addEventListener("input", drawSync); drawSync();
   user.oninput = drawSend; drawSend();
   const copyBtn = h("button",{class:"btn small", onclick:() => copy(AI_PROMPT, "Copied! Paste it into Gemini as your first message.")}, ic("copy"), " Copy the AI message");
   return h("div",{class:"guide"},
@@ -144,12 +151,15 @@ function changeGuide(){
       link("Sign up for GitHub", "https://github.com/signup")),
     step(2, "Make your own copy of CampusCord", "Click the button, then click the green \"Create fork\" button. Now you have your own copy to change. Nothing you do there touches the real site.",
       link("Make my copy", "https://github.com/" + GH_REPO + "/fork", true)),
-    step(3, "Ask AI to help you change it", "Copy the AI message, paste it into Gemini as your first message, then just chat. Tell it your idea (like \"make the send button purple\") and do what it says. You don't need to know how to code.",
+    h("div",{class:"gstep"}, h("div",{class:"gnum",text:"3"}), h("div",{class:"gbody"}, h("b",{text:"Every time: update your copy first"}),
+      h("p",{text:"Before each new change, open your copy and click \"Sync fork\" → \"Update branch\", so you're working on the newest code. If it says \"Discard commits\", that's only safe once Massimo has approved or turned down your last change."}),
+      syncBtn)),
+    step(4, "Ask AI to help you change it", "Copy the AI message, paste it into Gemini as your first message, then just chat. Tell it your idea (like \"make the send button purple\") and do what it says. When the AI asks to see some code, use the Code Finder at the top of this page.",
       copyBtn, link("Open Gemini", "https://gemini.google.com/")),
-    h("div",{class:"gstep"}, h("div",{class:"gnum",text:"4"}), h("div",{class:"gbody"}, h("b",{text:"Send your change to Massimo"}),
+    h("div",{class:"gstep"}, h("div",{class:"gnum",text:"5"}), h("div",{class:"gbody"}, h("b",{text:"Send your change to Massimo"}),
       h("p",{text:"Type your GitHub username once, then press the purple button. On the page that opens, write what you changed in normal words and click the green \"Create pull request\" button."}),
       user, send)),
-    step(5, "Wait for Massimo to approve it", "Your change shows up right below this guide. Green light = it passed the safety tests. When Massimo approves it, it's live on CampusCord about 5 minutes later."));
+    step(6, "Wait for Massimo to approve it", "Your change shows up right below this guide. Green light = it passed the safety tests. When Massimo approves it, it's live on CampusCord about 5 minutes later."));
 }
 
 // Owner: count waiting changes once at startup so the Admin button shows a red number.
@@ -179,18 +189,119 @@ function adminChanges(p, noIntro){
 
 // The Dev panel: its own page on the left bar (</> button), only for developers and the owner.
 function renderDevPage(box){
+  watchSubs();
+  const keep = box.scrollTop, focus = document.activeElement && box.contains(document.activeElement);
+  if (focus && box.querySelector(".easy")){ const old = box.querySelector(".subs"); if (old) old.replaceWith(subsListEl()); return; } // don't wipe what they're typing
   box.innerHTML = "";
   const wrap = h("div",{class:"devpage"});
   if (!(isOwner() || isDev(S.uid))){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
-  const who = isOwner() ? "owner" : "developer";
+  const who = isOwner() ? "owner" : "developer", waiting = S.subs.filter(x => x.status === "ready").length;
   wrap.append(h("div",{class:"devhero"},
     h("div",{class:"devterm"},
       h("div",{class:"devbar"}, h("i"), h("i"), h("i"), h("span",{text:"campuscord — dev"})),
       h("pre",null, h("span",{class:"c1",text:"$ "}), "whoami\n", h("span",{class:"c2",text: nickOf(S.uid) + " (" + who + ")"}), "\n",
-        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: (S.openChanges || 0) + " change" + (S.openChanges === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
+        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: waiting + " change" + (waiting === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
     h("div",{class:"devtxt"}, h("h2",{text:"Dev panel"}),
-      h("p",{text: isOwner() ? "Changes Elliott and other developers send to CampusCord show up here. Green = safe. Press Approve and it's live in about 5 minutes."
-        : "This is where you change CampusCord. Follow the steps, chat with Gemini, and send your change. Massimo approves it and it goes live."}))));
-  const p = h("div",{class:"devbody"}); adminChanges(p, true); wrap.append(p);
-  box.append(wrap);
+      h("p",{text: isOwner() ? "Your helpers' changes show up below. Green check = it passed the tests. Press Approve and it's live in a few minutes."
+        : "Change CampusCord with an AI in 3 steps. Massimo approves it, then it's live for everyone."}))));
+  if (isOwner()) wrap.append(subsListEl(), easyPanelEl());
+  else wrap.append(easyPanelEl(), subsListEl());
+  const adv = h("details",{class:"gwrap advanced"}, h("summary",null, ic("code"), " Advanced: Code Finder and GitHub"));
+  adv.append(h("div",{style:{padding:"10px 12px"}}, codeFinderEl(), (() => { const p = h("div",{class:"devbody"}); adminChanges(p, true); return p; })()));
+  wrap.append(adv);
+  box.append(wrap); box.scrollTop = keep;
+}
+
+// ---------------------------------------------------------------- Code Finder
+// Find any piece of CampusCord's code by name or by a word in it, and copy it ready to paste into an AI.
+// Reads the newest code straight from GitHub (public), so it always matches the live site.
+const SRC_FILES = ["app.js", "style.css", "body.html", "cosmetics.js", "badges.js", "voice.js", "camera.js", "vouches.js", "dailypoll.js", "feedback.js", "push.js", "appeals.js", "mod.js", "changes.js"];
+let srcCache = null, srcLoading = null;
+function loadSources(){
+  if (srcCache) return Promise.resolve(srcCache);
+  if (srcLoading) return srcLoading;
+  srcLoading = Promise.all(SRC_FILES.map(f => fetch("https://raw.githubusercontent.com/" + GH_REPO + "/main/src/" + f, {cache:"no-cache"})
+      .then(r => r.ok ? r.text() : "").catch(() => "").then(t => ({file:f, text:t}))))
+    .then(list => { srcCache = list.filter(x => x.text).map(x => ({file:x.file, lines:x.text.split("\n"), blocks:codeBlocks(x.file, x.text.split("\n"))})); srcLoading = null; return srcCache; });
+  return srcLoading;
+}
+// Split a file into named top-level pieces: functions and consts in JS, rules in CSS, the whole file for HTML.
+function codeBlocks(file, lines){
+  const out = [];
+  if (file.endsWith(".js")){
+    const starts = [];
+    lines.forEach((l, i) => { const m = l.match(/^(async function|function|const|let|class)\s+([A-Za-z_$][\w$]*)/); if (m) starts.push({i, kind:m[1].replace("async ", "async "), name:m[2]}); else if (/^\/\/ -{8,}/.test(l)) starts.push({i, sep:true}); });
+    starts.forEach((st, k) => { if (st.sep) return; let end = (starts[k + 1] ? starts[k + 1].i : lines.length) - 1; while (end > st.i && !lines[end].trim()) end--;
+      // pull in the comment lines right above it
+      let a = st.i; while (a > 0 && /^\/\/(?! -{8})/.test(lines[a - 1])) a--;
+      out.push({file, kind:st.kind, name:st.name, a:a + 1, b:end + 1, code:lines.slice(a, end + 1).join("\n")}); });
+  } else if (file.endsWith(".css")){
+    lines.forEach((l, i) => { if (!l.trim() || l.trim().startsWith("/*") && l.trim().endsWith("*/")) return; const sel = l.split("{")[0].trim().slice(0, 80);
+      out.push({file, kind:"css", name:sel || "(css)", a:i + 1, b:i + 1, code:l}); });
+  } else out.push({file, kind:"file", name:file, a:1, b:lines.length, code:lines.join("\n")});
+  return out;
+}
+// Pull out what the AI is asking for from whatever it said: `backticked` names, "function x", x(), .css-classes, camelCase words.
+function wantedNames(text){
+  const out = new Set(), add = n => { n = (n || "").trim().replace(/^(async\s+)?(function|const|let|class)\s+/, "").replace(/\(.*$/, "").replace(/[;,:'"]+$/, ""); if (n.length > 1) out.add(n); };
+  (text.match(/`([^`\n]{2,60})`/g) || []).forEach(x => add(x.slice(1, -1)));
+  (text.match(/\b(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/g) || []).forEach(add);
+  (text.match(/\b([A-Za-z_$][\w$]{2,})\s*\(/g) || []).forEach(add);
+  (text.match(/(^|\s)(\.[a-z][\w-]{1,30})/g) || []).forEach(x => add(x.trim()));
+  (text.match(/\b([a-z]+[A-Z][\w]*)\b/g) || []).forEach(add);
+  if (!out.size){ const STOP = new Set("show me how the a an and or of to for in on it is are was this that what where which who why can you please need see look find get give make let lets code file function part work works working does do send paste copy into with from there here about like just want would could should open search".split(" "));
+    text.toLowerCase().replace(/[^a-z0-9_.\s-]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP.has(w)).forEach(w => add(w.length > 4 && w.endsWith("s") ? w.slice(0, -1) : w)); }
+  return [...out];
+}
+const SKIP_NAMES = new Set(["src", "app.js", "style.css", "Ctrl", "Cmd", "GitHub", "Commit", "done", "querySelector", "getElementById", "addEventListener", "appendChild", "console.log"]);
+function findCode(q, fileFilter){
+  if (!q.trim() || !srcCache) return {best:[], more:[]};
+  const all = []; srcCache.forEach(f => { if (!fileFilter || f.file === fileFilter) f.blocks.forEach(b => all.push(b)); });
+  const names = wantedNames(q).filter(n => !SKIP_NAMES.has(n));
+  const best = [], seen = new Set(), more = [];
+  // 1) exact name matches, one per name the AI asked for (in the order it asked)
+  names.forEach(n => { const low = n.toLowerCase();
+    const hit = all.find(b => b.kind !== "css" && b.name.toLowerCase() === low) || (n.startsWith(".") ? null : null);
+    if (hit && !seen.has(hit)){ seen.add(hit); best.push(hit); return; }
+    if (n.startsWith(".")){ const css = all.filter(b => b.kind === "css" && b.code.includes(n)); if (css.length){ const merged = {file:css[0].file, kind:"css", name:n + " styles", a:css[0].a, b:css[css.length - 1].b, code:css.map(c => c.code).join("\n")}; best.push(merged); css.forEach(c => seen.add(c)); } } });
+  // 2) nothing exact: best partial match on the longest word
+  if (!best.length){ const words = names.length ? names : [q.trim()];
+    words.sort((a, b) => b.length - a.length).forEach(w => { const low = w.toLowerCase();
+      all.forEach(b => { if (seen.has(b)) return; const n = b.name.toLowerCase(); let sc = n.startsWith(low) ? 60 : n.includes(low) ? 40 : b.code.toLowerCase().includes(low) ? 10 : 0; if (sc) more.push(Object.assign({score:sc}, b)); }); });
+    more.sort((x, y) => y.score - x.score || x.code.length - y.code.length);
+    const top = more.shift(); if (top){ best.push(top); seen.add(top); } }
+  // 3) other things that mention the same words, for "not it?"
+  names.forEach(n => { const low = n.toLowerCase(); all.forEach(b => { if (!seen.has(b) && b.kind !== "css" && (b.name.toLowerCase().includes(low) || b.code.includes(n))) { seen.add(b); more.push(b); } }); });
+  return {best, more:more.filter((b, k, a) => a.indexOf(b) === k).slice(0, 8)};
+}
+function aiCopyText(b){
+  const what = b.kind === "css" ? "this CSS from src/" + b.file : b.kind === "file" ? "the whole file src/" + b.file : b.kind + " " + b.name + " from src/" + b.file;
+  return "Here's " + what + " (line" + (b.a === b.b ? " " + b.a : "s " + b.a + "–" + b.b) + "). This is the current code on the real site:\n\n```" + (b.file.endsWith(".css") ? "css" : b.file.endsWith(".html") ? "html" : "js") + "\n" + b.code + "\n```";
+}
+function codeFinderEl(){
+  const box = h("div",{class:"cfind"});
+  const q = h("textarea",{class:"inp cfq", rows:"3", placeholder:"Paste what your AI said here (the whole message is fine), or just type a name like messageEl"});
+  const out = h("div",{class:"cfout"});
+  const hitEl = (b, open) => { const pre = h("pre",{class:"cfcode" + (open ? "" : " hidden"), text:b.code.length > 4000 ? b.code.slice(0, 4000) + "\n… (Copy gets all of it)" : b.code});
+    return h("div",{class:"cfhit"}, h("div",{class:"cfrow"}, h("span",{class:"cfkind",text: b.kind === "css" ? "CSS" : b.kind === "file" ? "FILE" : b.kind}), h("b",{class:"cfname",text:b.name}),
+      h("span",{class:"note",style:{margin:0},text:"src/" + b.file + " · line " + b.a + (b.b > b.a ? "–" + b.b : "")}), h("span",{class:"sp"}),
+      h("button",{class:"btn small ghost", onclick:() => pre.classList.toggle("hidden")}, open ? "Hide" : "Show")), pre); };
+  const run = () => { const v = q.value; out.innerHTML = ""; if (!v.trim()) return;
+    if (!srcCache){ out.append(h("p",{class:"note",text:"Loading the code…"})); loadSources().then(run).catch(() => { out.innerHTML = ""; out.append(h("p",{class:"note",text:"Couldn't load the code. Check your internet and try again."})); }); return; }
+    const r = findCode(v);
+    if (!r.best.length){ out.append(h("p",{class:"note",text:"Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); return; }
+    const text = r.best.map(aiCopyText).join("\n\n");
+    out.append(h("div",{class:"cfbig"},
+      h("div",null, h("b",{text: r.best.length === 1 ? "Found it: " + r.best[0].name : "Found " + r.best.length + " things: " + r.best.map(b => b.name).join(", ")}),
+        h("div",{class:"note",style:{margin:0},text:"Press the button, then paste into your AI."})),
+      h("button",{class:"btn cfcopy", onclick:() => copy(text, "Copied! Now paste it into your AI.")}, ic("copy"), " Copy for AI")));
+    r.best.forEach(b => out.append(hitEl(b, r.best.length === 1)));
+    if (r.more.length){ const d = h("details",{class:"cfmore"}, h("summary",{text:"Not the right code? See " + r.more.length + " other matches"}));
+      r.more.forEach(b => { const one = hitEl(b, false); one.querySelector(".cfrow").append(h("button",{class:"btn small ghost", onclick:() => copy(aiCopyText(b), "Copied! Now paste it into your AI.")}, "Copy this one")); d.append(one); });
+      out.append(d); } };
+  let t = null; q.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 300); });
+  q.addEventListener("focus", () => loadSources().catch(() => {}), {once:true});
+  box.append(h("div",{class:"cfhead"}, h("span",{class:"cfic"}, ic("search")), h("div",null, h("b",{text:"Code Finder"}), h("div",{class:"note",style:{margin:0},text:"When your AI asks to see some code, paste what it said here. Then press Copy for AI."}))),
+    q, out);
+  return box;
 }

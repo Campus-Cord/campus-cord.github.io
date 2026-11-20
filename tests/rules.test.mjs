@@ -179,6 +179,19 @@ await updateDoc(doc(as("owner"), "config/main"), { "devUntil.carol": Date.now() 
 await t("when the time runs out, developer powers stop", assertFails(updateDoc(doc(as("carol"), "config/main"), { timeouts: { timed: Date.now() + 3600000 } })));
 await updateDoc(doc(as("owner"), "config/main"), { admins: ["dev"], timeouts: { timed: Date.now() + 3600000 } });
 
+console.log("Easy changes (Dev panel)");
+const sub = { uid: "dev", nick: "Dev", title: "Purple button", answer: "FILE: src/style.css\n<<<<<<< FIND\n=======\n.x{}\n>>>>>>> REPLACE", ts: Date.now(), status: "new" };
+await t("developer sends a change", assertSucceeds(setDoc(doc(as("dev"), "devSubs/s1"), sub)));
+await t("regular member can't send changes", assertFails(setDoc(doc(as("alice"), "devSubs/s2"), { ...sub, uid: "alice" })));
+await t("can't send a change pretending to be someone else", assertFails(setDoc(doc(as("dev"), "devSubs/s3"), { ...sub, uid: "owner" })));
+await t("can't send a change that's already approved", assertFails(setDoc(doc(as("dev"), "devSubs/s4"), { ...sub, status: "approved" })));
+await t("sender can see their change", assertSucceeds(getDoc(doc(as("dev"), "devSubs/s1"))));
+await t("others can't see it", assertFails(getDoc(doc(as("alice"), "devSubs/s1"))));
+await t("developer can't approve their own change", assertFails(updateDoc(doc(as("dev"), "devSubs/s1"), { status: "approved" })));
+await t("owner can't approve before it passes the tests", assertFails(updateDoc(doc(as("owner"), "devSubs/s1"), { status: "approved", decidedAt: Date.now() })));
+await t("owner can turn it down", assertSucceeds(updateDoc(doc(as("owner"), "devSubs/s1"), { status: "rejecting", decidedAt: Date.now() })));
+await t("sender can't change it after sending", assertFails(updateDoc(doc(as("dev"), "devSubs/s1"), { answer: "sneaky" })));
+
 console.log("Site changes");
 const sha = "a".repeat(40);
 await t("owner approves a site change", assertSucceeds(setDoc(doc(as("owner"), "devApprovals/5"), { sha, status: "queued", title: "Purple button", by: "owner", at: Date.now() })));
