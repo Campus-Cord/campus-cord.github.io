@@ -3843,7 +3843,7 @@ function installApp(){
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 3;
+const CAT_V = 4;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -3905,8 +3905,34 @@ const QUESTS = [
   {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:0},
   {id:"q_buy", icon:"bag", name:"First purchase", desc:"Buy something with Sparks in the Shop.", goal:1, check:() => (wal(S.uid).items || []).some(i => COSM_BY[i] && COSM_BY[i].price > 0) ? 1 : 0, reward:0},
 ];
+const DAILY_QUEST_POOL = [
+  {id:"dq_chat5", name:"Chatterbox", desc:"Send 5 messages today", icon:"chat", stat:"msgs", goal:5, reward:60},
+  {id:"dq_chat15", name:"Yap Session", desc:"Send 15 messages today", icon:"chat", stat:"msgs", goal:15, reward:100},
+  {id:"dq_react3", name:"Hype Squad", desc:"React to 3 messages today", icon:"smile", stat:"reacts", goal:3, reward:50},
+  {id:"dq_react8", name:"Reaction Spree", desc:"React to 8 messages today", icon:"smile", stat:"reacts", goal:8, reward:80},
+  {id:"dq_reply2", name:"Conversationalist", desc:"Reply to 2 messages today", icon:"reply", stat:"replies", goal:2, reward:60},
+  {id:"dq_dm2", name:"Slide In", desc:"Send 2 direct messages today", icon:"at", stat:"dms", goal:2, reward:60},
+  {id:"dq_gif1", name:"GIF Master", desc:"Send a GIF today", icon:"gif", stat:"gifs", goal:1, reward:50},
+  {id:"dq_poll1", name:"Voice Heard", desc:"Vote in a poll today", icon:"poll", stat:"votes", goal:1, reward:50},
+  {id:"dq_vouch1", name:"Good Vibes", desc:"Post a vouch today", icon:"star", stat:"vouches", goal:1, reward:90}
+];
+
+function dailyQuests(day = etDay()){
+  const n = DAILY_QUEST_POOL.length, out = [];
+  for (let i = 0; i < 3; i++){
+    const base = DAILY_QUEST_POOL[((day * 3) + i * 4) % n];
+    out.push({...base, baseId: base.id, id: "dq_" + day + "_" + base.id, daily: true});
+  }
+  return out;
+}
+
+function dailyStats(){
+  const d = store("dqstats_" + S.uid);
+  return d && d.day === etDay() ? d : {day: etDay()};
+}
+
 function catalogDoc(){ const prices = {}; Object.values(COSM_BY).filter(c => !c.own).forEach(c => prices[c.id] = c.price); const quests = {}; QUESTS.forEach(q => quests[q.id] = q.reward);
-  return {v:CAT_V, prices, quests, daily:DAILY_SPARKS}; }
+  return {v:CAT_V, prices, quests, daily:DAILY_SPARKS, dailyQuests: true}; }
 
 // ---- wallet + ownership
 const EMPTY_WALLET = {earned:0, spent:0, items:[], quests:[], lastDaily:0, lastItem:"", lastQuest:""};
@@ -3917,8 +3943,16 @@ function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid)
 function ownsBundleFully(uid, b){ return owns(uid, b.id) || b.items.every(i => owns(uid, i)); }
 function equipped(uid, slot){ const id = profile(uid)[slot]; if (id && COSM_BY[id] && COSM_BY[id].own) return isOwnerUid(uid) && COSM_BY[id].type === slot ? id : null; return id && COSM_BY[id] && COSM_BY[id].type === slot && owns(uid, id) ? id : null; }
 function qstats(){ return Object.assign({msgs:0, reacts:0, votes:0, polls:0, dailies:0, voice:0}, store("qstats_" + S.uid) || {}); }
-function bumpStat(k, n){ const s = qstats(); s[k] = (s[k] || 0) + (n || 1); store("qstats_" + S.uid, s); if (S.kind === "quests") need("msgs"); }
-function questProgress(q){ return Math.min(q.goal, q.check ? q.check() : (qstats()[q.stat] || 0)); }
+function bumpStat(k, n){
+  const add = n || 1;
+  const s = qstats(); s[k] = (s[k] || 0) + add; store("qstats_" + S.uid, s);
+  const ds = dailyStats(); ds[k] = (ds[k] || 0) + add; store("dqstats_" + S.uid, ds);
+  if (S.kind === "quests") need("msgs");
+}
+function questProgress(q){
+  if (q.daily) return Math.min(q.goal, dailyStats()[q.stat] || 0);
+  return Math.min(q.goal, q.check ? q.check() : (qstats()[q.stat] || 0));
+}
 async function ensureWallet(){ if (S.walletsLoaded && !S.wallets[S.uid] && !S.walletCreating){ S.walletCreating = true;
   try{ await setDoc(doc(db, "wallet", S.uid), Object.assign({}, EMPTY_WALLET)); }catch(e){ console.warn("wallet", e); } S.walletCreating = false; } }
 function econError(e){ return e && e.code === "permission-denied" ? "The shop is still being set up — ask the admin to open CampusCord once, then try again." : errMsg(e); }
@@ -3935,7 +3969,12 @@ async function equip(slot, id, quiet){ try{ await setMyProfile({[slot]: id || ""
 async function claimQuest(q){
   const w = wal(S.uid); if ((w.quests || []).includes(q.id) || questProgress(q) < q.goal) return;
   await ensureWallet(); const w2 = wal(S.uid);
-  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + q.reward, quests:[...(w2.quests || []), q.id], lastQuest:q.id}); toast("Quest complete — " + q.name + " ✦ Explorer badge progress!"); }
+  const keepQuests = (w2.quests || []).filter(id => !id.startsWith("dq_") || id.startsWith("dq_" + etDay() + "_"));
+  const rw = q.reward || 0;
+  try{
+    await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + rw, quests:[...keepQuests, q.id], lastQuest:q.id});
+    toast("Quest complete — " + q.name + (rw ? " (+" + rw + " Sparks!)" : " ✦ Explorer badge progress!"));
+  }
   catch(e){ toast("Couldn't claim: " + econError(e)); }
 }
 async function giveSparks(uid, n){ const w = wal(uid);
@@ -4131,20 +4170,40 @@ function renderQuestsPage(box){
         h("button",{class:"btn", onclick:() => badgeDirectory(S.uid)}, "View my badges")),
       h("div",{class:"qbig qbadge"}, badgeEl(qb, st || {tier:"bronze"}, "xl"))));
   }
-  const list = QUESTS.filter(q => tab === "claimed" ? done.includes(q.id) : !done.includes(q.id))
-    .sort((a, b) => (questProgress(b) >= b.goal) - (questProgress(a) >= a.goal));
-  body.appendChild(h("div",{class:"ssh"}, h("h3",{text: tab === "claimed" ? "Claimed quests" : "Quests"}), h("span",{class:"note",style:{margin:0},text: done.length + " of " + QUESTS.length + " complete"})));
-  if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"30px",textAlign:"center"},text: tab === "claimed" ? "Nothing claimed yet — finish a quest to grow your Explorer badge." : "You've finished every quest. Legend. New ones are coming!"}));
-  const grid = h("div",{class:"qgrid"});
-  list.forEach(q => { const p = questProgress(q), ok = p >= q.goal, claimed = done.includes(q.id);
-    grid.appendChild(h("div",{class:"qcard" + (ok && !claimed ? " ready" : "") + (claimed ? " claimed" : "")},
+  const renderQuestCard = q => {
+    const p = questProgress(q), ok = p >= q.goal, claimed = done.includes(q.id);
+    return h("div",{class:"qcard" + (ok && !claimed ? " ready" : "") + (claimed ? " claimed" : "")},
       h("div",{class:"qic"}, ic(q.icon)),
       h("div",{class:"qmain"}, h("b",{text:q.name}), h("span",{class:"note",style:{margin:0},text:q.desc}),
         h("div",{class:"qbar"}, h("i",{style:{width:(p / q.goal * 100) + "%"}})), h("span",{class:"qprog",text: p + " / " + q.goal})),
-      h("div",{class:"qside"}, h("span",{class:"qrw", title:"Explorer badge progress"}, ic("star","sm"), " +1"),
-        claimed ? h("span",{class:"owned"}, ic("check","sm"), " Claimed") : h("button",{class:"btn small", disabled:!ok, onclick:() => claimQuest(q)}, ok ? "Claim" : "In progress")))); });
+      h("div",{class:"qside"},
+        q.reward ? sparkPill(q.reward) : h("span",{class:"qrw", title:"Explorer badge progress"}, ic("star","sm"), " +1"),
+        claimed ? h("span",{class:"owned"}, ic("check","sm"), " Claimed") : h("button",{class:"btn small", disabled:!ok, onclick:() => claimQuest(q)}, ok ? "Claim" : "In progress")));
+  };
+
+  const dailies = dailyQuests();
+  if (tab === "all"){
+    const dailyDone = dailies.filter(q => done.includes(q.id)).length;
+    body.appendChild(h("div",{class:"ssh"},
+      h("h3",{text:"Daily Quests"}),
+      h("span",{class:"note",style:{margin:0},text: dailyDone + " of " + dailies.length + " done · New quests in " + untilNextDay()})));
+    const dgrid = h("div",{class:"qgrid"});
+    dailies.slice().sort((a, b) => (done.includes(a.id) - done.includes(b.id)) || ((questProgress(b) >= b.goal) - (questProgress(a) >= a.goal))).forEach(q => dgrid.appendChild(renderQuestCard(q)));
+    body.appendChild(dgrid);
+  }
+
+  const permDone = done.filter(id => !id.startsWith("dq_"));
+  const list = (tab === "claimed" ? [...dailies, ...QUESTS] : QUESTS)
+    .filter(q => tab === "claimed" ? done.includes(q.id) : !done.includes(q.id))
+    .sort((a, b) => (questProgress(b) >= b.goal) - (questProgress(a) >= a.goal));
+  body.appendChild(h("div",{class:"ssh", style: tab === "all" ? {marginTop:"22px"} : {}},
+    h("h3",{text: tab === "claimed" ? "Claimed quests" : "Explorer Quests"}),
+    h("span",{class:"note",style:{margin:0},text: permDone.length + " of " + QUESTS.length + " complete"})));
+  if (!list.length) body.appendChild(h("div",{class:"empty-note",style:{padding:"30px",textAlign:"center"},text: tab === "claimed" ? "Nothing claimed yet — finish a quest to earn Sparks and grow your Explorer badge." : "You've finished every Explorer quest! Check back tomorrow for fresh Daily Quests."}));
+  const grid = h("div",{class:"qgrid"});
+  list.forEach(q => grid.appendChild(renderQuestCard(q)));
   body.appendChild(grid);
-  body.appendChild(h("p",{class:"note",style:{textAlign:"center",marginTop:"20px"},text:"Quests earn badges, not Sparks. Sparks are bought in the Shop."}));
+  body.appendChild(h("p",{class:"note",style:{textAlign:"center",marginTop:"20px"},text:"Complete Daily Quests for Sparks every day, and Explorer Quests to level up your badge!"}));
   box.appendChild(wrap); box.scrollTop = keep;
 }
 
