@@ -43,7 +43,11 @@ await t("can't vouch for yourself", assertFails(vouch("alice", "general", "v2", 
 await t("can't give 6 stars", assertFails(vouch("alice", "general", "v3", { uid: "alice", text: "wow", ts: now, vouch: { to: "server", stars: 6, n: 3 } })));
 await t("timed-out member can't post", assertFails(setDoc(doc(as("timed"), "rooms/general/msgs/m2"), { uid: "timed", text: "hi", ts: now })));
 await t("invited member reads private room", assertSucceeds(getDoc(doc(as("alice"), "rooms/secret/msgs/x"))));
-await t("uninvited member can't read private room", assertFails(getDoc(doc(as("bob"), "rooms/secret/msgs/x"))));
+await t("uninvited member can't read private room", assertFails(getDoc(doc(as("bob"), "rooms/secret"))));
+
+console.log("Groups");
+await t("create a group", assertSucceeds(setDoc(doc(as("alice"), "groups/g1"), { uid: "alice", users: ["alice", "bob"], ts: now })));
+await t("non-member can't read group", assertFails(getDoc(doc(as("carol"), "groups/g1"))));/msgs/x"))));
 
 console.log("Presence & voice");
 await t("set yourself as away", assertSucceeds(updateDoc(doc(as("alice"), "members/alice"), { away: true, lastSeen: now })));
