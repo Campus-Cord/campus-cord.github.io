@@ -24,9 +24,10 @@ function parseEdits(text){
   for (const l of lines){
     const fm = mode === null && l.match(/^[\s#*>`_-]*FILE:\s*[`*"']*\s*((?:src\/)?[\w.\/-]+?)[`*"']*\s*$/i);
     if (fm){ file = fm[1].startsWith("src/") ? fm[1] : "src/" + fm[1]; continue; }
-    if (/^\s*<{5,}\s*FIND\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
-    if (mode === "find" && /^\s*={5,}\s*$/.test(l)){ mode = "rep"; continue; }
-    if (mode === "rep" && /^\s*>{5,}\s*REPLACE\s*$/i.test(l)){ blocks.push({file, find:clean(find), rep:clean(rep)}); mode = null; continue; }
+    // Markers: @@FIND / @@REPLACE / @@END (safe from chat formatting), or the older <<<<<<< FIND / ======= / >>>>>>> REPLACE
+    if (/^\s*(<{5,}\s*FIND|@@\s*FIND)\s*:?\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
+    if (mode === "find" && (/^\s*={5,}\s*$/.test(l) || /^\s*@@\s*REPLACE(\s+WITH)?\s*:?\s*$/i.test(l))){ mode = "rep"; continue; }
+    if (mode === "rep" && (/^\s*>{5,}\s*REPLACE\s*$/i.test(l) || /^\s*@@\s*END\s*$/i.test(l))){ blocks.push({file, find:clean(find), rep:clean(rep)}); mode = null; continue; }
     if (mode === "find") find.push(l); else if (mode === "rep") rep.push(l);
   }
   return {blocks, unfinished: mode !== null};

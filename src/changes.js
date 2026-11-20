@@ -244,8 +244,11 @@ function codeBlocks(file, lines){
 }
 // Pull out what the AI is asking for from whatever it said: `backticked` names, "function x", x(), .css-classes, camelCase words.
 function wantedNames(text){
-  const out = new Set(), add = n => { n = (n || "").trim().replace(/^(async\s+)?(function|const|let|class)\s+/, "").replace(/\(.*$/, "").replace(/[;,:'"]+$/, ""); if (n.length > 1) out.add(n); };
-  (text.match(/`([^`\n]{2,60})`/g) || []).forEach(x => add(x.slice(1, -1)));
+  const out = new Set(), add = (n, short) => { n = (n || "").trim().replace(/^(async\s+)?(function|const|let|class)\s+/, "").replace(/\(.*$/, "").replace(/[;,:'"]+$/, ""); if (n.length > 1 || (short && n)) out.add(n); };
+  // "const S" / "function h" / `S`: one-letter names count when the AI says exactly which kind it is
+  (text.match(/\b(?:function|const|let|class)\s+([A-Za-z_$])\b(?![\w$])/g) || []).forEach(x => add(x, true));
+  (text.match(/`([A-Za-z_$])`/g) || []).forEach(x => add(x.slice(1, -1), true));
+  (text.match(/`([^`\n]{1,60})`/g) || []).forEach(x => { const v = x.slice(1, -1); add(v, /^[A-Za-z_$]$/.test(v)); });
   (text.match(/\b(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/g) || []).forEach(add);
   (text.match(/\b([A-Za-z_$][\w$]{2,})\s*\(/g) || []).forEach(add);
   (text.match(/(^|\s)(\.[a-z][\w-]{1,30})/g) || []).forEach(x => add(x.trim()));
@@ -265,15 +268,23 @@ function findCode(q, fileFilter){
     const hit = all.find(b => b.kind !== "css" && b.name.toLowerCase() === low) || (n.startsWith(".") ? null : null);
     if (hit && !seen.has(hit)){ seen.add(hit); best.push(hit); return; }
     if (n.startsWith(".")){ const css = all.filter(b => b.kind === "css" && b.code.includes(n)); if (css.length){ const merged = {file:css[0].file, kind:"css", name:n + " styles", a:css[0].a, b:css[css.length - 1].b, code:css.map(c => c.code).join("\n")}; best.push(merged); css.forEach(c => seen.add(c)); } } });
+  // names the AI asked for exactly ("const X", `X`) that don't exist: say so instead of guessing something else
+  const exact = new Set(); (q.match(/`([^`\n]{1,60})`/g) || []).forEach(x => exact.add(x.slice(1, -1).replace(/^(async\s+)?(function|const|let|class)\s+/, "").replace(/\(.*$/, "").trim()));
+  (q.match(/\b(?:function|const|let|class)\s+([A-Za-z_$][\w$]*)/g) || []).forEach(x => exact.add(x.replace(/^(async\s+)?(function|const|let|class)\s+/, "")));
+  const missing = [...exact].filter(n => !n.startsWith(".") && !/\//.test(n) && !best.some(b => b.name.toLowerCase() === n.toLowerCase()) && !(srcCache || []).some(f => f.path === n || f.file === n));
+  // whole files asked for by name (firestore.rules, tests/rules.test.mjs, src/body.html)
+  (srcCache || []).forEach(f => { const big = /^src\/.*\.(js|css)$/.test(f.path);
+    const asked = exact.has(f.path) || exact.has(f.file) || q.includes(f.path) || new RegExp("(^|[\\s`(])" + f.file.replace(/\./g, "\\.") + "($|[\\s`),.])").test(q);
+    if (!big && asked && !best.some(b => b.file === f.path && b.kind === "file")) best.push({file:f.path, kind:"file", name:f.path, a:1, b:f.lines.length, code:f.lines.join("\n")}); });
   // 2) nothing exact: best partial match on the longest word
-  if (!best.length){ const words = names.length ? names : [q.trim()];
+  if (!best.length && !exact.size){ const words = names.length ? names : [q.trim()];
     words.sort((a, b) => b.length - a.length).forEach(w => { const low = w.toLowerCase();
       all.forEach(b => { if (seen.has(b)) return; const n = b.name.toLowerCase(); let sc = n.startsWith(low) ? 60 : n.includes(low) ? 40 : b.code.toLowerCase().includes(low) ? 10 : 0; if (sc) more.push(Object.assign({score:sc}, b)); }); });
     more.sort((x, y) => y.score - x.score || x.code.length - y.code.length);
     const top = more.shift(); if (top){ best.push(top); seen.add(top); } }
   // 3) other things that mention the same words, for "not it?"
   names.forEach(n => { const low = n.toLowerCase(); all.forEach(b => { if (!seen.has(b) && b.kind !== "css" && (b.name.toLowerCase().includes(low) || b.code.includes(n))) { seen.add(b); more.push(b); } }); });
-  return {best, more:more.filter((b, k, a) => a.indexOf(b) === k).slice(0, 8)};
+  return {best, missing, more:more.filter((b, k, a) => a.indexOf(b) === k).slice(0, 8)};
 }
 function aiCopyText(b){
   const what = b.kind === "css" ? "this CSS from " + b.file : b.kind === "file" ? "the whole file " + b.file : b.kind + " " + b.name + " from " + b.file;
@@ -290,8 +301,9 @@ function codeFinderEl(){
   const run = () => { const v = q.value; out.innerHTML = ""; if (!v.trim()) return;
     if (!srcCache){ out.append(h("p",{class:"note",text:"Loading the code…"})); loadSources().then(run).catch(() => { out.innerHTML = ""; out.append(h("p",{class:"note",text:"Couldn't load the code. Check your internet and try again."})); }); return; }
     const r = findCode(v);
-    if (!r.best.length){ out.append(h("p",{class:"note",text:"Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); return; }
-    const text = r.best.map(aiCopyText).join("\n\n");
+    const miss = (r.missing || []).length ? "\n\n(These names don't exist in CampusCord's code, so they're not included: " + r.missing.join(", ") + ". Check the map for the right name.)" : "";
+    if (!r.best.length){ out.append(h("p",{class:"note",text: miss ? "None of these exist in the code: " + r.missing.join(", ") + ". Ask your AI to check the map for the right names." : "Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); if (miss) out.append(h("button",{class:"btn small", onclick:() => copy(miss.trim(), "Copied! Paste it to your AI.")}, ic("copy","sm"), " Copy a note for your AI")); return; }
+    const text = r.best.map(aiCopyText).join("\n\n") + miss;
     out.append(h("div",{class:"cfbig"},
       h("div",null, h("b",{text: r.best.length === 1 ? "Found it: " + r.best[0].name : "Found " + r.best.length + " things: " + r.best.map(b => b.name).join(", ")}),
         h("div",{class:"note",style:{margin:0},text:"Press the button, then paste into your AI."})),

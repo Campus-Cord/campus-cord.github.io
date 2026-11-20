@@ -16,9 +16,10 @@ function parseEdits(text){
   for (const l of lines){
     const fm = mode === null && l.match(/^[\s#*>`_-]*FILE:\s*[`*"']*\s*([\w.\/-]+?)[`*"']*\s*$/i);
     if (fm){ const f = fm[1].replace(/^\.?\//, ""); file = /^(src|tests)\//.test(f) || f === "firestore.rules" ? f : f === "rules.test.mjs" ? "tests/rules.test.mjs" : "src/" + f; continue; }
-    if (/^\s*<{5,}\s*FIND\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
-    if (mode === "find" && /^\s*={5,}\s*$/.test(l)){ mode = "rep"; continue; }
-    if (mode === "rep" && /^\s*>{5,}\s*REPLACE\s*$/i.test(l)){ blocks.push({file, find:clean(find), rep:clean(rep)}); mode = null; continue; }
+    // Markers: @@FIND / @@REPLACE / @@END (safe from chat formatting), or the older <<<<<<< FIND / ======= / >>>>>>> REPLACE
+    if (/^\s*(<{5,}\s*FIND|@@\s*FIND)\s*:?\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
+    if (mode === "find" && (/^\s*={5,}\s*$/.test(l) || /^\s*@@\s*REPLACE(\s+WITH)?\s*:?\s*$/i.test(l))){ mode = "rep"; continue; }
+    if (mode === "rep" && (/^\s*>{5,}\s*REPLACE\s*$/i.test(l) || /^\s*@@\s*END\s*$/i.test(l))){ blocks.push({file, find:clean(find), rep:clean(rep)}); mode = null; continue; }
     if (mode === "find") find.push(l); else if (mode === "rep") rep.push(l);
   }
   return {blocks, unfinished: mode !== null};
@@ -56,7 +57,7 @@ function checkEdits(text){
 }
 function fixMessageForAI(problems){
   return "CampusCord couldn't use your changes:\n- " + problems.join("\n- ") +
-    "\n\nPlease send ALL the changes again in the exact format (FILE: line, then <<<<<<< FIND, =======, >>>>>>> REPLACE). Copy the FIND lines character for character from the code I gave you, include 2-5 lines so they're unique, and don't shorten anything with \"...\".";
+    "\n\nPlease send ALL the changes again in the exact format: a FILE: line, then a code block containing @@FIND, the lines, @@REPLACE, the new lines, @@END. Copy the FIND lines character for character from the code I gave you, include 2-5 lines so they're unique, and don't shorten anything with \"...\".";
 }
 
 // ---- the instructions + all the code, for the AI
@@ -72,7 +73,7 @@ YOU CAN CHANGE ANYTHING IN src/ (the whole app: looks, features, the shop, every
 HOW CAMPUSCORD WORKS (don't guess):
 - There is NO backend server, NO SQL tables, NO API endpoints and NO routes. It's ONE web page: plain JavaScript in the browser (no React or frameworks) that talks straight to a Firebase Firestore database (collections and documents) using the Firebase modular SDK v10.12.2. Images are stored inside documents as data URLs.
 - The files in src/ are joined into one page by a build script. All the .js files share ONE scope (no imports or exports between them), so a function in one file can be used in another. Before adding a function, search this file to make sure the name isn't already used, or the whole app crashes.
-- Security lives in firestore.rules (who can read and write each collection). You can read it below, but I can't send changes to it from here. If a feature needs a NEW collection or new fields the rules don't allow yet (for example group chats), do this: give me the src/ changes as usual, AND write the exact firestore.rules changes plus tests for tests/rules.test.mjs in a separate section titled "FOR MASSIMO: DATABASE RULES". I'll send that part to Massimo, who adds it. Copy how the existing "dms" rules and tests work.
+- Security lives in firestore.rules (who can read and write each collection). You can read it, but you can NOT change it from here, so never write rules changes or tests. If an idea needs a NEW collection or new fields the rules don't allow yet (for example group chats), say so in ONE short sentence: "This needs a database change first. Ask Massimo to get Claude to add it." Then stop, or offer a smaller version that works with the rules that already exist.
 - Useful helpers: h(tag, attrs, ...children) builds HTML elements; S is the app state (S.uid = me, S.members, S.rooms, S.dms); nickOf(uid) gives a name; avatar(uid, "sm") gives an avatar; toast(text) shows a message; need("side","msgs") redraws parts of the screen; openChat(kind, id) opens a chat; modal((m, close) => {...}) opens a pop-up; isOwner() and isAdmin() check roles.
 - Use the MAP to find what you need. Some starting points in src/app.js: messages are drawn in "function messageEl", sending is "function send", chats open in "function openChat", DMs are "function openDM" and "function renderDMList", the left list is "function renderSide", the top bar is "function renderHeader", the right panel is "function renderRPanel". The shop is src/cosmetics.js, styles are src/style.css.
 
@@ -81,17 +82,22 @@ HOW TO WORK WITH ME:
 2. I'll paste you that code. Then give me ALL the changes at once in EXACTLY this format. I paste your whole answer into CampusCord, which applies it automatically. I do NOT edit any files myself:
 
 FILE: src/app.js
-<<<<<<< FIND
-(2-5 lines copied EXACTLY from the code below, so they only match one place)
-=======
+\`\`\`
+@@FIND
+(2-5 lines copied EXACTLY from the real code, so they only match one place)
+@@REPLACE
 (what those lines should become)
->>>>>>> REPLACE
+@@END
+\`\`\`
 
 Rules for the format:
+- ALWAYS put each change inside its own code block (the three backticks), with the FILE: line just above it. Outside a code block, the chat window can eat the markers and the change gets lost.
+- Use exactly @@FIND, @@REPLACE and @@END, each on its own line.
 - Put a FILE: line before each block. Use as many blocks and files in src/ as you need.
 - The FIND lines must be copied character for character from code I pasted you. Never shorten them with "..." and never make them up. If you haven't seen a piece of code yet, ask for it first.
 - To add brand-new code (a new function, new CSS), leave the FIND part EMPTY and it gets added to the END of that file.
 - Don't change index.html or src/build.py.
+- NEVER tell me to open files, use GitHub, run commands, install things, or paste anything anywhere except the CampusCord box. Your answer is ONLY plain-English explanation plus FILE: blocks.
 3. If CampusCord tells me your changes have a problem, I'll paste you its message. Fix it and send ALL the changes again.
 
 Got it? Ask me what I'd like to work on.
@@ -181,7 +187,7 @@ function easyPanelEl(){
   const fullDl = h("a",{href:"#", class:"note", style:{fontSize:"12px"}, onclick:async e => { e.preventDefault(); try{ await loadSources(); const a = h("a",{href:URL.createObjectURL(new Blob([fullCodeText()], {type:"text/plain"})), download:"campuscord-full-code.txt"}); document.body.appendChild(a); a.click(); a.remove(); }catch(err){ toast("Couldn't get the code."); } }}, "Using an AI that can read very big files (like Gemini in AI Studio)? Download ALL the code instead");
   // 3
   const title = h("input",{class:"inp", maxlength:"100", placeholder:"What does it do? e.g. Purple send button"});
-  const ans = h("textarea",{class:"inp eans", rows:"6", placeholder:"Paste the AI's whole answer here (the part with <<<<<<< FIND in it). Extra text around it is fine."});
+  const ans = h("textarea",{class:"inp eans", rows:"6", placeholder:"Paste the AI's whole answer here (the part with @@FIND in it). Tip: use Gemini's copy button under its answer. Extra text around it is fine."});
   const res = h("div",{class:"eres"});
   const send = h("button",{class:"btn approve", disabled:""}, "Send to Massimo");
   let last = null;
