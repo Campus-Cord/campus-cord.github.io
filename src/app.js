@@ -485,7 +485,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.announceJoin && S.rooms.length){ S.announceJoin = false; announceJoin(); }
-    watchVouches();
+    watchVouches(); maybeVouchPopup();
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
     syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
@@ -527,7 +527,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -584,7 +584,7 @@ function renderRail(){
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
-  if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length : 0}));
+  if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length + (S.openChanges || 0) : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
   r.append(top, bot);
 }
@@ -1206,6 +1206,7 @@ function memberMenu(ev, uid){
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" : "Make developer", icon:"code", run:() => setDev(uid, !isDev(uid))} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     ...modMenuItems(uid),
+    isOwner() && uid !== S.uid ? {label:"Give 2 more vouch tries (" + vouchTries(uid).left + " left)", icon:"star", run:() => giveVouchTries(uid, 2)} : null,
     canModerate(uid) ? "-" : null,
     canModerate(uid) && !tu ? {label:"Timeout 5 minutes", icon:"hourglass", run:() => setTimeoutFor(uid, 5)} : null,
     canModerate(uid) && !tu ? {label:"Timeout 1 hour", icon:"hourglass", run:() => setTimeoutFor(uid, 60)} : null,
@@ -1366,7 +1367,8 @@ function openProfile(uid, anchor, self){
         nameLocked(uid) ? h("button",{class:"rolepill nameflag on", title:"Remove the name flag", onclick:() => { closeLayer("profile"); clearNameFlag(uid); }}, "✓ FLAGGED")
           : h("button",{class:"rolepill nameflag", title:"This isn't their real name", onclick:() => { closeLayer("profile"); flagName(uid); }}, "NOT REAL NAME")) : null,
       isOwner() && uid !== S.uid && nameFlagLabel(uid) ? h("div",{class:"note nfl",text:nameFlagLabel(uid)}) : null,
-      uid !== S.uid && modLabel(uid) ? h("div",{class:"note nfl",text:modLabel(uid)}) : null));
+      uid !== S.uid && modLabel(uid) ? h("div",{class:"note nfl",text:modLabel(uid)}) : null,
+      isOwner() && uid !== S.uid ? h("div",{class:"note nfl",text:"Vouch tries left: " + vouchTries(uid).left + " of " + vouchTries(uid).total}) : null));
   document.body.appendChild(card);
   const r = anchor.getBoundingClientRect();
   let left = r.right + 12, top = r.top - 20;

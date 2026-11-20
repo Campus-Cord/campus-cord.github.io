@@ -9,6 +9,51 @@ const weekId = () => Math.floor((Date.now() - 363600000) / 604800000);
 function vouchesThisWeek(){ const w = wal(S.uid); return w.vWeek === weekId() ? (w.vCount || 0) : 0; }
 function nextVouchReward(){ return VOUCH_REWARDS[vouchesThisWeek()] || 0; }
 // Rewards only after the owner (or a developer) approves a vouch. The author's app then claims it automatically.
+// Vouch tries: everyone gets VOUCH_TRIES; the owner can give more (vouchQuota/{uid}.extra).
+const VOUCH_TRIES = 4;
+S.vq = {}; S.myVq = null;
+function watchVouchQuota(){
+  if (S.vqSub) return; S.vqSub = true;
+  onSnapshot(doc(db, "vouchQuota", S.uid), s => { S.myVq = s.exists() ? s.data() : {}; need("msgs"); maybeVouchPopup(); }, () => {});
+  if (isOwner()) onSnapshot(collection(db, "vouchQuota"), s => { const q = {}; s.docs.forEach(d => q[d.id] = d.data()); S.vq = q; refreshOpenPane(); }, () => {});
+}
+function vouchTries(uid){ if (isOwnerUid(uid)) return {left:Infinity, total:Infinity, used:0};
+  const q = (uid === S.uid ? S.myVq : S.vq[uid]) || {}; const total = VOUCH_TRIES + (q.extra || 0), used = q.used || 0;
+  return {left:Math.max(0, total - used), total, used}; }
+async function giveVouchTries(uid, n){
+  try{ const q = S.vq[uid] || {}; await setDoc(doc(db, "vouchQuota", uid), Object.assign({}, q, {extra:(q.extra || 0) + n}));
+    toast(nickOf(uid) + " got " + n + " more vouch tr" + (n === 1 ? "y" : "ies")); }
+  catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+// The "Submit vouches for Sparks" pop-up: shows at most every 3 days, only if they have tries left and a reward to earn.
+function maybeVouchPopup(){
+  if (isOwner() || S.vPopShown || window.__ccNoPop) return;
+  const vr = S.rooms.find(isVouchRoom); if (!vr || !S.myVq) return;
+  const t = vouchTries(S.uid); if (!t.left || !nextVouchReward()) return;
+  let last = 0; try{ last = +localStorage.getItem("ccVouchPop") || 0; }catch(e){}
+  if (Date.now() - last < 3 * 864e5) return;
+  S.vPopShown = true;
+  const tryShow = () => { if (document.querySelector(".modalbg") || document.getElementById("modnote") || document.getElementById("modsus") || document.getElementById("namelock")) return setTimeout(tryShow, 30000); vouchPopup(); };
+  setTimeout(tryShow, 20000);
+}
+function vouchPopup(){
+  try{ localStorage.setItem("ccVouchPop", String(Date.now())); }catch(e){}
+  const t = vouchTries(S.uid), [a, b] = VOUCH_REWARDS, done = vouchesThisWeek();
+  modal((m, close) => {
+    m.append(h("div",{class:"vpop"},
+      h("div",{class:"vpopic"}, ic("spark")),
+      h("h2",{text:"Submit vouches for Sparks!"}),
+      h("p",{text:"Write a vouch about CampusCord or a friend. When Massimo approves it, you get Sparks to spend in the Shop."}),
+      h("div",{class:"vpoprw"},
+        h("div",{class:"vprow" + (done >= 1 ? " done" : "")}, h("span",{text:"1st vouch this week"}), h("b",{text:"+" + a + " Sparks"})),
+        h("div",{class:"vprow" + (done >= 2 ? " done" : "")}, h("span",{text:"2nd vouch this week"}), h("b",{text:"+" + b + " Sparks"}))),
+      h("div",{class:"vptries"}, "You have ", h("b",{text:t.left + " of " + t.total}), " vouch tries left"),
+      h("p",{class:"note",style:{margin:0},text:"Rewards reset every Monday. Only real, specific vouches get approved."}),
+      h("div",{class:"foot",style:{justifyContent:"center"}}, h("button",{class:"btn ghost",onclick:close},"Maybe later"),
+        h("button",{class:"btn",onclick:() => { close(); openVouchModal(); }}, "Write a vouch"))));
+  }, "vpopmodal");
+}
+
 let vClaiming = false;
 async function claimVouchRewards(){
   const vr = S.rooms.find(isVouchRoom); if (!vr || vClaiming || !S.walletsLoaded || isOwnerUid(S.uid)) return; vClaiming = true;
@@ -54,6 +99,10 @@ function starsText(n){ return "★★★★★".slice(0, n) + "☆☆☆☆☆".
 function vouchCount(){ return S.msgs.filter(m => m.vouch).length; }
 function openVouchModal(preTo){
   const r = curRoom(); if (!isVouchRoom(r)){ const vr = S.rooms.find(isVouchRoom); if (vr){ openChat("room", vr.id); setTimeout(() => openVouchModal(preTo), 600); } else toast("Ask the owner to make a #vouches room first"); return; }
+  const tries = vouchTries(S.uid);
+  if (!tries.left){ modal((m, close) => m.append(h("h3",{text:"You're out of vouch tries"}),
+      h("p",{class:"note",text:"Everyone gets " + VOUCH_TRIES + " vouch tries so nobody can spam. You've used all " + tries.total + ". Ask Massimo if you want more."}),
+      h("div",{class:"foot"}, h("button",{class:"btn small",onclick:close},"OK")))); return; }
   modal((m, close) => {
     let to = preTo || "server", stars = 5, file = null;
     const people = Object.keys(S.members).filter(u => u !== S.uid && !isBanned(u)).sort((a, b) => nickOf(a).localeCompare(nickOf(b)));
@@ -75,17 +124,21 @@ function openVouchModal(preTo){
         if (to !== "server") body.mentions = [to];
         if (file) body.img = await imageToData(file);
         const id = Date.now().toString(36) + "-v" + Math.random().toString(36).slice(2, 6);
-        await setDoc(doc(db, "rooms", r.id, "msgs", id), body);
+        const b = writeBatch(db);
+        b.set(doc(db, "rooms", r.id, "msgs", id), body);
+        if (!isOwnerUid(S.uid)) b.set(doc(db, "vouchQuota", S.uid), {used:(S.myVq && S.myVq.used || 0) + 1, lastMsg:r.id + "/" + id}, {merge:true});
+        await b.commit();
         setDoc(doc(db, "rooms", r.id, "reacts", id + "__" + S.uid + "__" + eKey("✅")), {mid:id, uid:S.uid, e:"✅", ts:Date.now()}).catch(() => {});
         setDoc(doc(db, "meta", r.id), {lastTs:body.ts, lastUid:S.uid, lastNick:nickOf(S.uid), lastPreview:"left a " + stars + "★ vouch" + (to === "server" ? "" : " for " + nickOf(to)), lastMentions:body.mentions || [], lastEveryone:false}).catch(() => {});
         bumpStat("vouch"); close();
-        toast("Vouch #" + body.vouch.n + " posted ✦" + (nextVouchReward() && !isOwnerUid(S.uid) ? " Once it's approved you'll get +" + nextVouchReward() + " Sparks." : ""));
+        toast("Vouch #" + body.vouch.n + " posted ✦" + (isOwnerUid(S.uid) ? "" : " " + (tries.left - 1) + " tr" + (tries.left - 1 === 1 ? "y" : "ies") + " left.") + (nextVouchReward() && !isOwnerUid(S.uid) ? " Once it's approved you'll get +" + nextVouchReward() + " Sparks." : ""));
       }catch(e){ toast("Couldn't post: " + errMsg(e)); btn.disabled = false; btn.textContent = "Post vouch"; }
     };
     const btn = h("button",{class:"btn", onclick:go}, "Post vouch");
     const rw = nextVouchReward();
     m.append(h("div",{class:"vmhead"}, h("span",{class:"vmic"}, "🎉"), h("div",null, h("h3",{style:{margin:0},text:"Write a vouch"}), h("div",{class:"note",style:{margin:0},text:"Vouch #" + (vouchCount() + 1) + " · shows up in #" + r.name + " for everyone"}))),
       isOwnerUid(S.uid) ? null : h("div",{class:"vreward" + (rw ? "" : " none")}, rw ? [ic("spark","sm"), " Earn ", h("b",{text:"+" + rw + " Sparks"}), " when the owner approves this vouch. Write something real and specific — short or low-effort vouches won't be approved."] : "You've earned this week's vouch rewards — they reset Monday. You can still vouch!"),
+      isOwnerUid(S.uid) ? null : h("div",{class:"vptries small"}, "Vouch tries left: ", h("b",{text:tries.left + " of " + tries.total}), tries.left === 1 ? " · this is your last one!" : ""),
       h("label",{class:"f",text:"Vouching for"}), sel, h("label",{class:"f",text:"Stars"}), starRow, h("label",{class:"f",text:"Review"}), txt,
       h("div",{class:"row",style:{marginTop:"10px",alignItems:"center",gap:"10px"}}, pick, proof),
       h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), btn));

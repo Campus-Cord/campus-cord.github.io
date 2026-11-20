@@ -2,7 +2,7 @@
 // before firestore.rules is published; if any check fails, nothing is deployed.
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, setDoc, updateDoc, getDoc, deleteDoc, getDocs, collection, query, where } from "firebase/firestore";
+import { doc, setDoc, updateDoc, getDoc, deleteDoc, getDocs, collection, query, where, writeBatch } from "firebase/firestore";
 
 const env = await initializeTestEnvironment({ projectId: "demo-campuscord", firestore: { rules: readFileSync("firestore.rules", "utf8") } });
 const now = Date.now();
@@ -19,6 +19,14 @@ await env.withSecurityRulesDisabled(async ctx => {
 });
 const as = u => env.authenticatedContext(u).firestore();
 let pass = 0, fail = 0;
+// Post a vouch the way the app does: the message plus one "vouch try", in one batch.
+const vTries = {};
+function vouch(u, rid, mid, data, usedOverride){
+  const db = as(u), b = writeBatch(db), used = usedOverride ?? (vTries[u] || 0) + 1;
+  b.set(doc(db, "rooms", rid, "msgs", mid), data);
+  b.set(doc(db, "vouchQuota", u), { used, lastMsg: rid + "/" + mid }, { merge: true });
+  return b.commit().then(r => { vTries[u] = used; return r; });
+}
 async function t(name, p){ try{ await p; pass++; console.log("  ✓", name); }catch(e){ fail++; console.log("  ✗", name, "—", e.message.split("\n")[0]); } }
 
 console.log("Membership");
@@ -30,9 +38,9 @@ await t("wrong invite code is refused", assertFails(setDoc(doc(as("dave"), "memb
 
 console.log("Rooms");
 await t("member posts in a public room", assertSucceeds(setDoc(doc(as("alice"), "rooms/general/msgs/m1"), { uid: "alice", text: "hi", ts: now })));
-await t("post a vouch", assertSucceeds(setDoc(doc(as("alice"), "rooms/general/msgs/v1"), { uid: "alice", text: "great", ts: now, vouch: { to: "bob", stars: 5, n: 1 } })));
-await t("can't vouch for yourself", assertFails(setDoc(doc(as("alice"), "rooms/general/msgs/v2"), { uid: "alice", text: "me!", ts: now, vouch: { to: "alice", stars: 5, n: 2 } })));
-await t("can't give 6 stars", assertFails(setDoc(doc(as("alice"), "rooms/general/msgs/v3"), { uid: "alice", text: "wow", ts: now, vouch: { to: "server", stars: 6, n: 3 } })));
+await t("post a vouch", assertSucceeds(vouch("alice", "general", "v1", { uid: "alice", text: "great", ts: now, vouch: { to: "bob", stars: 5, n: 1 } })));
+await t("can't vouch for yourself", assertFails(vouch("alice", "general", "v2", { uid: "alice", text: "me!", ts: now, vouch: { to: "alice", stars: 5, n: 2 } })));
+await t("can't give 6 stars", assertFails(vouch("alice", "general", "v3", { uid: "alice", text: "wow", ts: now, vouch: { to: "server", stars: 6, n: 3 } })));
 await t("timed-out member can't post", assertFails(setDoc(doc(as("timed"), "rooms/general/msgs/m2"), { uid: "timed", text: "hi", ts: now })));
 await t("invited member reads private room", assertSucceeds(getDoc(doc(as("alice"), "rooms/secret/msgs/x"))));
 await t("uninvited member can't read private room", assertFails(getDoc(doc(as("bob"), "rooms/secret/msgs/x"))));
@@ -96,13 +104,13 @@ await t("dev approves a vouch", assertSucceeds(updateDoc(doc(as("dev"), "rooms/g
 await t("1st approved vouch of the week pays 200", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 200, vWeek: wk, vCount: 1, lastVouch: "general/v1", vPaid: ["general/v1"] })));
 await t("can't claim the same vouch twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 350, vWeek: wk, vCount: 2, lastVouch: "general/v1", vPaid: ["general/v1", "general/v1"] })));
 await t("can't claim someone else's vouch", assertFails(updateDoc(doc(as("bob"), "wallet/bob"), { earned: 200, vWeek: wk, vCount: 1, lastVouch: "general/v1", vPaid: ["general/v1"] })));
-await setDoc(doc(as("alice"), "rooms/general/msgs/v4"), { uid: "alice", text: "again and again", ts: Date.now(), vouch: { to: "server", stars: 4, n: 4 } });
+await vouch("alice", "general", "v4", { uid: "alice", text: "again and again", ts: Date.now(), vouch: { to: "server", stars: 4, n: 4 } });
 await updateDoc(doc(as("dev"), "rooms/general/msgs/v4"), { approved: true, approvedBy: "dev" });
 await t("2nd approved vouch of the week pays 150", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 350, vWeek: wk, vCount: 2, lastVouch: "general/v4", vPaid: ["general/v1", "general/v4"] })));
-await setDoc(doc(as("alice"), "rooms/general/msgs/v5"), { uid: "alice", text: "more more more", ts: Date.now(), vouch: { to: "server", stars: 3, n: 5 } });
+await vouch("alice", "general", "v5", { uid: "alice", text: "more more more", ts: Date.now(), vouch: { to: "server", stars: 3, n: 5 } });
 await updateDoc(doc(as("dev"), "rooms/general/msgs/v5"), { approved: true, approvedBy: "dev" });
 await t("3rd vouch of the week pays nothing", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 500, vWeek: wk, vCount: 3, lastVouch: "general/v5", vPaid: ["general/v1", "general/v4", "general/v5"] })));
-await t("can't backdate a vouch", assertFails(setDoc(doc(as("alice"), "rooms/general/msgs/v6"), { uid: "alice", text: "old", ts: Date.now() - 864e5 * 9, vouch: { to: "server", stars: 5, n: 6 } })));
+await t("can't backdate a vouch", assertFails(vouch("alice", "general", "v6", { uid: "alice", text: "old", ts: Date.now() - 864e5 * 9, vouch: { to: "server", stars: 5, n: 6 } })));
 await t("dev marks feedback planned", assertSucceeds(updateDoc(doc(as("dev"), "feedback/f1"), { status: "planned", statusBy: "dev", statusAt: Date.now() })));
 e0 = (await aw()).earned;
 await t("feedback author gets 200 once it's planned", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 200, fbPaid: ["f1"], lastFb: "f1" })));
@@ -123,7 +131,7 @@ await t("can't rename to someone else's name", assertFails(updateDoc(doc(as("car
 await setDoc(doc(as("owner"), "rooms/vch"), { name: "vouches", type: "vouches", createdAt: 1 });
 await updateDoc(doc(as("owner"), "config/main"), { "nameFlags.carol": { count: 1, at: Date.now() + 1000, active: true } });
 await t("only vouches can be posted in #vouches", assertFails(setDoc(doc(as("alice"), "rooms/vch/msgs/x1"), { uid: "alice", text: "hey", ts: Date.now() })));
-await t("a vouch can be posted in #vouches", assertSucceeds(setDoc(doc(as("alice"), "rooms/vch/msgs/x2"), { uid: "alice", text: "great friend", ts: Date.now(), vouch: { to: "bob", stars: 5, n: 1 } })));
+await t("a vouch can be posted in #vouches", assertSucceeds(vouch("alice", "vch", "x2", { uid: "alice", text: "great friend", ts: Date.now(), vouch: { to: "bob", stars: 5, n: 1 } })));
 await t("a name-flagged person can't post", assertFails(setDoc(doc(as("carol"), "rooms/general/msgs/c1"), { uid: "carol", text: "hi", ts: Date.now() })));
 await t("can't unlock without actually changing your name", assertFails(updateDoc(doc(as("carol"), "members/carol"), { nickAt: Date.now() + 9000 })));
 await setDoc(doc(as("carol"), "names/carol parker"), { uid: "carol", ts: now });
@@ -164,6 +172,15 @@ await t("regular member can't see approvals", assertFails(getDoc(doc(as("alice")
 await t("developer can't approve their own change", assertFails(setDoc(doc(as("dev"), "devApprovals/6"), { sha, status: "queued", title: "x", by: "dev", at: Date.now() })));
 await t("owner can't fake a 'merged' result", assertFails(setDoc(doc(as("owner"), "devApprovals/7"), { sha, status: "merged", title: "x", by: "owner", at: Date.now() })));
 await t("approval needs a real commit id", assertFails(setDoc(doc(as("owner"), "devApprovals/8"), { sha: "main", status: "queued", title: "x", by: "owner", at: Date.now() })));
+
+console.log("Vouch tries");
+await t("5th vouch is blocked (4 tries each)", assertFails(vouch("alice", "general", "v7", { uid: "alice", text: "one more please", ts: Date.now(), vouch: { to: "server", stars: 5, n: 7 } })));
+await t("can't post a vouch without using a try", assertFails(setDoc(doc(as("carol"), "rooms/general/msgs/c9"), { uid: "carol", text: "sneaky vouch", ts: Date.now(), vouch: { to: "server", stars: 5, n: 9 } })));
+await t("can't reset your own tries", assertFails(setDoc(doc(as("alice"), "vouchQuota/alice"), { used: 0, lastMsg: "general/v1" })));
+await t("can't give yourself extra tries", assertFails(updateDoc(doc(as("alice"), "vouchQuota/alice"), { extra: 10 })));
+await t("can't use someone else's vouch to fake a try", assertFails(setDoc(doc(as("carol"), "vouchQuota/carol"), { used: 1, lastMsg: "general/v1" })));
+await t("owner gives 2 more tries", assertSucceeds(setDoc(doc(as("owner"), "vouchQuota/alice"), { extra: 2 }, { merge: true })));
+await t("with extra tries the 5th vouch works", assertSucceeds(vouch("alice", "general", "v8", { uid: "alice", text: "thanks for the extra", ts: Date.now(), vouch: { to: "server", stars: 5, n: 8 } })));
 
 console.log("Strikes & warnings");
 await t("owner gives a warning", assertSucceeds(setDoc(doc(as("owner"), "mod/alice/notices/w1"), { kind: "warning", reason: "be nice", at: Date.now(), by: "owner", ackAt: null })));

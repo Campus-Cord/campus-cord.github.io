@@ -82,23 +82,24 @@ function changeCard(c){
     h("div",{class:"chh"}, h("b",{text:c.title}), changeLight(c, owner.length > 0)),
     h("div",{class:"note",style:{margin:"2px 0 0"},text:"#" + c.n + " · from " + (c.who || "someone") + " · " + fmtDay(c.at)}),
     desc ? h("p",{class:"chdesc",text: desc.length > 600 ? desc.slice(0, 600) + "…" : desc}) : null,
-    h("details",{class:"chfiles"}, h("summary",{text:"What it changes (" + c.files.length + " file" + (c.files.length === 1 ? "" : "s") + ")"}),
+    h("details",{class:"chfiles"}, h("summary",{text:"Details: " + c.files.length + " file" + (c.files.length === 1 ? "" : "s") + " changed"}),
       h("ul",null, c.files.map(f => h("li",null, h("code",{text:f.name}), " ", h("span",{class:"add",text:"+" + f.add}), " ", h("span",{class:"del",text:"−" + f.del}),
         OWNER_ONLY_FILES.test(f.name) ? h("span",{class:"chwarn",text:" owner-only"}) : null)))),
     owner.length ? h("p",{class:"chalert",text:"⚠️ This touches owner-only files (security, payments or automation). Approve it on GitHub after checking it with Claude, not here."}) : null,
     note ? h("p",{class:"chnote",text:note}) : null);
   const btns = h("div",{class:"foot",style:{justifyContent:"flex-start",marginTop:"8px",flexWrap:"wrap"}});
-  btns.append(h("a",{class:"btn small ghost",href:c.url + "/files",target:"_blank",rel:"noopener"}, "See the code"));
   const done = a && (a.status === "queued" && a.sha === c.sha || a.status === "rejecting");
   if (isOwner() && !done){
     const ok = c.light === "green" && !owner.length;
-    const ap = h("button",{class:"btn small", disabled: ok ? null : "", title: ok ? "Put this change live" : owner.length ? "Owner-only files: approve on GitHub" : "Wait for the tests to pass"}, ic("check"), " Approve");
+    const ap = h("button",{class:"btn approve", disabled: ok ? null : "", title: ok ? "Put this change live" : owner.length ? "Owner-only files: approve on GitHub" : "Wait for the tests to pass"}, ic("check"), ok ? " Approve & put it live" : c.light === "red" ? " Can't approve: tests failed" : " Waiting for tests…");
     ap.onclick = () => decideChange(c, true, ap);
-    const no = h("button",{class:"btn small ghost"}, "Turn down"); no.onclick = () => decideChange(c, false, no);
+    const no = h("button",{class:"btn ghost"}, "Turn down"); no.onclick = () => decideChange(c, false, no);
     btns.append(ap, no);
     if (c.light === "waiting") btns.append(h("a",{class:"btn small ghost",href:c.url + "/checks",target:"_blank",rel:"noopener"}, "Start tests on GitHub"));
   }
+  if (!isOwner() && !done) card.append(h("p",{class:"chnote",text: c.light === "red" ? "❌ The safety tests failed. Ask Gemini to help fix it, then commit again on your copy." : c.light === "green" ? "⏳ Waiting for Massimo to approve it." : "🔄 GitHub is testing it. This takes about 2 minutes."}));
   card.append(btns);
+  btns.append(h("a",{class:"btn small ghost",href:c.url + "/files",target:"_blank",rel:"noopener"}, "See the code"));
   return card;
 }
 
@@ -151,6 +152,9 @@ function changeGuide(){
     step(5, "Wait for Massimo to approve it", "Your change shows up right below this guide. Green light = it passed the safety tests. When Massimo approves it, it's live on CampusCord about 5 minutes later."));
 }
 
+// Owner: count waiting changes once at startup so the Admin button shows a red number.
+function checkChangesBadge(){ if (!isOwner() || S.changesChecked) return; S.changesChecked = true;
+  loadChanges(false).then(() => need("rail")).catch(() => {}); setTimeout(() => { S.changesChecked = false; }, 10 * 60000); }
 function adminChanges(p){
   watchApprovals();
   const guide = h("details",{class:"gwrap"}, h("summary",null, ic("info"), isOwner() ? " How changes work (and how Elliott sends them)" : " How to make a change to CampusCord"), changeGuide());

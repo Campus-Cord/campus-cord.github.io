@@ -86,6 +86,21 @@ service cloud.firestore {
     }
 
     // ---------------- people
+    // Vouch tries: 4 each; only the owner can add "extra". A person can only count one more try,
+    // and only together with the vouch it's for (see vouchTryOk in rooms/msgs).
+    match /vouchQuota/{uid} {
+      function forRealVouch() {
+        let p = request.resource.data.lastMsg.split('/');
+        let m = /databases/$(database)/documents/rooms/$(p[0])/msgs/$(p[1]);
+        return existsAfter(m) && !exists(m) && getAfter(m).data.uid == request.auth.uid && ('vouch' in getAfter(m).data);
+      }
+      allow read: if signedIn() && (uid == request.auth.uid || isOwner());
+      allow write: if isOwner();
+      allow create: if signedIn() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['used', 'lastMsg']) && request.resource.data.used == 1 && forRealVouch();
+      allow update: if signedIn() && uid == request.auth.uid
+        && changed().hasOnly(['used', 'lastMsg']) && request.resource.data.used == resource.data.get('used', 0) + 1 && forRealVouch();
+    }
     // Strikes, warnings, suspensions: only the owner gives them. The person can read their own
     // and can only mark a notice as read ("I understand"), once.
     match /mod/{uid} {
@@ -241,11 +256,19 @@ service cloud.firestore {
       allow update: if isOwner() || (isAdmin() && !resource.data.get('private', false) && !request.resource.data.get('private', false));
       allow delete: if isOwner() || (isAdmin() && !resource.data.get('private', false));
 
+      // Each vouch uses one "vouch try" (vouchQuota/{uid}.used, written in the same batch).
+      function vouchTryOk(rid, mid) {
+        let qp = /databases/$(database)/documents/vouchQuota/$(request.auth.uid);
+        let after = getAfter(qp).data;
+        let before = exists(qp) ? get(qp).data.get('used', 0) : 0;
+        return after.used == before + 1 && after.used <= 4 + after.get('extra', 0) && after.lastMsg == rid + '/' + mid;
+      }
       match /msgs/{msgId} {
         allow read: if inRoom();
         allow create: if inRoom() && ownsNew() && request.resource.data.text.size() <= 4000
           && (roomOpen() || isAdmin()) && notTimedOut() && !nameLocked()
           && (room().get('type', 'text') != 'vouches' || ('vouch' in request.resource.data))
+          && (!('vouch' in request.resource.data) || isOwner() || vouchTryOk(roomId, msgId))
           && (!('vouch' in request.resource.data) || (request.resource.data.vouch.stars is int
               && request.resource.data.vouch.stars >= 1 && request.resource.data.vouch.stars <= 5
               && request.resource.data.vouch.to is string && request.resource.data.vouch.to != request.auth.uid
