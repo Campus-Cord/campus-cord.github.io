@@ -61,6 +61,11 @@ await t("can't edit someone else's group message", assertFails(updateDoc(doc(as(
 await t("member updates the group (last message)", assertSucceeds(updateDoc(doc(as("bob"), "groups/g1"), { lastTs: now, lastUid: "bob" })));
 await t("member adds a friend to the group", assertSucceeds(updateDoc(doc(as("alice"), "groups/g1"), { users: ["alice", "bob", "dev"] })));
 await t("non-member can't add themselves", assertFails(updateDoc(doc(as("timed"), "groups/g1"), { users: ["alice", "bob", "dev", "timed"] })));
+await t("make a group with a timed-out member", assertSucceeds(setDoc(doc(as("alice"), "groups/g4"), { uid: "alice", users: ["alice", "timed"], ts: now })));
+await t("timed-out member can't post in a group", assertFails(setDoc(doc(as("timed"), "groups/g4/msgs/t1"), { uid: "timed", text: "hi", ts: now })));
+await t("timed-out member can't DM a friend", assertFails(setDoc(doc(as("timed"), "dms/alice_timed/msgs/t1"), { uid: "timed", text: "hi", ts: now })));
+await t("timed-out member can still DM the owner", assertSucceeds(setDoc(doc(as("timed"), "dms/owner_timed/msgs/t1"), { uid: "timed", text: "why was I timed out?", ts: now })));
+await t("people who aren't timed out can DM", assertSucceeds(setDoc(doc(as("alice"), "dms/alice_bob/msgs/a1"), { uid: "alice", text: "hi", ts: now })));
 
 console.log("Presence & voice");
 await t("set yourself as away", assertSucceeds(updateDoc(doc(as("alice"), "members/alice"), { away: true, lastSeen: now })));
