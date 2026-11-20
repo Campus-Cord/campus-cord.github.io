@@ -1091,8 +1091,7 @@ function messageEl(m, first, reacts){
   if (S.editing === m.id) body.appendChild(editBox(m));
   else if (m.poll) body.appendChild(pollEl(m, reacts || {}));
   else if (m.text){
-const bub = equipped(m.uid, "bubble"), fnt = equipped(m.uid, "font");
-    const tx = h("div",{class:"tx" + (m.me ? " me" : "") + (onlyEmoji(m.text) && !m.img ? " jumbo" : "") + (bub && !m.me ? " bub bub-" + bub.slice(2) : "") + (fnt ? " font-" + fnt.slice(2) : "")});
+    const tx = h("div",{class:"tx" + (m.me ? " me" : "") + (onlyEmoji(m.text) && !m.img ? " jumbo" : "")});
     tx.innerHTML = md(m.me ? nickOf(m.uid) + " " + m.text : m.text);
     if (m.edited) tx.appendChild(h("span",{class:"edited",title: m.editedAt ? fmtDay(m.editedAt) : "", text:"(edited)"}));
     tx.addEventListener("click", e => { const sp = e.target.closest(".spoiler"); if (sp) sp.classList.toggle("open"); const mn = e.target.closest(".men[data-uid]"); if (mn) openProfile(mn.dataset.uid, mn); });
