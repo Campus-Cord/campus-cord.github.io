@@ -302,7 +302,7 @@ function codeFinderEl(){
       out.append(d); } };
   let t = null; q.addEventListener("input", () => { clearTimeout(t); t = setTimeout(run, 300); });
   q.addEventListener("focus", () => loadSources().catch(() => {}), {once:true});
-  box.append(h("div",{class:"cfhead"}, h("span",{class:"cfic"}, ic("search")), h("div",null, h("b",{text:"Code Finder"}), h("div",{class:"note",style:{margin:0},text:"When your AI asks to see some code, paste what it said here. Then press Copy for AI."}))),
+  box.append(h("div",{class:"cfhead"}, h("span",{class:"cfic"}, ic("search")), h("div",null, h("b",{text:"Give your AI the code it asks for"}), h("div",{class:"note",style:{margin:0},text:"Paste the AI's message here (the one that asks for code), then press Copy for AI and paste it back."}))),
     q, out);
   return box;
 }

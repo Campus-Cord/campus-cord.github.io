@@ -64,7 +64,8 @@ function aiStarter(){
   const me = nickOf(S.uid);
   return `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
 
-IMPORTANT: This file already contains ALL of CampusCord's code, below these instructions. NEVER ask me to paste code or "sections" of the file. Search this file yourself whenever you need to see something.
+IMPORTANT: The full code is too big to send at once, so at the end of this file is a MAP of CampusCord's code: every function and setting, with its file and line number. You have NOT seen the code itself yet. Never guess or invent code.
+When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once.
 
 YOU CAN CHANGE ANYTHING IN src/ (the whole app: looks, features, the shop, everything). Massimo reviews every change before it goes live and turns down what he doesn't want, so don't refuse ideas because they seem big or touch something important. Just do them well.
 
@@ -73,11 +74,11 @@ HOW CAMPUSCORD WORKS (don't guess):
 - The files in src/ are joined into one page by a build script. All the .js files share ONE scope (no imports or exports between them), so a function in one file can be used in another. Before adding a function, search this file to make sure the name isn't already used, or the whole app crashes.
 - Security lives in firestore.rules (who can read and write each collection). You can read it below, but I can't send changes to it from here. If a feature needs a NEW collection or new fields the rules don't allow yet (for example group chats), do this: give me the src/ changes as usual, AND write the exact firestore.rules changes plus tests for tests/rules.test.mjs in a separate section titled "FOR MASSIMO: DATABASE RULES". I'll send that part to Massimo, who adds it. Copy how the existing "dms" rules and tests work.
 - Useful helpers: h(tag, attrs, ...children) builds HTML elements; S is the app state (S.uid = me, S.members, S.rooms, S.dms); nickOf(uid) gives a name; avatar(uid, "sm") gives an avatar; toast(text) shows a message; need("side","msgs") redraws parts of the screen; openChat(kind, id) opens a chat; modal((m, close) => {...}) opens a pop-up; isOwner() and isAdmin() check roles.
-- Where things are in src/app.js: messages are drawn in "function messageEl", sending is "function send", chats open in "function openChat", DMs are "function openDM" and "function renderDMList", the left list is "function renderSide", the top bar is "function renderHeader", the right panel is "function renderRPanel". The shop is src/cosmetics.js, styles are src/style.css.
+- Use the MAP to find what you need. Some starting points in src/app.js: messages are drawn in "function messageEl", sending is "function send", chats open in "function openChat", DMs are "function openDM" and "function renderDMList", the left list is "function renderSide", the top bar is "function renderHeader", the right panel is "function renderRPanel". The shop is src/cosmetics.js, styles are src/style.css.
 
 HOW TO WORK WITH ME:
-1. When I give you an idea, first explain your plan in 2-4 simple sentences and ask if it's OK.
-2. Then give me ALL the changes at once in EXACTLY this format. I paste your whole answer into CampusCord, which applies it automatically. I do NOT edit any files myself:
+1. When I give you an idea, explain your plan in 2-4 simple sentences, and in the same message list the exact names of the code you need to see (in backticks).
+2. I'll paste you that code. Then give me ALL the changes at once in EXACTLY this format. I paste your whole answer into CampusCord, which applies it automatically. I do NOT edit any files myself:
 
 FILE: src/app.js
 <<<<<<< FIND
@@ -88,7 +89,7 @@ FILE: src/app.js
 
 Rules for the format:
 - Put a FILE: line before each block. Use as many blocks and files in src/ as you need.
-- The FIND lines must match the code below character for character. Never shorten them with "..." and never make them up.
+- The FIND lines must be copied character for character from code I pasted you. Never shorten them with "..." and never make them up. If you haven't seen a piece of code yet, ask for it first.
 - To add brand-new code (a new function, new CSS), leave the FIND part EMPTY and it gets added to the END of that file.
 - Don't change index.html or src/build.py.
 3. If CampusCord tells me your changes have a problem, I'll paste you its message. Fix it and send ALL the changes again.
@@ -97,7 +98,20 @@ Got it? Ask me what I'd like to work on.
 
 `;
 }
-function allCodeText(){ return "I attached CampusCord's code. Read the instructions at the top of the file and follow them.\n\n" + aiStarter() + "======================== ALL OF CAMPUSCORD'S CODE ========================\n\n" + (srcCache || []).map(f => "===== " + f.path + " =====\n" + f.lines.join("\n")).join("\n\n"); }
+function codeMapText(){
+  const out = [];
+  (srcCache || []).forEach(f => {
+    if (/\.m?js$/.test(f.file)){ out.push("\n## " + f.path);
+      f.blocks.forEach(b => { const first = (b.code.split("\n").find(l => /^(async function|function|const|let|class)\s/.test(l)) || "").trim();
+        const sig = /function/.test(b.kind) ? (first.match(/^(async\s+)?function\s+[\w$]+\s*\([^)]*\)/) || [first.slice(0, 70)])[0] : b.kind + " " + b.name;
+        out.push("L" + b.a + "  " + sig); }); }
+    else if (f.file.endsWith(".css")){ out.push("\n## " + f.path + " (ask for CSS by class name, like `.icard`; sections:)");
+      f.lines.forEach((l, i) => { const m = l.match(/^\/\*\s*(.{3,60}?)\s*\*\//); if (m) out.push("L" + (i + 1) + "  /* " + m[1] + " */"); }); }
+    else out.push("\n## " + f.path + " (" + f.lines.length + " lines; ask for it by file name if you need it)"); });
+  return out.join("\n");
+}
+function allCodeText(){ return "I attached CampusCord's instructions and a map of its code. Read the instructions at the top of the file and follow them.\n\n" + aiStarter() + "======================== MAP OF CAMPUSCORD'S CODE ========================" + codeMapText(); }
+function fullCodeText(){ return "I attached ALL of CampusCord's code. Follow the instructions at the top, except: you already have the full code below, so search it instead of asking me for code.\n\n" + aiStarter() + "======================== ALL OF CAMPUSCORD'S CODE ========================\n\n" + (srcCache || []).map(f => "===== " + f.path + " =====\n" + f.lines.join("\n")).join("\n\n"); }
 
 // ---- submissions
 S.subs = [];
@@ -162,6 +176,9 @@ function easyPanelEl(){
       try{ await loadSources(); const a = h("a",{href:URL.createObjectURL(new Blob([allCodeText()], {type:"text/plain"})), download:"campuscord-for-ai.txt"}); document.body.appendChild(a); a.click(); a.remove(); toast("Downloaded! Now attach it in Gemini."); }
       catch(e){ toast("Couldn't get the code. Check your internet and try again."); }
       dl.disabled = false; dl.innerHTML = old; }}, ic("arrowdown","sm"), " Download the code file");
+  // 2: the AI asks for code by name -> paste its message, get the real code
+  const giveCode = (() => { const el = codeFinderEl(); el.classList.add("inline"); return el; })();
+  const fullDl = h("a",{href:"#", class:"note", style:{fontSize:"12px"}, onclick:async e => { e.preventDefault(); try{ await loadSources(); const a = h("a",{href:URL.createObjectURL(new Blob([fullCodeText()], {type:"text/plain"})), download:"campuscord-full-code.txt"}); document.body.appendChild(a); a.click(); a.remove(); }catch(err){ toast("Couldn't get the code."); } }}, "Using an AI that can read very big files (like Gemini in AI Studio)? Download ALL the code instead");
   // 3
   const title = h("input",{class:"inp", maxlength:"100", placeholder:"What does it do? e.g. Purple send button"});
   const ans = h("textarea",{class:"inp eans", rows:"6", placeholder:"Paste the AI's whole answer here (the part with <<<<<<< FIND in it). Extra text around it is fine."});
@@ -188,8 +205,9 @@ function easyPanelEl(){
         h("li",null, "Open Gemini and start a ", h("b",{text:"new chat"}), "."),
         h("li",null, "Click the ", h("b",{text:"+"}), " next to the message box and attach ", h("b",{text:"campuscord-for-ai.txt"}), " (it's in your Downloads)."),
         h("li",null, "Press send. If Gemini wants you to type something, just type ", h("b",{text:"go"}), ".")),
-      h("div",{class:"gbtns"}, dl, h("a",{class:"btn ghost", href:"https://gemini.google.com/app", target:"_blank", rel:"noopener"}, "Open Gemini"))),
-    step(2, "Tell the AI your idea", "Just chat in normal words, like \"make the send button purple\" or \"add a dark green theme\". When it's ready, it gives you the changes in a special format with <<<<<<< FIND in it."),
+      h("div",{class:"gbtns"}, dl, h("a",{class:"btn ghost", href:"https://gemini.google.com/app", target:"_blank", rel:"noopener"}, "Open Gemini")), fullDl),
+    step(2, "Tell the AI your idea, and give it the code it asks for", "Chat in normal words, like \"make the send button purple\". The AI will ask to see some code by name. Paste its message in this box, press Copy for AI, and paste that back to the AI.",
+      giveCode),
     step(3, "Paste the AI's answer and send it", null, title, ans, res, h("div",{class:"gbtns"}, send)));
   return box;
 }

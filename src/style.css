@@ -1387,3 +1387,4 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .diffview .dadd{color:#3fdc7a;background:rgba(63,220,122,.08)}.diffview .ddel{color:#ff7b72;background:rgba(255,123,114,.08)}.diffview .dhunk{color:#79c0ff}
 .easy .gbtns .btn,.subcard .btn{width:auto;margin:0}
 .esub{margin:2px 0 4px;padding-left:20px;color:var(--muted);font-size:13.5px;line-height:1.6}.esub b{color:var(--text)}
+.cfind.inline{margin:4px 0 0;background:var(--card)}
