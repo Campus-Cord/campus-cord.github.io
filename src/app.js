@@ -370,7 +370,7 @@ function setupJoin(){
 // A random ID for this browser, saved with the member profile. Banning someone also bans their browser, so making a
 // "new account" in the same browser doesn't get them back in.
 function deviceId(){ let d = null; try{ d = localStorage.getItem("ccDevice"); if (!d){ d = "d" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("ccDevice", d); } }catch(e){} return d || "unknown"; }
-const deviceBanned = () => ((S.config && S.config.bannedDevices) || []).includes(deviceId());
+const deviceBanned = () => !isOwner() && ((S.config && S.config.bannedDevices) || []).includes(deviceId());
 // ---- unique names: names/{key} records who owns each name (case-insensitive)
 const cleanNick = n => String(n || "").replace(/\s+/g, " ").trim().slice(0, 24);
 const nameKey = n => cleanNick(n).toLowerCase().replace(/\//g, "_");
@@ -1215,7 +1215,7 @@ function memberMenu(ev, uid){
     canModerate(uid) && !tu ? {label:"Timeout 1 hour", icon:"hourglass", run:() => setTimeoutFor(uid, 60)} : null,
     canModerate(uid) && !tu ? {label:"Timeout 1 day", icon:"hourglass", run:() => setTimeoutFor(uid, 1440)} : null,
     canModerate(uid) && tu ? {label:"Remove timeout", icon:"hourglass", run:() => setTimeoutFor(uid, 0)} : null,
-    canModerate(uid) ? {label:"Kick " + nickOf(uid), icon:"x", danger:true, run:() => confirmBox("Kick " + nickOf(uid) + "?", "They'll be locked out and can't rejoin unless unbanned.", "Kick", () => kick(uid))} : null,
+    canModerate(uid) ? {label:"Kick " + nickOf(uid), icon:"x", danger:true, run:() => kickWithReason(uid)} : null,
   ]);
 }
 async function setTimeoutFor(uid, mins){
@@ -1363,7 +1363,7 @@ function openProfile(uid, anchor, self){
       h("div",{class:"acts"},
         uid === S.uid ? h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openSettings("profile"); }}, "Edit profile") : h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openDM(uid); }}, ic("message"), " Message"),
         uid === S.uid ? statusPicker() : null,
-        isAdmin() && uid !== S.uid && !isOwnerUid(uid) && !(isDev(uid) && !isOwner()) ? h("button",{class:"btn small danger", onclick:() => { closeLayer("profile"); confirmBox("Kick " + nickOf(uid) + "?", "They'll be locked out right away and can't rejoin unless unbanned.", "Kick", () => kick(uid)); }}, "Kick") : null),
+        isAdmin() && uid !== S.uid && !isOwnerUid(uid) && !(isDev(uid) && !isOwner()) ? h("button",{class:"btn small danger", onclick:() => { closeLayer("profile"); kickWithReason(uid); }}, "Kick") : null),
       isOwner() && uid !== S.uid ? h("div",{class:"proles"}, h("span",{class:"pl",text:"Roles"}),
         h("button",{class:"rolepill dev" + (isDev(uid) ? " on" : ""), title: isDev(uid) ? "Remove developer" : "Make developer", onclick:() => { closeLayer("profile"); isDev(uid) ? confirmBox("Remove " + nickOf(uid) + " as developer?", "They'll go back to being a regular member.", "Remove", () => setDev(uid, false)) : confirmBox("Make " + nickOf(uid) + " a developer?", "Developers can manage rooms, delete messages, pin, kick regular members, and see the invite code. Only you can add or remove developers.", "Make developer", () => setDev(uid, true), true); }}, isDev(uid) ? "✓ DEV" : "+ DEV"),
         h("button",{class:"rolepill design" + (isDesigner(uid) ? " on" : ""), title: isDesigner(uid) ? "Remove designer" : "Make designer", onclick:() => { closeLayer("profile"); setDesigner(uid, !isDesigner(uid)); }}, isDesigner(uid) ? "✓ DESIGN" : "+ DESIGN"),
@@ -2072,13 +2072,13 @@ function adminMembers(p){
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => setDev(u, !isDev(u))}, isDev(u) ? "✓ DEV" : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
-      u !== S.uid && !isOwnerUid(u) && (isOwner() || !isDev(u)) ? h("button",{class:"btn small danger", onclick:() => confirmBox("Kick " + nickOf(u) + "?", "They'll be locked out and can't rejoin unless unbanned.", "Kick", () => kick(u))}, "Kick") : null));
+      u !== S.uid && !isOwnerUid(u) && (isOwner() || !isDev(u)) ? h("button",{class:"btn small danger", onclick:() => kickWithReason(u)}, "Kick") : null));
   });
   p.append(h("label",{class:"f",text:"Members"}), list);
   const banned = S.config.banned || [], names = S.config.bannedNames || {};
   p.append(h("label",{class:"f",text:"Kicked (" + banned.length + ")"}));
   if (!banned.length) p.append(h("p",{class:"note",style:{marginTop:0},text:"Nobody."}));
-  p.append(h("div",{class:"list"}, banned.map(u => h("div",{class:"li"}, h("span",{class:"nm",text:names[u] || "Kicked member"}),
+  p.append(h("div",{class:"list"}, banned.map(u => h("div",{class:"li"}, h("span",{class:"nm"}, h("b",{text:names[u] || "Kicked member"}), banReasonOf(u) ? h("span",{class:"s",text:"  · " + banReasonOf(u).reason}) : null),
     h("button",{class:"btn small ghost", onclick:() => decideAppeal(Object.assign({id:u, nick:names[u]}, (S.appeals.find(a => a.id === u) || {}), {dev:(S.appeals.find(a => a.id === u) || {}).dev}), true)}, "Unban")))));
 }
 function grantModal(uid){
@@ -2155,7 +2155,7 @@ function flagName(uid){
   const f = nameFlag(uid) || {count:0}; const n = (f.count || 0) + 1; const who = nickOf(uid);
   if (f.count >= NAME_STRIKES){
     confirmBox("Ban " + who + " for good?", who + " already used all " + NAME_STRIKES + " chances to use their real name. This bans them permanently.", "Ban permanently", async () => {
-      try{ await updateDoc(doc(db, "config/main"), {["nameFlags." + uid]:Object.assign({}, f, {active:false, bannedAt:Date.now()})}); await kick(uid); toast(who + " was banned permanently"); }catch(e){ toast("Couldn't ban: " + errMsg(e)); } });
+      try{ await updateDoc(doc(db, "config/main"), {["nameFlags." + uid]:Object.assign({}, f, {active:false, bannedAt:Date.now()})}); await kick(uid, "Didn't change to your real name after 3 strikes"); toast(who + " was banned permanently"); }catch(e){ toast("Couldn't ban: " + errMsg(e)); } });
     return;
   }
   confirmBox("Not a real name: strike " + n + " of " + NAME_STRIKES, "“" + who + "” will be locked out until they change to their real name. If they don't within " + NAME_DAYS + " days they're removed from the server." + (n === NAME_STRIKES ? " This is their last chance — next time they're banned for good." : ""), "Send strike " + n, async () => {
@@ -2185,8 +2185,28 @@ function enforceNameLock(){
     inp, err, h("button",{class:"btn", onclick:go}, "Change my name"))));
   setTimeout(() => inp.focus(), 50);
 }
-async function kick(uid){
+const BAN_REASONS = ["Spamming", "Not using your real name", "Being mean or bullying", "Using another account to get around a ban", "Posting inappropriate stuff", "Farming Sparks with fake vouches"];
+function banReasonOf(uid){ const r = (S.config && S.config.banReasons) || {}; return r[uid] || null; }
+function kickWithReason(uid){
+  const who = nickOf(uid);
+  modal((m, close) => {
+    let picked = "";
+    const txt = h("textarea",{class:"inp", rows:"2", maxlength:"200", placeholder:"Or write your own reason…"});
+    const chips = h("div",{class:"rchips"}, BAN_REASONS.map(r => { const b = h("button",{class:"rchip", type:"button", text:r});
+      b.onclick = () => { picked = picked === r ? "" : r; chips.querySelectorAll(".rchip").forEach(x => x.classList.toggle("on", x.textContent === picked)); if (picked) txt.value = ""; }; return b; }));
+    txt.oninput = () => { if (txt.value.trim()){ picked = ""; chips.querySelectorAll(".rchip").forEach(x => x.classList.remove("on")); } };
+    const err = h("div",{class:"note",style:{color:"#f0565c",minHeight:"16px",margin:"4px 0 0"}});
+    m.append(h("h3",{text:"Kick & ban " + who}),
+      h("p",{class:"note",text:who + " gets locked out right away and sees this reason on their screen. They can ask to be unbanned."}),
+      h("label",{class:"f",text:"Why?"}), chips, txt, err,
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"),
+        h("button",{class:"btn danger", onclick:() => { const reason = (picked || txt.value.trim()).slice(0, 200);
+          if (reason.length < 3){ err.textContent = "Pick a reason or write one."; return; } close(); kick(uid, reason); }}, "Kick & ban")));
+  });
+}
+async function kick(uid, reason){
   try{ const m = member(uid) || {}; const upd = {banned:arrayUnion(uid), bannedNames:Object.assign({}, S.config.bannedNames||{}, {[uid]:nickOf(uid)})};
+    if (reason){ const r = {reason:String(reason).slice(0, 200), by:nickOf(S.uid), at:Date.now()}; upd["banReasons." + uid] = r; if (m.dev) upd["banReasons." + m.dev] = r; }
     if (m.dev){ upd.bannedDevices = arrayUnion(m.dev); upd["bannedDevNames." + m.dev] = nickOf(uid); }
     if (isOwner() && isDev(uid)) upd.admins = arrayRemove(uid);
     await updateDoc(doc(db, "config/main"), upd);

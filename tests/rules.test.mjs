@@ -164,6 +164,13 @@ await setDoc(doc(as("gus"), "appeals/gus"), { startedAt: Date.now(), nick: "gus"
 await updateDoc(doc(as("owner"), "appeals/gus"), { startedAt: Date.now() - 40 * 60000 });
 await t("can't submit after 30 minutes", assertFails(updateDoc(doc(as("gus"), "appeals/gus"), { answers: { names: "x", main: "x", promise: "x" }, submittedAt: Date.now() })));
 
+console.log("Kick reasons");
+const why = { reason: "Spamming", by: "Dev", at: Date.now() };
+await t("developer kicks someone with a reason (and their device)", assertSucceeds(updateDoc(doc(as("dev"), "config/main"), { banned: ["bob", "gus", "zed"], "bannedNames.zed": "Zed", bannedDevices: ["devX", "devZ"], "bannedDevNames.devZ": "Zed", "banReasons.zed": why, "banReasons.devZ": why })));
+await t("developer still can't ban the owner", assertFails(updateDoc(doc(as("dev"), "config/main"), { banned: ["bob", "gus", "zed", "owner"], "banReasons.owner": why })));
+await t("regular member can't write ban reasons", assertFails(updateDoc(doc(as("alice"), "config/main"), { "banReasons.zed": { reason: "lol", by: "alice", at: Date.now() } })));
+await t("developer can't change other settings while kicking", assertFails(updateDoc(doc(as("dev"), "config/main"), { "banReasons.zed": why, serverName: "Hacked" })));
+
 console.log("Site changes");
 const sha = "a".repeat(40);
 await t("owner approves a site change", assertSucceeds(setDoc(doc(as("owner"), "devApprovals/5"), { sha, status: "queued", title: "Purple button", by: "owner", at: Date.now() })));

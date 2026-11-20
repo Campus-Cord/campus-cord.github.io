@@ -18,6 +18,7 @@ function showBanAppeal(){
     box.classList.add("bancard");
     box.append(h("div",{class:"banic",text:"⛔"}), h("h1",{text:"You have been banned"}),
       h("div",{class:"banname"}, "Account: ", h("b",{text:bannedName()})),
+      (() => { const c = S.config || {}, r = (c.banReasons || {})[S.uid] || (c.banReasons || {})[deviceId()]; return r ? h("div",{class:"banreason"}, h("span",{text:"Reason"}), h("b",{text:r.reason}), r.at ? h("small",{text:"Banned " + fmtDay(r.at)}) : null) : null; })(),
       h("div",{class:"banstatus"}, h("span",{class:"dot"}), "Your account status is currently ", h("b",{text: ap && ap.status === "denied" ? "denied" : ap && ap.status === "approved" ? "unbanned" : "pending review"}), "."));
     if (ap && ap.status === "approved"){ S.holdBan = true; try{ localStorage.setItem("ccJoinCode", ap.code || ""); }catch(e){}
       box.append(h("p",{class:"sub",text:"Good news — the owner unbanned you. Rejoin with this invite code and use your real name:"}), h("div",{class:"bancode",text:ap.code || "(ask the owner)"}),

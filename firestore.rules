@@ -36,7 +36,7 @@ service cloud.firestore {
       allow update: if isOwner() && request.resource.data.ownerUid == resource.data.ownerUid;
       // Developers can only kick/unban/time out, never the owner or another developer.
       allow update: if isAdmin() && !isOwner()
-        && changed().hasOnly(['banned', 'bannedNames', 'timeouts'])
+        && changed().hasOnly(['banned', 'bannedNames', 'timeouts', 'bannedDevices', 'bannedDevNames', 'banReasons'])
         && !(resource.data.ownerUid in request.resource.data.get('banned', []))
         && !request.resource.data.get('banned', []).hasAny(resource.data.get('admins', []))
         && !(resource.data.ownerUid in request.resource.data.get('timeouts', {}))
