@@ -215,12 +215,26 @@ service cloud.firestore {
         && nw().items.toSet().difference(ow().items.toSet()) == [nw().lastItem].toSet()
         && nw().spent == ow().spent + cat().prices[nw().lastItem]
         && nw().spent <= ow().earned;
-      // claim one quest
+      // claim one quest (permanent catalog quest or today's daily quest)
+      function todayEt() { return int((request.time.toMillis() - 18000000) / 86400000); }
+      function dailyQuestReward(qid) {
+        return qid == 'dq_' + string(todayEt()) + '_dq_chat5' ? 60
+          : qid == 'dq_' + string(todayEt()) + '_dq_chat15' ? 100
+          : qid == 'dq_' + string(todayEt()) + '_dq_react3' ? 50
+          : qid == 'dq_' + string(todayEt()) + '_dq_react8' ? 80
+          : qid == 'dq_' + string(todayEt()) + '_dq_reply2' ? 60
+          : qid == 'dq_' + string(todayEt()) + '_dq_dm2' ? 60
+          : qid == 'dq_' + string(todayEt()) + '_dq_gif1' ? 50
+          : qid == 'dq_' + string(todayEt()) + '_dq_poll1' ? 50
+          : qid == 'dq_' + string(todayEt()) + '_dq_vouch1' ? 90
+          : -1;
+      }
       allow update: if mine()
         && changed().hasOnly(['earned', 'quests', 'lastQuest'])
-        && nw().quests.size() == ow().quests.size() + 1
+        && !(nw().lastQuest in ow().quests)
         && nw().quests.toSet().difference(ow().quests.toSet()) == [nw().lastQuest].toSet()
-        && nw().earned == ow().earned + cat().quests[nw().lastQuest];
+        && ((nw().lastQuest in cat().quests && nw().earned == ow().earned + cat().quests[nw().lastQuest])
+          || (dailyQuestReward(nw().lastQuest) > 0 && nw().earned == ow().earned + dailyQuestReward(nw().lastQuest)));
       // Weekly vouch rewards (week starts Monday 00:00 Eastern): the owner/devs approve a vouch first, then its author can
       // claim it — 1st claim of the week +200, 2nd +150, then nothing. Each vouch pays at most once.
       function week() { return int((request.time.toMillis() - 363600000) / 604800000); }

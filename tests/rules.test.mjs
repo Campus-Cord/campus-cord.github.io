@@ -71,6 +71,10 @@ await t("can't create someone else's wallet", assertFails(setDoc(doc(as("bob"), 
 await t("claim a quest for its reward", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 100, quests: ["q_first"], lastQuest: "q_first" })));
 await t("can't claim the same quest twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 200, quests: ["q_first", "q_first"], lastQuest: "q_first" })));
 await t("can't inflate a quest reward", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 1100, quests: ["q_first", "q_react"], lastQuest: "q_react" })));
+const dqDay = Math.floor((Date.now() - 18000000) / 86400000);
+const dqId = `dq_${dqDay}_dq_chat5`;
+await t("claim today's daily quest for Sparks", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 160, quests: ["q_first", dqId], lastQuest: dqId })));
+await t("can't claim yesterday's daily quest", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 220, quests: ["q_first", dqId, `dq_${dqDay - 1}_dq_chat5`], lastQuest: `dq_${dqDay - 1}_dq_chat5` })));
 await t("claim the free decoration", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 0, items: ["d_bubble"], lastItem: "d_bubble" })));
 await t("can't buy without enough Sparks", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 700, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
 await t("can't underpay", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 1, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
