@@ -1520,7 +1520,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-20.1155";
+const APP_VERSION = "2026-11-20.1159";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -5170,7 +5170,7 @@ const SUB_STATUS = {
   failed:["❌", "Didn't pass the tests."],
   approved:["🚀", "Approved! Going live in a few minutes…"],
   live:["🎉", "Live on CampusCord!"],
-  pr:["🧩", "Changes the database rules, so it needs one more click: open it on GitHub and press Merge. The rules get tested before they go live."],
+  pr:["🧩", "Approved! Because it changes the database rules, press Merge on GitHub (the green button below). This card turns 🎉 by itself about a minute later."],
   error:["⚠️", "Couldn't put it live."],
   rejecting:["✖", "Turned down."], rejected:["✖", "Turned down."],
 };
@@ -5180,14 +5180,14 @@ function subCard(x){
     h("div",{class:"subtop"}, h("b",{text:x.title}), h("span",{class:"note",style:{margin:0},text:(isOwner() ? "from " + (x.nick || "someone") + " · " : "") + fmtDay(x.ts)})),
     h("div",{class:"subst"}, h("span",{text:st[0]}), h("span",{text: x.status === "ready" && !isOwner() ? "Passed the tests. Waiting for Massimo to approve it." : st[1]})),
     x.files ? h("div",{class:"note",style:{margin:"2px 0 0"},text:"Changes " + x.files.join(", ")}) : null,
-    x.error ? h("div",{class:"suberr",text:x.error}) : null,
+    x.error && x.status !== "pr" && x.status !== "live" ? h("div",{class:"suberr",text:x.error}) : null,
     x.flags && x.flags.length && isOwner() ? h("div",{class:"chalert",text:"⚠️ This touches payments or owner stuff (" + x.flags.join(", ") + "). Look at the code carefully before approving."}) : null);
   const btns = h("div",{class:"foot",style:{justifyContent:"flex-start",marginTop:"8px",flexWrap:"wrap",gap:"8px"}});
   if (isOwner() && x.status === "ready"){
     btns.append(h("button",{class:"btn approve", onclick:e => { e.currentTarget.disabled = true; decideSub(x, true); }}, ic("check"), " Approve & put it live"),
       h("button",{class:"btn ghost", onclick:() => confirmBox("Turn down \"" + x.title + "\"?", (x.nick || "They") + " can send a new version.", "Turn down", () => decideSub(x, false))}, "Turn down"));
   }
-  if (x.status === "pr" && x.prUrl && isOwner()) btns.append(h("a",{class:"btn approve", href:x.prUrl, target:"_blank", rel:"noopener"}, "Open on GitHub to merge"));
+  if (x.status === "pr" && x.prUrl && isOwner()) btns.append(h("a",{class:"btn approve", href:x.prUrl, target:"_blank", rel:"noopener"}, "Press Merge on GitHub"));
   if (x.diff) btns.append(h("button",{class:"btn small ghost", onclick:() => diffModal(x)}, "See the code"));
   if (!isOwner() && (x.status === "failed" || x.status === "error") && x.error) btns.append(h("button",{class:"btn small", onclick:() => copy(fixMessageForAI([x.error]), "Copied! Paste it to your AI so it can fix it.")}, ic("copy","sm"), " Copy a fix message for your AI"));
   if (["new", "failed", "error", "rejected", "live"].includes(x.status) && (isOwner() || x.uid === S.uid)) btns.append(h("button",{class:"btn small ghost", onclick:() => deleteDoc(doc(db, "devSubs", x.id)).catch(e => toast(errMsg(e)))}, x.status === "live" ? "Clear" : "Remove"));
