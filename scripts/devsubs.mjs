@@ -20,13 +20,15 @@ const NEEDS_PR = f => f === "firestore.rules" || f.startsWith("tests/");
 const NO_FILES = new Set(["src/build.py", "src/firebase-config.js"]);
 const FLAGS = ["STRIPE_LINKS", "buy.stripe.com", "const CATALOG", "ownerUid", "giveSparks", "earned:", "firestore.rules"];
 
+const normFile = f => { f = f.replace(/^\.?\//, "").replace(/^src\/(?=firestore\.rules$|tests\/)/, "");
+  return /^(src|tests)\//.test(f) || f === "firestore.rules" ? f : f === "rules.test.mjs" ? "tests/rules.test.mjs" : "src/" + f; };
 function parseEdits(text){
   const lines = String(text || "").replace(/\r/g, "").split("\n"), blocks = [];
   let file = null, mode = null, find = [], rep = [];
   const clean = arr => { while (arr.length && /^\s*```/.test(arr[0])) arr.shift(); while (arr.length && /^\s*```\s*$/.test(arr[arr.length - 1])) arr.pop(); return arr.join("\n"); };
   for (const l of lines){
     const fm = mode === null && l.match(/^[\s#*>`_-]*FILE:\s*[`*"']*\s*((?:src\/)?[\w.\/-]+?)[`*"']*\s*$/i);
-    if (fm){ file = fm[1].startsWith("src/") ? fm[1] : "src/" + fm[1]; continue; }
+    if (fm){ file = normFile(fm[1]); continue; }
     // Markers: @@FIND / @@REPLACE / @@END (safe from chat formatting), or the older <<<<<<< FIND / ======= / >>>>>>> REPLACE
     if (/^\s*(<{5,}\s*FIND|@@\s*FIND)\s*:?\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
     if (mode === "find" && (/^\s*={5,}\s*$/.test(l) || /^\s*@@\s*REPLACE(\s+WITH)?\s*:?\s*$/i.test(l))){ mode = "rep"; continue; }
@@ -102,13 +104,15 @@ async function openPR(id, x, r){
 const d_set = (id, patch) => db.collection("devSubs").doc(id).set(Object.assign({checkedAt:Date.now()}, patch), {merge:true});
 const git = (...a) => execFileSync("git", a, {cwd:ROOT, stdio:"pipe"}).toString().trim();
 
-const snap = await db.collection("devSubs").where("status", "in", ["new", "approved", "rejecting"]).get();
-if (snap.empty){ console.log("Nothing to do."); process.exit(0); }
-for (const d of snap.docs){
+// Earlier robot versions misread "FILE: firestore.rules"; test those again.
+const RETRY = /changes src\/(firestore\.rules|tests\/)/;
+async function handle(d){
   const x = d.data(), set = patch => d.ref.set(Object.assign({checkedAt:Date.now()}, patch), {merge:true});
   try{
-    if (x.status === "rejecting"){ await set({status:"rejected"}); console.log(d.id, "rejected"); continue; }
+    if (x.status === "rejecting"){ await set({status:"rejected"}); console.log(d.id, "rejected"); return; }
+    if (x.status === "failed" && RETRY.test(x.error || "")) x.status = "new";
     if (x.status === "new"){
+      try{ git("pull", "-q", "--rebase", "origin", "main"); }catch(e){}
       // test on a throwaway copy
       const tmp = mkdtempSync(join(tmpdir(), "sub-")); cpSync(join(ROOT, "src"), join(tmp, "src"), {recursive:true}); cpSync(join(ROOT, "tests"), join(tmp, "tests"), {recursive:true}); cpSync(join(ROOT, "firestore.rules"), join(tmp, "firestore.rules"));
       const r = applyAll(tmp, x.answer);
@@ -116,12 +120,12 @@ for (const d of snap.docs){
       buildAndCheck(tmp, join(tmp, "out.html"));
       await set({status:"ready", files:Object.keys(r.files), flags:r.flags, diff:diffOf(ROOT, r.files), error:null});
       console.log(d.id, "ready");
-      continue;
+      return;
     }
     if (x.status === "approved"){
       git("pull", "-q", "--rebase", "origin", "main");
       const r = applyAll(ROOT, x.answer);
-      if (Object.keys(r.files).some(NEEDS_PR)){ await openPR(d.id, x, r); continue; }
+      if (Object.keys(r.files).some(NEEDS_PR)){ await openPR(d.id, x, r); return; }
       for (const [f, t] of Object.entries(r.files)) writeFileSync(join(ROOT, f), t);
       try{ buildAndCheck(ROOT, join(tmpdir(), "live-check.html")); }
       catch(e){ git("checkout", "--", "src"); throw e; }
@@ -139,3 +143,15 @@ for (const d of snap.docs){
     console.log(d.id, "problem:", msg);
   }
 }
+
+// Run once (GitHub timer), or keep watching for WATCH_MINUTES so changes get tested within seconds.
+let busy = Promise.resolve();
+const runAll = docs => { busy = busy.then(async () => { for (const d of docs) await handle(d); }); return busy; };
+const Q = db.collection("devSubs").where("status", "in", ["new", "approved", "rejecting"]);
+const failed = (await db.collection("devSubs").where("status", "==", "failed").get()).docs.filter(d => RETRY.test(d.data().error || ""));
+await runAll(failed);
+const mins = Number(process.env.WATCH_MINUTES || 0);
+if (!mins){ await runAll((await Q.get()).docs); process.exit(0); }
+console.log("Watching for changes for", mins, "minutes…");
+const stop = Q.onSnapshot(s => { const docs = s.docChanges().filter(c => c.type !== "removed").map(c => c.doc); if (docs.length) runAll(docs); }, e => { console.log("watch error", e.message); process.exit(1); });
+setTimeout(async () => { stop(); await busy; process.exit(0); }, mins * 60000);

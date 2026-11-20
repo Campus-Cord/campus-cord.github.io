@@ -1,0 +1,44 @@
+name: Test helper changes
+
+# Keeps a robot watching CampusCord's Dev panel so changes from helpers get tested within
+# seconds (GitHub's 5-minute timer is unreliable). Each run watches for about 55 minutes;
+# the hourly timer starts the next one. Approved changes to database rules become a pull
+# request that Massimo merges himself.
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [scripts/devsubs.mjs, .github/workflows/devsubs.yml]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: devsubs
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 62
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: npm i --no-save --silent firebase-admin@12
+      - name: Test and publish changes sent from the Dev panel
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GITHUB_TOKEN: ${{ github.token }}
+          WATCH_MINUTES: "55"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node scripts/devsubs.mjs

@@ -15,7 +15,7 @@ function parseEdits(text){
   const clean = arr => { while (arr.length && /^\s*```/.test(arr[0])) arr.shift(); while (arr.length && /^\s*```\s*$/.test(arr[arr.length - 1])) arr.pop(); return arr.join("\n"); };
   for (const l of lines){
     const fm = mode === null && l.match(/^[\s#*>`_-]*FILE:\s*[`*"']*\s*([\w.\/-]+?)[`*"']*\s*$/i);
-    if (fm){ const f = fm[1].replace(/^\.?\//, ""); file = /^(src|tests)\//.test(f) || f === "firestore.rules" ? f : f === "rules.test.mjs" ? "tests/rules.test.mjs" : "src/" + f; continue; }
+    if (fm){ const f = fm[1].replace(/^\.?\//, "").replace(/^src\/(?=firestore\.rules$|tests\/)/, ""); file = /^(src|tests)\//.test(f) || f === "firestore.rules" ? f : f === "rules.test.mjs" ? "tests/rules.test.mjs" : "src/" + f; continue; }
     // Markers: @@FIND / @@REPLACE / @@END (safe from chat formatting), or the older <<<<<<< FIND / ======= / >>>>>>> REPLACE
     if (/^\s*(<{5,}\s*FIND|@@\s*FIND)\s*:?\s*$/i.test(l)){ mode = "find"; find = []; rep = []; continue; }
     if (mode === "find" && (/^\s*={5,}\s*$/.test(l) || /^\s*@@\s*REPLACE(\s+WITH)?\s*:?\s*$/i.test(l))){ mode = "rep"; continue; }
