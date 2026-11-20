@@ -527,7 +527,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -767,7 +767,7 @@ function renderDMList(box){
   });
 }
 function renderMe(){
-  enforceNameLock();
+  enforceNameLock(); enforceMod();
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
   const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
   const mic = $("meMic"), hd = $("meDeaf"); mic.innerHTML = ""; hd.innerHTML = "";
@@ -1205,6 +1205,7 @@ function memberMenu(ev, uid){
     isOwner() && uid !== S.uid ? (nameLocked(uid) ? {label:"Remove name flag", icon:"check", run:() => clearNameFlag(uid)} : {label:"Not their real name…", icon:"alert", danger:true, run:() => flagName(uid)}) : null,
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" : "Make developer", icon:"code", run:() => setDev(uid, !isDev(uid))} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
+    ...modMenuItems(uid),
     canModerate(uid) ? "-" : null,
     canModerate(uid) && !tu ? {label:"Timeout 5 minutes", icon:"hourglass", run:() => setTimeoutFor(uid, 5)} : null,
     canModerate(uid) && !tu ? {label:"Timeout 1 hour", icon:"hourglass", run:() => setTimeoutFor(uid, 60)} : null,
@@ -1364,7 +1365,8 @@ function openProfile(uid, anchor, self){
         h("button",{class:"rolepill design" + (isDesigner(uid) ? " on" : ""), title: isDesigner(uid) ? "Remove designer" : "Make designer", onclick:() => { closeLayer("profile"); setDesigner(uid, !isDesigner(uid)); }}, isDesigner(uid) ? "✓ DESIGN" : "+ DESIGN"),
         nameLocked(uid) ? h("button",{class:"rolepill nameflag on", title:"Remove the name flag", onclick:() => { closeLayer("profile"); clearNameFlag(uid); }}, "✓ FLAGGED")
           : h("button",{class:"rolepill nameflag", title:"This isn't their real name", onclick:() => { closeLayer("profile"); flagName(uid); }}, "NOT REAL NAME")) : null,
-      isOwner() && uid !== S.uid && nameFlagLabel(uid) ? h("div",{class:"note nfl",text:nameFlagLabel(uid)}) : null));
+      isOwner() && uid !== S.uid && nameFlagLabel(uid) ? h("div",{class:"note nfl",text:nameFlagLabel(uid)}) : null,
+      uid !== S.uid && modLabel(uid) ? h("div",{class:"note nfl",text:modLabel(uid)}) : null));
   document.body.appendChild(card);
   const r = anchor.getBoundingClientRect();
   let left = r.right + 12, top = r.top - 20;
@@ -2217,6 +2219,7 @@ function installApp(){
 // __COSMETICS__
 // __APPEALS__
 // __CHANGES__
+// __MOD__
 // __PUSH__
 // __VOUCHES__
 // __FEEDBACK__

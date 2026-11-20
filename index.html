@@ -1241,6 +1241,15 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .chhist{margin-top:16px}.chhist h4{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .chrow{display:flex;gap:8px;align-items:center;font-size:13px;padding:6px 0;border-top:1px solid var(--line)}
 .chcard .btn[disabled]{opacity:.4;cursor:not-allowed;filter:grayscale(1)}
+
+/* warnings, strikes, suspensions */
+.modlayer{position:fixed;inset:0;z-index:210;background:rgba(10,10,14,.94);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadein .25s}
+#modsus{z-index:220}
+.modlayer .nlbox{width:min(460px,94vw)}
+.mreason{background:var(--rail);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.mreason span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}.mreason b{font-weight:600;white-space:pre-wrap}
+.mdots{display:flex;gap:6px;justify-content:center;margin-bottom:6px}.mdot{width:28px;height:8px;border-radius:4px;background:color-mix(in srgb,var(--muted) 30%,transparent)}.mdot.on{background:#f0565c}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
 </style>
 </head>
 <body>
@@ -1353,7 +1362,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-19.1845";
+const APP_VERSION = "2026-11-19.1921";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1872,7 +1881,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -2112,7 +2121,7 @@ function renderDMList(box){
   });
 }
 function renderMe(){
-  enforceNameLock();
+  enforceNameLock(); enforceMod();
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
   const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
   const mic = $("meMic"), hd = $("meDeaf"); mic.innerHTML = ""; hd.innerHTML = "";
@@ -2550,6 +2559,7 @@ function memberMenu(ev, uid){
     isOwner() && uid !== S.uid ? (nameLocked(uid) ? {label:"Remove name flag", icon:"check", run:() => clearNameFlag(uid)} : {label:"Not their real name…", icon:"alert", danger:true, run:() => flagName(uid)}) : null,
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" : "Make developer", icon:"code", run:() => setDev(uid, !isDev(uid))} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
+    ...modMenuItems(uid),
     canModerate(uid) ? "-" : null,
     canModerate(uid) && !tu ? {label:"Timeout 5 minutes", icon:"hourglass", run:() => setTimeoutFor(uid, 5)} : null,
     canModerate(uid) && !tu ? {label:"Timeout 1 hour", icon:"hourglass", run:() => setTimeoutFor(uid, 60)} : null,
@@ -2709,7 +2719,8 @@ function openProfile(uid, anchor, self){
         h("button",{class:"rolepill design" + (isDesigner(uid) ? " on" : ""), title: isDesigner(uid) ? "Remove designer" : "Make designer", onclick:() => { closeLayer("profile"); setDesigner(uid, !isDesigner(uid)); }}, isDesigner(uid) ? "✓ DESIGN" : "+ DESIGN"),
         nameLocked(uid) ? h("button",{class:"rolepill nameflag on", title:"Remove the name flag", onclick:() => { closeLayer("profile"); clearNameFlag(uid); }}, "✓ FLAGGED")
           : h("button",{class:"rolepill nameflag", title:"This isn't their real name", onclick:() => { closeLayer("profile"); flagName(uid); }}, "NOT REAL NAME")) : null,
-      isOwner() && uid !== S.uid && nameFlagLabel(uid) ? h("div",{class:"note nfl",text:nameFlagLabel(uid)}) : null));
+      isOwner() && uid !== S.uid && nameFlagLabel(uid) ? h("div",{class:"note nfl",text:nameFlagLabel(uid)}) : null,
+      uid !== S.uid && modLabel(uid) ? h("div",{class:"note nfl",text:modLabel(uid)}) : null));
   document.body.appendChild(card);
   const r = anchor.getBoundingClientRect();
   let left = r.right + 12, top = r.top - 20;
@@ -4221,6 +4232,136 @@ function adminChanges(p){
   p.append(h("div",{class:"foot",style:{justifyContent:"flex-start",margin:"0 0 10px"}}, refresh,
     h("a",{class:"btn small ghost",href:"https://github.com/" + GH_REPO + "/blob/main/CONTRIBUTING.md",target:"_blank",rel:"noopener"}, "How to send a change")), list, histEl);
   draw(false);
+}
+
+// ---------------------------------------------------------------- strikes, warnings, suspensions
+// Owner-only moderation. Data:
+//   mod/{uid}                 {strikes, suspendedUntil, suspendReason, suspensions}
+//   mod/{uid}/notices/{id}    {kind:"warning"|"strike", reason, at, strikes?, ackAt:null}
+// A warning or strike pops up full screen for that person until they press "I understand".
+// The 3rd strike suspends them for SUSPEND_DAYS: a full-screen block they can't close, plus a
+// timeout in config/main (so the database rules stop them posting). Strikes reset after that.
+const MAX_STRIKES = 3, SUSPEND_DAYS = 7;
+S.mod = {}; S.myMod = null; S.myNotices = [];
+
+function watchMod(){
+  if (S.modSubs) return; S.modSubs = true;
+  onSnapshot(doc(db, "mod", S.uid), s => { S.myMod = s.exists() ? s.data() : null; enforceMod(); }, () => {});
+  onSnapshot(query(collection(db, "mod", S.uid, "notices"), where("ackAt", "==", null)), s => {
+    S.myNotices = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a, b) => a.at - b.at); enforceMod();
+  }, () => {});
+  if (isOwner()) onSnapshot(collection(db, "mod"), s => { const m = {}; s.docs.forEach(d => m[d.id] = d.data()); S.mod = m; refreshOpenPane(); }, () => {});
+}
+const strikesOf = uid => (S.mod[uid] && S.mod[uid].strikes) || 0;
+const suspendedUntil = uid => { const m = uid === S.uid ? S.myMod : S.mod[uid]; const t = m && m.suspendedUntil; return t && t > Date.now() ? t : 0; };
+
+function reasonModal(title, text, okLabel, onOk, required){
+  modal((m, close) => {
+    const r = h("textarea",{class:"inp", rows:"3", maxlength:"300", placeholder: required ? "What did they do? (they'll see this)" : "Reason (optional, they'll see this)"});
+    const err = h("div",{class:"note",style:{color:"#f0565c",minHeight:"16px"}});
+    m.append(h("h3",{text:title}), h("p",{class:"note",text}), r, err,
+      h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"),
+        h("button",{class:"btn small danger", onclick:() => { const v = r.value.trim(); if (required && v.length < 3){ err.textContent = "Write a short reason."; return; } close(); onOk(v); }}, okLabel)));
+    setTimeout(() => r.focus(), 50);
+  });
+}
+
+function giveWarning(uid){
+  const who = nickOf(uid);
+  reasonModal("Warn " + who, "A warning doesn't do anything else: it just takes up " + who + "'s whole screen until they press \"I understand\".", "Send warning", async reason => {
+    try{ await setDoc(doc(collection(db, "mod", uid, "notices")), {kind:"warning", reason, at:Date.now(), by:S.uid, ackAt:null}); toast("Warning sent to " + who); }
+    catch(e){ toast("Couldn't warn: " + errMsg(e)); }
+  }, true);
+}
+
+function giveStrike(uid){
+  const who = nickOf(uid), n = strikesOf(uid) + 1, last = n >= MAX_STRIKES;
+  reasonModal("Strike " + n + " of " + MAX_STRIKES + " for " + who,
+    last ? "This is their 3rd strike, so " + who + " gets suspended for " + SUSPEND_DAYS + " days: they can't use CampusCord until it's over. Their strikes reset afterwards."
+         : who + " sees it full screen and has to accept it. At " + MAX_STRIKES + " strikes they get suspended for " + SUSPEND_DAYS + " days.",
+    last ? "Strike & suspend" : "Give strike", async reason => {
+    try{
+      const b = writeBatch(db), now = Date.now(), prev = S.mod[uid] || {};
+      if (last){
+        const until = now + SUSPEND_DAYS * 864e5;
+        b.set(doc(db, "mod", uid), {strikes:0, suspendedUntil:until, suspendReason:reason, suspendedAt:now, suspensions:(prev.suspensions || 0) + 1});
+        b.update(doc(db, "config/main"), {["timeouts." + uid]:until});
+      } else {
+        b.set(doc(db, "mod", uid), Object.assign({}, prev, {strikes:n, lastStrikeAt:now}));
+        b.set(doc(collection(db, "mod", uid, "notices")), {kind:"strike", reason, strikes:n, at:now, by:S.uid, ackAt:null});
+      }
+      await b.commit();
+      toast(last ? who + " is suspended for " + SUSPEND_DAYS + " days" : "Strike " + n + " given to " + who);
+    }catch(e){ toast("Couldn't give strike: " + errMsg(e)); }
+  }, true);
+}
+
+async function clearStrikes(uid){
+  try{ await setDoc(doc(db, "mod", uid), Object.assign({}, S.mod[uid] || {}, {strikes:0})); toast(nickOf(uid) + "'s strikes were cleared"); }
+  catch(e){ toast(errMsg(e)); }
+}
+async function endSuspension(uid){
+  try{ const b = writeBatch(db);
+    b.set(doc(db, "mod", uid), Object.assign({}, S.mod[uid] || {}, {suspendedUntil:0}));
+    b.update(doc(db, "config/main"), {["timeouts." + uid]:deleteField()});
+    await b.commit(); toast(nickOf(uid) + "'s suspension was ended"); }
+  catch(e){ toast(errMsg(e)); }
+}
+
+function modMenuItems(uid){
+  if (!isOwner() || uid === S.uid) return [];
+  const n = strikesOf(uid), sus = suspendedUntil(uid);
+  return ["-",
+    {label:"Give warning…", icon:"alert", run:() => giveWarning(uid)},
+    sus ? {label:"End suspension", icon:"check", run:() => endSuspension(uid)}
+        : {label:"Give strike… (" + n + "/" + MAX_STRIKES + ")", icon:"flag", danger:true, run:() => giveStrike(uid)},
+    n && !sus ? {label:"Clear strikes", icon:"check", run:() => clearStrikes(uid)} : null];
+}
+function modLabel(uid){
+  if (!isOwner()) return null;
+  const sus = suspendedUntil(uid); if (sus) return "⛔ Suspended until " + fmtDay(sus);
+  const n = strikesOf(uid); return n ? "Strikes: " + n + "/" + MAX_STRIKES : null;
+}
+
+// What the person sees
+function strikeDots(n){ return h("div",{class:"mdots"}, [...Array(MAX_STRIKES)].map((_, i) => h("span",{class:"mdot" + (i < n ? " on" : "")}))); }
+function enforceMod(){
+  if (!S.uid || isOwner()){ ["modsus","modnote"].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); }); return; }
+  // Suspension: can't be closed, ends by itself
+  const sus = suspendedUntil(S.uid), susEl = document.getElementById("modsus");
+  if (sus){
+    if (!susEl){
+      const left = h("b"); const tick = () => { const ms = sus - Date.now(); if (ms <= 0){ clearInterval(t); enforceMod(); return; }
+        const d = Math.floor(ms / 864e5), hr = Math.floor(ms % 864e5 / 36e5), mi = Math.floor(ms % 36e5 / 6e4);
+        left.textContent = (d ? d + "d " : "") + (d || hr ? hr + "h " : "") + mi + "m"; };
+      const t = setInterval(tick, 30000); tick();
+      document.body.appendChild(h("div",{id:"modsus",class:"modlayer"}, h("div",{class:"nlbox"},
+        h("div",{class:"nlic",text:"⛔"}), h("h2",{text:"You're suspended"}),
+        h("p",{text:"You got " + MAX_STRIKES + " strikes, so you can't use CampusCord for " + SUSPEND_DAYS + " days."}),
+        S.myMod.suspendReason ? h("div",{class:"mreason"}, h("span",{text:"Last strike"}), h("b",{text:S.myMod.suspendReason})) : null,
+        h("div",{class:"nlstrike"}, "Ends in ", left, " · ", fmtDay(sus)),
+        h("p",{class:"note",text:"Your strikes reset when it's over."}))));
+    }
+  } else if (susEl) susEl.remove();
+  // Warnings and strikes: full screen until accepted
+  const n = S.myNotices[0], noteEl = document.getElementById("modnote");
+  if (!n || sus){ if (noteEl) noteEl.remove(); return; }
+  if (noteEl && noteEl.dataset.id === n.id) return;
+  if (noteEl) noteEl.remove();
+  const strike = n.kind === "strike";
+  const ok = h("button",{class:"btn"}, "I understand");
+  ok.onclick = async () => { ok.disabled = true;
+    try{ await updateDoc(doc(db, "mod", S.uid, "notices", n.id), {ackAt:Date.now()}); }
+    catch(e){ ok.disabled = false; toast("Couldn't save: " + errMsg(e)); } };
+  document.body.appendChild(h("div",{id:"modnote",class:"modlayer" + (strike ? " strike" : ""),"data-id":n.id}, h("div",{class:"nlbox"},
+    h("div",{class:"nlic",text: strike ? "🟥" : "⚠️"}),
+    h("h2",{text: strike ? "You got a strike" : "You got a warning"}),
+    n.reason ? h("div",{class:"mreason"}, h("span",{text:"Reason"}), h("b",{text:n.reason})) : null,
+    strike ? h("div",{class:"nlstrike"}, strikeDots(n.strikes), h("div",null, "Strike ", h("b",{text:n.strikes + " of " + MAX_STRIKES})),
+      n.strikes >= MAX_STRIKES - 1 ? h("div",{class:"nlwarn",text:"One more strike and you're suspended for " + SUSPEND_DAYS + " days."}) : h("div",{class:"note",style:{margin:"4px 0 0"},text:"At " + MAX_STRIKES + " strikes you get suspended for " + SUSPEND_DAYS + " days."}))
+      : h("p",{text:"This is just a warning from the owner. Please keep CampusCord fun for everyone."}),
+    h("p",{class:"note",text:"From the owner · " + fmtDay(n.at)}),
+    ok)));
 }
 
 // ---------------------------------------------------------------- phone & desktop push notifications

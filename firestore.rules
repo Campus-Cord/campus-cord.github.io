@@ -86,6 +86,18 @@ service cloud.firestore {
     }
 
     // ---------------- people
+    // Strikes, warnings, suspensions: only the owner gives them. The person can read their own
+    // and can only mark a notice as read ("I understand"), once.
+    match /mod/{uid} {
+      allow read: if signedIn() && (uid == request.auth.uid || isOwner());
+      allow write: if isOwner();
+      match /notices/{nid} {
+        allow read: if signedIn() && (uid == request.auth.uid || isOwner());
+        allow create, update, delete: if isOwner();
+        allow update: if signedIn() && uid == request.auth.uid && resource.data.ackAt == null
+          && changed().hasOnly(['ackAt']) && request.resource.data.ackAt is int;
+      }
+    }
     // Site changes: the owner approves or turns down a pull request by number; the merge.yml
     // GitHub Action (service account) does the merge and records the result. Devs can see status.
     match /devApprovals/{n} {

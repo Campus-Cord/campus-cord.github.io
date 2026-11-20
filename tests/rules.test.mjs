@@ -165,6 +165,19 @@ await t("developer can't approve their own change", assertFails(setDoc(doc(as("d
 await t("owner can't fake a 'merged' result", assertFails(setDoc(doc(as("owner"), "devApprovals/7"), { sha, status: "merged", title: "x", by: "owner", at: Date.now() })));
 await t("approval needs a real commit id", assertFails(setDoc(doc(as("owner"), "devApprovals/8"), { sha: "main", status: "queued", title: "x", by: "owner", at: Date.now() })));
 
+console.log("Strikes & warnings");
+await t("owner gives a warning", assertSucceeds(setDoc(doc(as("owner"), "mod/alice/notices/w1"), { kind: "warning", reason: "be nice", at: Date.now(), by: "owner", ackAt: null })));
+await t("owner gives a strike", assertSucceeds(setDoc(doc(as("owner"), "mod/alice"), { strikes: 1 })));
+await t("person can read their own warning", assertSucceeds(getDoc(doc(as("alice"), "mod/alice/notices/w1"))));
+await t("others can't read someone's warnings", assertFails(getDoc(doc(as("carol"), "mod/alice/notices/w1"))));
+await t("others can't read someone's strikes", assertFails(getDoc(doc(as("carol"), "mod/alice"))));
+await t("can't remove your own strikes", assertFails(setDoc(doc(as("alice"), "mod/alice"), { strikes: 0 })));
+await t("developer can't give strikes", assertFails(setDoc(doc(as("dev"), "mod/carol"), { strikes: 1 })));
+await t("can't change the warning's reason", assertFails(updateDoc(doc(as("alice"), "mod/alice/notices/w1"), { reason: "nothing" })));
+await t("can't delete your own warning", assertFails(deleteDoc(doc(as("alice"), "mod/alice/notices/w1"))));
+await t("person accepts the warning", assertSucceeds(updateDoc(doc(as("alice"), "mod/alice/notices/w1"), { ackAt: Date.now() })));
+await t("can only accept once", assertFails(updateDoc(doc(as("alice"), "mod/alice/notices/w1"), { ackAt: Date.now() + 5 })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
