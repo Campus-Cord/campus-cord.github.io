@@ -93,7 +93,7 @@ Got it? Ask me what I'd like to work on.
 
 `;
 }
-function allCodeText(){ return aiStarter() + "======================== ALL OF CAMPUSCORD'S CODE ========================\n\n" + (srcCache || []).map(f => "===== src/" + f.file + " =====\n" + f.lines.join("\n")).join("\n\n"); }
+function allCodeText(){ return "I attached CampusCord's code. Read the instructions at the top of the file and follow them.\n\n" + aiStarter() + "======================== ALL OF CAMPUSCORD'S CODE ========================\n\n" + (srcCache || []).map(f => "===== src/" + f.file + " =====\n" + f.lines.join("\n")).join("\n\n"); }
 
 // ---- submissions
 S.subs = [];
@@ -158,8 +158,6 @@ function easyPanelEl(){
       try{ await loadSources(); const a = h("a",{href:URL.createObjectURL(new Blob([allCodeText()], {type:"text/plain"})), download:"campuscord-for-ai.txt"}); document.body.appendChild(a); a.click(); a.remove(); toast("Downloaded! Now attach it in Gemini."); }
       catch(e){ toast("Couldn't get the code. Check your internet and try again."); }
       dl.disabled = false; dl.innerHTML = old; }}, ic("arrowdown","sm"), " Download the code file");
-  const FIRST_MSG = "I attached CampusCord's code. Read the instructions at the top of the file and follow them.";
-  const first = h("button",{class:"btn ghost", onclick:() => copy(FIRST_MSG, "Copied! Paste it in Gemini next to the file.")}, ic("copy","sm"), " Copy the first message");
   // 3
   const title = h("input",{class:"inp", maxlength:"100", placeholder:"What does it do? e.g. Purple send button"});
   const ans = h("textarea",{class:"inp eans", rows:"6", placeholder:"Paste the AI's whole answer here (the part with <<<<<<< FIND in it). Extra text around it is fine."});
@@ -185,8 +183,8 @@ function easyPanelEl(){
         h("li",null, "Press ", h("b",{text:"Download the code file"}), "."),
         h("li",null, "Open Gemini and start a ", h("b",{text:"new chat"}), "."),
         h("li",null, "Click the ", h("b",{text:"+"}), " next to the message box and attach ", h("b",{text:"campuscord-for-ai.txt"}), " (it's in your Downloads)."),
-        h("li",null, "Paste the first message next to it and send.")),
-      h("div",{class:"gbtns"}, dl, first, h("a",{class:"btn ghost", href:"https://gemini.google.com/app", target:"_blank", rel:"noopener"}, "Open Gemini"))),
+        h("li",null, "Press send. If Gemini wants you to type something, just type ", h("b",{text:"go"}), ".")),
+      h("div",{class:"gbtns"}, dl, h("a",{class:"btn ghost", href:"https://gemini.google.com/app", target:"_blank", rel:"noopener"}, "Open Gemini"))),
     step(2, "Tell the AI your idea", "Just chat in normal words, like \"make the send button purple\" or \"add a dark green theme\". When it's ready, it gives you the changes in a special format with <<<<<<< FIND in it."),
     step(3, "Paste the AI's answer and send it", null, title, ans, res, h("div",{class:"gbtns"}, send)));
   return box;
