@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 3;
+const CAT_V = 4;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -35,6 +35,11 @@ const COSM = [
   {id:"n_ocean", type:"pban", name:"Ocean Waves", price:400, desc:"Rolling waves in deep blue."},
   {id:"n_holo", type:"pban", name:"Holographic", price:700, tag:"exclusive", desc:"A shimmering rainbow foil."},
   {id:"n_sakura", type:"pban", name:"Sakura Breeze", price:400, desc:"Soft pink with drifting petals."},
+  // chat bubbles & fonts
+  {id:"c_nebula", type:"bubble", name:"Nebula Bubble", price:500, tag:"new", desc:"A glowing purple speech bubble around your messages."},
+  {id:"c_gold", type:"bubble", name:"Gold Bubble", price:600, tag:"exclusive", desc:"A warm golden bubble around your messages."},
+  {id:"f_mono", type:"font", name:"Hacker Mono", price:300, tag:"new", desc:"Typewriter code font for your messages."},
+  {id:"f_serif", type:"font", name:"Classic Serif", price:300, desc:"Book-style serif font for your messages."},
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
@@ -48,7 +53,7 @@ const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
 [{id:"d_yinyang", type:"deco", name:"Yin-Yang", price:0, own:true, desc:"A black-and-white outline. Owner only."},
  {id:"p_yinyang", type:"plate", name:"Yin-Yang", price:0, own:true, desc:"Black fading into white. Owner only."}].forEach(c => COSM_BY[c.id] = c);
 BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
-const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bundle:"Bundle"};
+const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bubble:"Chat bubble", font:"Message font", bundle:"Bundle"};
 const DAILY_SPARKS = 0, DAILY_MS = 20 * 3600 * 1000;
 const QUESTS = [
   {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:0},
@@ -58,7 +63,7 @@ const QUESTS = [
   {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:0},
   {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:0},
   {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:0},
-  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:0},
+  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban || p.bubble || p.font ? 1 : 0; }, reward:0},
   {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:0},
   {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:0},
   {id:"q_buy", icon:"bag", name:"First purchase", desc:"Buy something with Sparks in the Shop.", goal:1, check:() => (wal(S.uid).items || []).some(i => COSM_BY[i] && COSM_BY[i].price > 0) ? 1 : 0, reward:0},
@@ -111,6 +116,8 @@ function itemArt(c){
   else if (c.type === "pban"){ art.appendChild(h("div",{class:"minicard"}, h("div",{class:"mb2 ban-" + c.id.slice(2)}), h("div",{class:"mav"}, previewAvatar(null, "sm")), h("i",{class:"l1"}), h("i",{class:"l2"}))); }
   else if (c.type === "plate"){ art.appendChild(h("div",{class:"platedemo"}, h("div",{class:"pd ghost"}, h("i"), h("b")),
       h("div",{class:"pd plate plate-" + c.id.slice(2)}, previewAvatar(null, "sm"), paintName(h("span",{text:nickOf(S.uid)}), S.uid)), h("div",{class:"pd ghost"}, h("i"), h("b")))); }
+  else if (c.type === "bubble"){ art.appendChild(h("div",{class:"tx bub bub-" + c.id.slice(2), text:"Hey everyone! ✨"})); }
+  else if (c.type === "font"){ art.appendChild(h("div",{class:"tx font-" + c.id.slice(2), style:{fontSize:"18px"}, text:"Hello CampusCord!"})); }
   else if (c.type === "bundle"){ const [d, e, p, n] = c.items;
     if (n) art.appendChild(h("div",{class:"bban ban-" + n.slice(2)}));
     art.append(h("div",{class:"pfx pfx-" + e.slice(2)}), h("div",{class:"bdeco"}, previewAvatar(d)), h("div",{class:"bplate pd plate plate-" + p.slice(2)}, paintName(h("span",{text:nickOf(S.uid)}), S.uid))); }
@@ -206,7 +213,7 @@ function itemModal(c){
 }
 
 // ---- Shop page
-const SHOP_TABS = [{id:"featured", name:"Featured", ic:"star"}, {id:"deco", name:"Decorations", ic:"user"}, {id:"pfx", name:"Profile Effects", ic:"sparkles"}, {id:"pban", name:"Banners", ic:"image"}, {id:"plate", name:"Nameplates", ic:"pen"}, {id:"bundle", name:"Bundles", ic:"gem"}, {id:"ranks", name:"Ranks & Sparks", ic:"crown"}];
+const SHOP_TABS = [{id:"featured", name:"Featured", ic:"star"}, {id:"deco", name:"Decorations", ic:"user"}, {id:"bubble", name:"Bubbles", ic:"message"}, {id:"font", name:"Fonts", ic:"pen"}, {id:"pfx", name:"Profile Effects", ic:"sparkles"}, {id:"pban", name:"Banners", ic:"image"}, {id:"plate", name:"Nameplates", ic:"tag"}, {id:"bundle", name:"Bundles", ic:"gem"}, {id:"ranks", name:"Ranks & Sparks", ic:"crown"}];
 function shopHeaderBar(active){
   const bar = h("div",{class:"shopbar"});
   bar.append(h("span",{class:"sbic"}, ic("bag")));
@@ -240,6 +247,8 @@ function renderShopPage(box){
     body.appendChild(h("div",{class:"ssec spot"}, h("div",{class:"ssh"}, h("h3",null, ic("sparkles"), " Today's Spotlight"), h("span",{class:"spottimer"}, ic("hourglass","sm"), " New picks in " + untilNextDay())),
       h("div",{class:"igrid"}, spot.map(itemCard))));
     body.append(shopSection("Bundles", [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]], "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
+      shopSection("Chat Bubbles", COSM.filter(c => c.type === "bubble").slice(0, 4), "bubble"),
+      shopSection("Message Fonts", COSM.filter(c => c.type === "font").slice(0, 4), "font"),
       shopSection("Animated Banners", COSM.filter(c => c.type === "pban").slice(0, 4), "pban"),
       shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));
     body.appendChild(h("div",{class:"earnbar"}, ic("spark"), h("div",{style:{flex:"1"}}, h("b",{text:"Get Sparks"}), h("div",{class:"note",style:{margin:0},text:"Sparks are bought with real money and spent on anything in the Shop. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
