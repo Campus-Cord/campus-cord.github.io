@@ -1514,7 +1514,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-20.0856";
+const APP_VERSION = "2026-11-20.0947";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2597,7 +2597,8 @@ function messageEl(m, first, reacts){
   if (S.editing === m.id) body.appendChild(editBox(m));
   else if (m.poll) body.appendChild(pollEl(m, reacts || {}));
   else if (m.text){
-    const tx = h("div",{class:"tx" + (m.me ? " me" : "") + (onlyEmoji(m.text) && !m.img ? " jumbo" : "")});
+const bub = equipped(m.uid, "bubble"), fnt = equipped(m.uid, "font");
+    const tx = h("div",{class:"tx" + (m.me ? " me" : "") + (onlyEmoji(m.text) && !m.img ? " jumbo" : "") + (bub && !m.me ? " bub bub-" + bub.slice(2) : "") + (fnt ? " font-" + fnt.slice(2) : "")});
     tx.innerHTML = md(m.me ? nickOf(m.uid) + " " + m.text : m.text);
     if (m.edited) tx.appendChild(h("span",{class:"edited",title: m.editedAt ? fmtDay(m.editedAt) : "", text:"(edited)"}));
     tx.addEventListener("click", e => { const sp = e.target.closest(".spoiler"); if (sp) sp.classList.toggle("open"); const mn = e.target.closest(".men[data-uid]"); if (mn) openProfile(mn.dataset.uid, mn); });
@@ -3780,7 +3781,7 @@ function installApp(){
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 3;
+const CAT_V = 4;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -3814,6 +3815,11 @@ const COSM = [
   {id:"n_ocean", type:"pban", name:"Ocean Waves", price:400, desc:"Rolling waves in deep blue."},
   {id:"n_holo", type:"pban", name:"Holographic", price:700, tag:"exclusive", desc:"A shimmering rainbow foil."},
   {id:"n_sakura", type:"pban", name:"Sakura Breeze", price:400, desc:"Soft pink with drifting petals."},
+  // chat bubbles & fonts
+  {id:"c_nebula", type:"bubble", name:"Nebula Bubble", price:500, tag:"new", desc:"A glowing purple speech bubble around your messages."},
+  {id:"c_gold", type:"bubble", name:"Gold Bubble", price:600, tag:"exclusive", desc:"A warm golden bubble around your messages."},
+  {id:"f_mono", type:"font", name:"Hacker Mono", price:300, tag:"new", desc:"Typewriter code font for your messages."},
+  {id:"f_serif", type:"font", name:"Classic Serif", price:300, desc:"Book-style serif font for your messages."},
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
@@ -3827,7 +3833,7 @@ const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
 [{id:"d_yinyang", type:"deco", name:"Yin-Yang", price:0, own:true, desc:"A black-and-white outline. Owner only."},
  {id:"p_yinyang", type:"plate", name:"Yin-Yang", price:0, own:true, desc:"Black fading into white. Owner only."}].forEach(c => COSM_BY[c.id] = c);
 BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
-const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bundle:"Bundle"};
+const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bubble:"Chat bubble", font:"Message font", bundle:"Bundle"};
 const DAILY_SPARKS = 0, DAILY_MS = 20 * 3600 * 1000;
 const QUESTS = [
   {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:0},
@@ -3837,7 +3843,7 @@ const QUESTS = [
   {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:0},
   {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:0},
   {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:0},
-  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:0},
+  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban || p.bubble || p.font ? 1 : 0; }, reward:0},
   {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:0},
   {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:0},
   {id:"q_buy", icon:"bag", name:"First purchase", desc:"Buy something with Sparks in the Shop.", goal:1, check:() => (wal(S.uid).items || []).some(i => COSM_BY[i] && COSM_BY[i].price > 0) ? 1 : 0, reward:0},
@@ -3890,6 +3896,8 @@ function itemArt(c){
   else if (c.type === "pban"){ art.appendChild(h("div",{class:"minicard"}, h("div",{class:"mb2 ban-" + c.id.slice(2)}), h("div",{class:"mav"}, previewAvatar(null, "sm")), h("i",{class:"l1"}), h("i",{class:"l2"}))); }
   else if (c.type === "plate"){ art.appendChild(h("div",{class:"platedemo"}, h("div",{class:"pd ghost"}, h("i"), h("b")),
       h("div",{class:"pd plate plate-" + c.id.slice(2)}, previewAvatar(null, "sm"), paintName(h("span",{text:nickOf(S.uid)}), S.uid)), h("div",{class:"pd ghost"}, h("i"), h("b")))); }
+  else if (c.type === "bubble"){ art.appendChild(h("div",{class:"tx bub bub-" + c.id.slice(2), text:"Hey everyone! ✨"})); }
+  else if (c.type === "font"){ art.appendChild(h("div",{class:"tx font-" + c.id.slice(2), style:{fontSize:"18px"}, text:"Hello CampusCord!"})); }
   else if (c.type === "bundle"){ const [d, e, p, n] = c.items;
     if (n) art.appendChild(h("div",{class:"bban ban-" + n.slice(2)}));
     art.append(h("div",{class:"pfx pfx-" + e.slice(2)}), h("div",{class:"bdeco"}, previewAvatar(d)), h("div",{class:"bplate pd plate plate-" + p.slice(2)}, paintName(h("span",{text:nickOf(S.uid)}), S.uid))); }
@@ -3985,7 +3993,7 @@ function itemModal(c){
 }
 
 // ---- Shop page
-const SHOP_TABS = [{id:"featured", name:"Featured", ic:"star"}, {id:"deco", name:"Decorations", ic:"user"}, {id:"pfx", name:"Profile Effects", ic:"sparkles"}, {id:"pban", name:"Banners", ic:"image"}, {id:"plate", name:"Nameplates", ic:"pen"}, {id:"bundle", name:"Bundles", ic:"gem"}, {id:"ranks", name:"Ranks & Sparks", ic:"crown"}];
+const SHOP_TABS = [{id:"featured", name:"Featured", ic:"star"}, {id:"deco", name:"Decorations", ic:"user"}, {id:"bubble", name:"Bubbles", ic:"message"}, {id:"font", name:"Fonts", ic:"pen"}, {id:"pfx", name:"Profile Effects", ic:"sparkles"}, {id:"pban", name:"Banners", ic:"image"}, {id:"plate", name:"Nameplates", ic:"tag"}, {id:"bundle", name:"Bundles", ic:"gem"}, {id:"ranks", name:"Ranks & Sparks", ic:"crown"}];
 function shopHeaderBar(active){
   const bar = h("div",{class:"shopbar"});
   bar.append(h("span",{class:"sbic"}, ic("bag")));
@@ -4019,6 +4027,8 @@ function renderShopPage(box){
     body.appendChild(h("div",{class:"ssec spot"}, h("div",{class:"ssh"}, h("h3",null, ic("sparkles"), " Today's Spotlight"), h("span",{class:"spottimer"}, ic("hourglass","sm"), " New picks in " + untilNextDay())),
       h("div",{class:"igrid"}, spot.map(itemCard))));
     body.append(shopSection("Bundles", [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]], "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
+      shopSection("Chat Bubbles", COSM.filter(c => c.type === "bubble").slice(0, 4), "bubble"),
+      shopSection("Message Fonts", COSM.filter(c => c.type === "font").slice(0, 4), "font"),
       shopSection("Animated Banners", COSM.filter(c => c.type === "pban").slice(0, 4), "pban"),
       shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));
     body.appendChild(h("div",{class:"earnbar"}, ic("spark"), h("div",{style:{flex:"1"}}, h("b",{text:"Get Sparks"}), h("div",{class:"note",style:{margin:0},text:"Sparks are bought with real money and spent on anything in the Shop. You have " + sparks(S.uid).toLocaleString() + " Sparks."})),
@@ -5187,6 +5197,83 @@ function openFromUrl(){ try{ const k = new URLSearchParams(location.search).get(
 // ---------------------------------------------------------------- #vouches channel (Discord vouch-bot style)
 // A text room with type "vouches". People run /vouch (or the Write a vouch button): pick who it's for — a person or
 // CampusCord itself — give 1–5 stars, write a review and optionally attach proof. It posts as a numbered vouch card.
+// ---------------------------------------------------------------- #daily-poll channel
+const isPollRoom = r => r && (r.type === "polls" || /^(daily-?poll|qotd)$/i.test((r.name || "").trim()));
+const DAILY_POLLS = [
+  {q:"Would you rather always have to sing instead of speak, or dance everywhere you walk?", opts:["Sing instead of speak","Dance everywhere"]},
+  {q:"Best school lunch side?", opts:["Fries","Tater tots","Mozzarella sticks","Cookies"]},
+  {q:"If you could have one superpower, which one?", opts:["Invisibility","Teleportation","Time travel","Mind reading"]},
+  {q:"Pineapple on pizza?", opts:["Yes, 100%","No way","Only if there's jalapeño too"]},
+  {q:"Which is worse?", opts:["Waking up 5 mins before your alarm","Stepping in water with socks on","Phone dying at 1%"]},
+  {q:"Ideal weekend vibe?", opts:["Gaming all day","Hanging out with friends","Sleeping 12 hours","Going somewhere new"]},
+  {q:"Cats or dogs?", opts:["Dogs","Cats","Both","Neither"]},
+  {q:"Summer break or winter break?", opts:["Summer break","Winter break"]},
+  {q:"Sweet or savory snacks?", opts:["Sweet (candy/chocolate)","Savory (chips/pretzels)","Both mixed together"]},
+  {q:"Would you rather fight 1 horse-sized duck or 100 duck-sized horses?", opts:["1 horse-sized duck","100 duck-sized horses"]},
+  {q:"Best fast food fries?", opts:["McDonald's","Chick-fil-A","Wendy's","Five Guys","Arby's curly fries"]},
+  {q:"If animals could talk, which would be the rudest?", opts:["Cats","Geese","Squirrels","Chihuahuas"]},
+  {q:"Night owl or early bird?", opts:["Night owl","Early bird","Tired 24/7"]},
+  {q:"Is a hot dog a sandwich?", opts:["Yes","No","It's a taco"]},
+  {q:"Which app could you NOT live without?", opts:["YouTube","TikTok","Spotify / Music","CampusCord"]},
+  {q:"Would you rather live in space or underwater?", opts:["In space","Underwater"]},
+  {q:"Best season of the year?", opts:["Spring","Summer","Fall","Winter"]},
+  {q:"Cereal first or milk first?", opts:["Cereal first","Milk first (psychopath)"]},
+  {q:"If you won $1,000,000 today, what's the first thing you buy?", opts:["Dream car","House / room setup","Travel the world","Save / invest it"]},
+  {q:"Music with headphones or out loud on a speaker?", opts:["Headphones","Speaker","Depends on the mood"]},
+  {q:"Would you rather never use social media again or never watch movies/TV again?", opts:["No social media","No movies/TV"]},
+  {q:"Best ice cream flavor?", opts:["Cookies & cream","Chocolate","Strawberry","Mint chocolate chip","Vanilla"]},
+  {q:"Texting or calling?", opts:["Texting","Calling / FaceTime","Voice notes"]},
+  {q:"Could you survive a zombie apocalypse?", opts:["Easily","Maybe for a week","First one gone"]},
+  {q:"Which time period would you visit?", opts:["The 1980s / 90s","Ancient Egypt / Rome","100 years in the future","Dinosaurs"]},
+  {q:"Homework right after school or right before bed?", opts:["Right after school","Right before bed","In homeroom the next morning"]},
+  {q:"Unlimited free flights or unlimited free food?", opts:["Unlimited free flights","Unlimited free food"]},
+  {q:"Best Mario Kart item?", opts:["Blue Shell","Bullet Bill","Star","Red Shell"]},
+  {q:"Cold weather or hot weather?", opts:["Cold weather (hoodie season)","Hot weather (beach season)"]},
+  {q:"Would you rather be famous or rich & unknown?", opts:["Rich & unknown","Famous"]},
+  {q:"Best movie genre?", opts:["Action / Sci-Fi","Comedy","Horror / Thriller","Animated"]},
+  {q:"How many tabs do you have open right now?", opts:["1–5","6–15","16–50","50+ (lost count)"]},
+  {q:"Pancakes or waffles?", opts:["Waffles","Pancakes","French toast"]},
+  {q:"Would you rather know every language or play every instrument?", opts:["Speak every language","Play every instrument"]},
+  {q:"Biggest pet peeve?", opts:["Loud chewing","Slow walkers in the hallway","People who don't text back","Spoilers"]},
+  {q:"Teleport to school every day or never have homework again?", opts:["Teleport to school","Never have homework again"]},
+  {q:"Best video game genre?", opts:["FPS / Shooter","Sandbox / Survival","Sports / Racing","RPG / Story"]},
+  {q:"Morning shower or night shower?", opts:["Night shower","Morning shower","Both"]},
+  {q:"Would you rather lose your phone for a week or your favorite shoes for a month?", opts:["Lose phone for a week","Lose favorite shoes for a month"]},
+  {q:"Most underrated snack?", opts:["Goldfish","Cheez-Its","Fruit snacks","Pretzels & Nutella"]},
+  {q:"If you had to eat one meal forever, what is it?", opts:["Pizza","Tacos","Burgers & fries","Sushi","Pasta"]},
+  {q:"Are aliens real?", opts:["Definitely","Probably not","They're already here"]},
+  {q:"Best superpower for school?", opts:["Photographic memory","Stopping time","Reading teachers' minds","Teleporting between classes"]},
+  {q:"Dark mode or light mode?", opts:["Dark mode","Light mode (why?!)"]},
+  {q:"Would you rather explore the deepest ocean or outer space?", opts:["Outer space","Deepest ocean"]},
+  {q:"Best gaming platform?", opts:["PC","PlayStation","Xbox","Nintendo Switch","Mobile"]},
+  {q:"Chocolate chip cookies: soft & chewy or crispy?", opts:["Soft & chewy","Crispy","Raw cookie dough"]},
+  {q:"Would you rather always be 10 minutes late or 20 minutes early?", opts:["20 minutes early","10 minutes late"]},
+  {q:"Best holiday of the year?", opts:["Halloween","Thanksgiving","Winter Holidays","Your Birthday"]},
+  {q:"Invisible to cameras or invisible to people?", opts:["Invisible to people","Invisible to cameras"]},
+  {q:"Favorite drink?", opts:["Iced coffee / matcha","Soda","Juice / lemonade","Plain cold water"]},
+  {q:"Would you rather have a rewind button or a pause button on your life?", opts:["Rewind button","Pause button"]},
+  {q:"Most chaotic school subject?", opts:["Gym / PE","Science lab","Art","Lunch period"]},
+  {q:"Dogs wearing pants: 2 legs or all 4 legs?", opts:["2 back legs","All 4 legs"]},
+  {q:"If you were a teacher, what subject would you teach?", opts:["PE / Sports","History","Art / Music","Computer Science"]},
+  {q:"Best road trip seat?", opts:["Shotgun (front passenger)","Driver","Backseat napper"]},
+  {q:"Would you rather live without music or without video games?", opts:["Live without video games","Live without music"]},
+  {q:"Pick a free pet:", opts:["Golden retriever","Capuchin monkey","Capybara","Red panda"]},
+  {q:"First thing you do when you get home from school?", opts:["Drop bag & lie on bed","Grab a snack","Hop on games / phone","Actually do homework"]},
+  {q:"Today's mood in one button:", opts:["Locked in 🔥","Sleepy 😴","Chaotic 🤪","Chilling 😎"]}
+];
+let dailyPollPosting = false;
+async function ensureDailyPoll(r){
+  if (!isPollRoom(r) || dailyPollPosting || !S.uid) return;
+  const dayNum = Math.floor((Date.now() - 18000000) / 86400000);
+  const pollId = "daily-" + dayNum;
+  if (S.msgs.some(m => m.id === pollId)) return;
+  dailyPollPosting = true;
+  try{
+    const pick = DAILY_POLLS[dayNum % DAILY_POLLS.length];
+    const body = {uid:S.uid, text:"", ts:Date.now(), poll:{q:"📅 Question of the Day: " + pick.q, opts:pick.opts}};
+    await setDoc(doc(db, "rooms", r.id, "msgs", pollId), body);
+    setDoc(doc(db, "meta", r.id), {lastTs:body.ts, lastUid:S.uid, lastNick:"Daily Poll", lastPreview:"📊 " + pick.q, lastMentions:[], lastEveryone:false}).catch(() => {});
+  }catch(e){ console.warn("daily poll", e); }
 const isVouchRoom = r => r && r.type === "vouches";
 const VOUCH_GOLD = "#f5b83d";
 // Weekly vouch rewards: resets Monday 00:00 Eastern. 1st vouch +200, 2nd +150, then just for fun.
