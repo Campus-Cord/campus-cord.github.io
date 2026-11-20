@@ -98,7 +98,7 @@ async function openPR(id, x, r){
       body:"Sent from CampusCord's Dev panel and approved by Massimo. It changes the database rules, so it waits for Massimo to press **Merge** here. After the merge, deploy-rules.yml tests the rules and only puts them live if every test passes."})});
   const pr = await res.json();
   if (!pr.html_url) throw new Error("Couldn't open the GitHub pull request: " + String(pr.message || res.status));
-  await d_set(id, {status:"pr", prUrl:pr.html_url, files:Object.keys(r.files)});
+  await d_set(id, {status:"pr", prUrl:pr.html_url, prNumber:pr.number, files:Object.keys(r.files), error:null});
   console.log(id, "pull request", pr.html_url);
 }
 const d_set = (id, patch) => db.collection("devSubs").doc(id).set(Object.assign({checkedAt:Date.now()}, patch), {merge:true});
@@ -156,5 +156,14 @@ await runAll(failed);
 const mins = Number(process.env.WATCH_MINUTES || 0);
 if (!mins){ await runAll((await Q.get()).docs); process.exit(0); }
 console.log("Watching for changes for", mins, "minutes…");
+// Every minute: cards waiting on a GitHub merge become "live" once Massimo merges (or "rejected" if he closes it).
+const checkPRs = async () => { try{
+  const docs = (await db.collection("devSubs").where("status", "==", "pr").get()).docs;
+  for (const d of docs){ const x = d.data(), n = x.prNumber || Number(String(x.prUrl || "").split("/").pop()); if (!n) continue;
+    const pr = await (await fetch("https://api.github.com/repos/" + process.env.GITHUB_REPOSITORY + "/pulls/" + n, {headers:{Authorization:"Bearer " + process.env.GITHUB_TOKEN, Accept:"application/vnd.github+json"}})).json();
+    if (pr.merged) await d.ref.set({status:"live", liveAt:Date.now(), error:null}, {merge:true});
+    else if (pr.state === "closed") await d.ref.set({status:"rejected", error:null}, {merge:true}); }
+}catch(e){ console.log("PR check", e.message); } };
+await checkPRs(); const prTimer = setInterval(checkPRs, 60000);
 const stop = Q.onSnapshot(s => { const docs = s.docChanges().filter(c => c.type !== "removed").map(c => c.doc); if (docs.length) runAll(docs); }, e => { console.log("watch error", e.message); process.exit(1); });
-setTimeout(async () => { stop(); await busy; process.exit(0); }, mins * 60000);
+setTimeout(async () => { stop(); clearInterval(prTimer); await busy; process.exit(0); }, mins * 60000);
