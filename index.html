@@ -1514,7 +1514,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-20.0735";
+const APP_VERSION = "2026-11-20.0856";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1702,15 +1702,18 @@ const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid)) && (!de
 // Designers made CampusCord's look (logo, role tags). A title + badge + ring; no extra admin powers.
 const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid));
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
-function member(uid){ return S.members[uid] || null; }
-function profile(uid){ return S.profiles[uid] || {}; }
+// Linked accounts: an old account's uid points at the new one (config/main.aliases), so its messages show the new person.
+function realUid(uid){ const al = (S.config && S.config.aliases) || {}; let u = uid, n = 0; while (al[u] && n++ < 5) u = al[u]; return u; }
+function member(uid){ uid = realUid(uid); const m = S.members[uid]; if (!m) return null;
+  const lj = ((S.config && S.config.linkedJoined) || {})[uid]; return lj && (!m.joinedAt || lj < m.joinedAt) ? Object.assign({}, m, {joinedAt:lj}) : m; }
+function profile(uid){ return S.profiles[realUid(uid)] || {}; }
 function nickOf(uid){ const m = member(uid); return (m && m.nick) || "Former member"; }
 function colorOf(uid){ const m = member(uid); return (m && m.color) || "#6f7480"; }
 function isBanned(uid){ return !!(S.config && Array.isArray(S.config.banned) && S.config.banned.includes(uid)); }
 function perkActive(entry){ return !!entry && (!entry.until || entry.until > Date.now()); }
 function hasPerk(uid, key){
   if (isOwnerUid(uid)) return true;
-  const items = (S.perks[uid] && S.perks[uid].items) || {};
+  uid = realUid(uid); const items = (S.perks[uid] && S.perks[uid].items) || {};
   if (perkActive(items[key])) return true;
   if (PLUS_INCLUDES.includes(key) && perkActive(items.plus)) return true;
   if (PLUSPLUS_INCLUDES.includes(key) && perkActive(items.plusplus)) return true;
@@ -1718,7 +1721,7 @@ function hasPerk(uid, key){
 }
 function hasPlus(uid){ return hasPerk(uid, "plus"); }
 // rank for display: "plusplus" | "plus" | "supporter" | null (the owner shows ADMIN instead)
-function rankOf(uid){ const items = ((S.perks[uid]||{}).items)||{};
+function rankOf(uid){ const items = ((S.perks[realUid(uid)]||{}).items)||{};
   if (perkActive(items.plusplus)) return "plusplus"; if (perkActive(items.plus)) return "plus"; if (perkActive(items.supporter)) return "supporter"; return null; }
 // Freshness on *our* clock: the first time we see a timestamp we trust it (capped at now); after that, whenever it
 // changes we record when we saw the change. Friends whose computer clocks are off no longer look offline.
@@ -1813,7 +1816,7 @@ function start(){
   onSnapshot(doc(db, "config/main"), snap => {
     S.config = snap.exists() ? snap.data() : null; S.configLoaded = true;
     if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
-    route(); applyPrefs(); need("rail","side","header","msgs","rpanel","me","composer");
+    route(); applyPrefs(); adoptLinkedProfile(); need("rail","side","header","msgs","rpanel","me","composer");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   onSnapshot(collection(db, "members"), snap => {
     const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.members = m; S.membersLoaded = true;
@@ -1821,7 +1824,7 @@ function start(){
     route(); need("side","msgs","rpanel","me","header","typing");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   // optional collections (need v3 rules) — fail quietly
-  onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; need("side","msgs","rpanel","me","header"); }, () => {});
+  onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; adoptLinkedProfile(); need("side","msgs","rpanel","me","header"); }, () => {});
   onSnapshot(collection(db, "wallet"), snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); S.wallets = w; S.walletsLoaded = true;
     if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane();
     const mw = w[S.uid]; if (mw && mw.welcomed && prefs.sawWelcome !== mw.welcomed){ prefs.sawWelcome = mw.welcomed; savePrefs(); setTimeout(() => welcomeGiftPopup(), 1200); } }, () => {});
@@ -2723,6 +2726,7 @@ function memberMenu(ev, uid){
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" + (devUntil(uid) ? " (until " + devTimeLabel(devUntil(uid)) + ")" : "") : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     ...modMenuItems(uid),
+    isOwner() && !isOwnerUid(uid) ? {label:"Link an old account…", icon:"users", run:() => linkAccountModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label:"Give 2 more vouch tries (" + vouchTries(uid).left + " left)", icon:"star", run:() => giveVouchTries(uid, 2)} : null,
     canModerate(uid) ? "-" : null,
     canModerate(uid) && !tu ? {label:"Timeout 5 minutes", icon:"hourglass", run:() => setTimeoutFor(uid, 5)} : null,
@@ -3843,7 +3847,7 @@ function catalogDoc(){ const prices = {}; Object.values(COSM_BY).filter(c => !c.
 
 // ---- wallet + ownership
 const EMPTY_WALLET = {earned:0, spent:0, items:[], quests:[], lastDaily:0, lastItem:"", lastQuest:""};
-function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[uid] || {}); }
+function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[realUid(uid)] || {}); }
 function sparks(uid){ const w = wal(uid); return Math.max(0, (w.earned || 0) - (w.spent || 0)); }
 function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid).items || [];
   if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }
@@ -4148,7 +4152,7 @@ const SPECIAL_BADGES = [
   {id:"hype", name:"Hype Squad", how:"Given by the owner to the people who keep chat alive.", rarity:"Rare"},
   {id:"event", name:"Event Winner", how:"Given by the owner to whoever won a server event.", rarity:"Epic"},
 ];
-function specialOf(uid){ return ((S.config && S.config.badges) || {})[uid] || []; }
+function specialOf(uid){ return ((S.config && S.config.badges) || {})[realUid(uid)] || []; }
 // Evolving badges: [threshold, tier]
 const SPEND_TIERS = [[500,"bronze"],[1500,"silver"],[3000,"gold"],[6000,"platinum"],[10000,"diamond"],[20000,"emerald"],[35000,"ruby"],[60000,"opal"]];
 const LOYAL_TIERS = [[7,"bronze"],[30,"silver"],[90,"gold"],[180,"platinum"],[365,"diamond"]];
@@ -5049,6 +5053,80 @@ function subsListEl(){
   if (!list.length) wrap.append(h("p",{class:"note",text: isOwner() ? "Nothing yet. When a helper sends a change, it shows up here with an Approve button." : "Nothing sent yet. Your changes show up here after you send them."}));
   list.slice(0, 15).forEach(x => wrap.append(subCard(x)));
   return wrap;
+}
+
+// ---------------------------------------------------------------- linked accounts
+// The owner can link a friend's OLD account into their NEW one. The new account gets the old one's Sparks,
+// shop items, perks and special badges, and keeps the earliest "member since" date. Everything the old account
+// ever posted shows up under the new name and avatar (config/main.aliases: {oldUid: newUid}).
+// The old account is removed from the member list. Old DMs stay readable only by the old account.
+function linkCandidates(newUid){
+  const al = (S.config && S.config.aliases) || {}, names = (S.config && S.config.bannedNames) || {};
+  const ids = new Set([...Object.keys(S.members), ...Object.keys(S.wallets), ...((S.config && S.config.banned) || [])]);
+  return [...ids].filter(u => u !== newUid && !isOwnerUid(u) && !al[u] && realUid(u) === u)
+    .map(u => ({uid:u, name: (S.members[u] && S.members[u].nick) || names[u] || "Former member (" + u.slice(0, 6) + ")", sparks:sparks(u), items:(wal(u).items || []).length, here:!!S.members[u], joined:(S.members[u] || {}).joinedAt || 0}))
+    .sort((a, b) => b.sparks - a.sparks || a.name.localeCompare(b.name));
+}
+function linkAccountModal(newUid){
+  const who = nickOf(newUid);
+  modal((m, close) => {
+    const f = h("input",{class:"inp", placeholder:"Search by name, or paste the old account's ID"});
+    const list = h("div",{class:"list"});
+    const draw = () => { list.innerHTML = ""; const q = f.value.trim().toLowerCase();
+      const rows = linkCandidates(newUid).filter(c => !q || c.name.toLowerCase().includes(q) || c.uid.toLowerCase() === q);
+      if (!rows.length) list.append(h("div",{class:"note",text:"No accounts found."}));
+      rows.slice(0, 40).forEach(c => list.append(h("div",{class:"li", style:{cursor:"pointer"}, onclick:() => { close(); confirmLink(c, newUid); }},
+        c.here ? avatar(c.uid, "sm") : h("div",{class:"av sm",text:"?"}),
+        h("span",{class:"nm"}, h("b",{text:c.name}), h("span",{class:"s",text:"  · " + c.sparks.toLocaleString() + " Sparks · " + c.items + " items" + (c.here ? "" : " · not in the server")}))))); };
+    f.oninput = draw; draw();
+    m.append(h("h3",{text:"Link an old account to " + who}),
+      h("p",{class:"note",text:"Pick " + who + "'s OLD account. Its Sparks, shop items, perks and badges move to " + who + ", and its old messages will show as " + who + "."}),
+      f, list, h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel")));
+  });
+}
+function confirmLink(c, newUid){
+  const who = nickOf(newUid);
+  confirmBox("Link " + c.name + " into " + who + "?",
+    who + " gets " + c.sparks.toLocaleString() + " Sparks, " + c.items + " shop items, and all of " + c.name + "'s perks and badges. Messages " + c.name + " sent will show as " + who + ". " + c.name + " is removed from the member list. Only do this if they're really the same person.",
+    "Link accounts", () => linkAccounts(c.uid, newUid), true);
+}
+async function linkAccounts(oldUid, newUid){
+  try{
+    const ow = wal(oldUid), nw = wal(newUid), uni = (a, b) => [...new Set([...(a || []), ...(b || [])])];
+    // 1) Sparks + items
+    const merged = Object.assign({}, nw, {earned:(nw.earned || 0) + (ow.earned || 0), spent:(nw.spent || 0) + (ow.spent || 0),
+      items:uni(nw.items, ow.items), quests:uni(nw.quests, ow.quests), lastDaily:Math.max(nw.lastDaily || 0, ow.lastDaily || 0)});
+    await setDoc(doc(db, "wallet", newUid), merged);
+    if (S.wallets[oldUid]) await setDoc(doc(db, "wallet", oldUid), Object.assign({}, EMPTY_WALLET, {linkedTo:newUid}));
+    // 2) perks: keep whichever lasts longer
+    const op = ((S.perks[oldUid] || {}).items) || {}, np = ((S.perks[newUid] || {}).items) || {}, items = Object.assign({}, np);
+    Object.entries(op).forEach(([k, v]) => { const cur = items[k]; if (!cur || (cur.until && (!v.until || v.until > cur.until))) items[k] = v; });
+    if (Object.keys(op).length) await setDoc(doc(db, "perks", newUid), {items}, {merge:true});
+    // 3) config: alias (and re-point any older aliases), badges, earliest join date
+    const al = (S.config && S.config.aliases) || {}, upd = {["aliases." + oldUid]:newUid};
+    Object.entries(al).forEach(([a, b]) => { if (b === oldUid) upd["aliases." + a] = newUid; });
+    const ob = specialOf(oldUid); if (ob.length) upd["badges." + newUid] = uni(specialOf(newUid), ob);
+    const oj = Math.min(...[(S.members[oldUid] || {}).joinedAt, ((S.config.linkedJoined || {})[oldUid])].filter(Boolean)), nj = (S.members[newUid] || {}).joinedAt;
+    if (isFinite(oj) && (!nj || oj < nj)) upd["linkedJoined." + newUid] = Math.min(oj, (S.config.linkedJoined || {})[newUid] || oj);
+    await updateDoc(doc(db, "config/main"), upd);
+    // 4) take the old account out of the member list and free its name
+    const om = S.members[oldUid];
+    if (om){ await deleteDoc(doc(db, "members", oldUid)).catch(() => {});
+      try{ const ref = doc(db, "names", nameKey(om.nick)); const cur = await getDoc(ref); if (cur.exists() && cur.data().uid === oldUid) await deleteDoc(ref); }catch(e){} }
+    toast("Linked! " + nickOf(newUid) + " now has everything from the old account.", 6000);
+    refreshOpenPane(); need("side", "msgs", "rpanel");
+  }catch(e){ toast("Couldn't link: " + errMsg(e)); }
+}
+// On the new account's own device: copy the old profile (avatar, bio, decorations…) once, for anything not set yet.
+function adoptLinkedProfile(){
+  if (!S.uid || !S.config || !S.config.aliases) return;
+  const olds = Object.entries(S.config.aliases).filter(([, n]) => n === S.uid).map(([o]) => o);
+  prefs.adopted = prefs.adopted || {};
+  olds.forEach(o => { if (prefs.adopted[o]) return; const p = S.profiles[o]; if (!p) return;
+    const mine = S.profiles[S.uid] || {}, patch = {};
+    ["avatar", "bio", "customStatus", "nameFx", "banner", "deco", "pfx", "plate", "pban", "showcase"].forEach(k => { if (p[k] != null && mine[k] == null) patch[k] = p[k]; });
+    prefs.adopted[o] = Date.now(); savePrefs();
+    if (Object.keys(patch).length) setMyProfile(patch).then(() => toast("Your old account's profile was added to this one ✨")).catch(() => {}); });
 }
 
 // ---------------------------------------------------------------- phone & desktop push notifications

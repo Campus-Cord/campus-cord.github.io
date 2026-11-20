@@ -77,7 +77,7 @@ const SPECIAL_BADGES = [
   {id:"hype", name:"Hype Squad", how:"Given by the owner to the people who keep chat alive.", rarity:"Rare"},
   {id:"event", name:"Event Winner", how:"Given by the owner to whoever won a server event.", rarity:"Epic"},
 ];
-function specialOf(uid){ return ((S.config && S.config.badges) || {})[uid] || []; }
+function specialOf(uid){ return ((S.config && S.config.badges) || {})[realUid(uid)] || []; }
 // Evolving badges: [threshold, tier]
 const SPEND_TIERS = [[500,"bronze"],[1500,"silver"],[3000,"gold"],[6000,"platinum"],[10000,"diamond"],[20000,"emerald"],[35000,"ruby"],[60000,"opal"]];
 const LOYAL_TIERS = [[7,"bronze"],[30,"silver"],[90,"gold"],[180,"platinum"],[365,"diamond"]];

@@ -196,15 +196,18 @@ const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid)) && (!de
 // Designers made CampusCord's look (logo, role tags). A title + badge + ring; no extra admin powers.
 const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid));
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
-function member(uid){ return S.members[uid] || null; }
-function profile(uid){ return S.profiles[uid] || {}; }
+// Linked accounts: an old account's uid points at the new one (config/main.aliases), so its messages show the new person.
+function realUid(uid){ const al = (S.config && S.config.aliases) || {}; let u = uid, n = 0; while (al[u] && n++ < 5) u = al[u]; return u; }
+function member(uid){ uid = realUid(uid); const m = S.members[uid]; if (!m) return null;
+  const lj = ((S.config && S.config.linkedJoined) || {})[uid]; return lj && (!m.joinedAt || lj < m.joinedAt) ? Object.assign({}, m, {joinedAt:lj}) : m; }
+function profile(uid){ return S.profiles[realUid(uid)] || {}; }
 function nickOf(uid){ const m = member(uid); return (m && m.nick) || "Former member"; }
 function colorOf(uid){ const m = member(uid); return (m && m.color) || "#6f7480"; }
 function isBanned(uid){ return !!(S.config && Array.isArray(S.config.banned) && S.config.banned.includes(uid)); }
 function perkActive(entry){ return !!entry && (!entry.until || entry.until > Date.now()); }
 function hasPerk(uid, key){
   if (isOwnerUid(uid)) return true;
-  const items = (S.perks[uid] && S.perks[uid].items) || {};
+  uid = realUid(uid); const items = (S.perks[uid] && S.perks[uid].items) || {};
   if (perkActive(items[key])) return true;
   if (PLUS_INCLUDES.includes(key) && perkActive(items.plus)) return true;
   if (PLUSPLUS_INCLUDES.includes(key) && perkActive(items.plusplus)) return true;
@@ -212,7 +215,7 @@ function hasPerk(uid, key){
 }
 function hasPlus(uid){ return hasPerk(uid, "plus"); }
 // rank for display: "plusplus" | "plus" | "supporter" | null (the owner shows ADMIN instead)
-function rankOf(uid){ const items = ((S.perks[uid]||{}).items)||{};
+function rankOf(uid){ const items = ((S.perks[realUid(uid)]||{}).items)||{};
   if (perkActive(items.plusplus)) return "plusplus"; if (perkActive(items.plus)) return "plus"; if (perkActive(items.supporter)) return "supporter"; return null; }
 // Freshness on *our* clock: the first time we see a timestamp we trust it (capped at now); after that, whenever it
 // changes we record when we saw the change. Friends whose computer clocks are off no longer look offline.
@@ -307,7 +310,7 @@ function start(){
   onSnapshot(doc(db, "config/main"), snap => {
     S.config = snap.exists() ? snap.data() : null; S.configLoaded = true;
     if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
-    route(); applyPrefs(); need("rail","side","header","msgs","rpanel","me","composer");
+    route(); applyPrefs(); adoptLinkedProfile(); need("rail","side","header","msgs","rpanel","me","composer");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   onSnapshot(collection(db, "members"), snap => {
     const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.members = m; S.membersLoaded = true;
@@ -315,7 +318,7 @@ function start(){
     route(); need("side","msgs","rpanel","me","header","typing");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
   // optional collections (need v3 rules) — fail quietly
-  onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; need("side","msgs","rpanel","me","header"); }, () => {});
+  onSnapshot(collection(db, "profiles"), snap => { const p = {}; snap.docs.forEach(d => p[d.id] = d.data()); S.profiles = p; adoptLinkedProfile(); need("side","msgs","rpanel","me","header"); }, () => {});
   onSnapshot(collection(db, "wallet"), snap => { const w = {}; snap.docs.forEach(d => w[d.id] = d.data()); S.wallets = w; S.walletsLoaded = true;
     if (S.routed === "app") ensureWallet(); need("side","msgs","rpanel","me","rail"); refreshOpenPane();
     const mw = w[S.uid]; if (mw && mw.welcomed && prefs.sawWelcome !== mw.welcomed){ prefs.sawWelcome = mw.welcomed; savePrefs(); setTimeout(() => welcomeGiftPopup(), 1200); } }, () => {});
@@ -1217,6 +1220,7 @@ function memberMenu(ev, uid){
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" + (devUntil(uid) ? " (until " + devTimeLabel(devUntil(uid)) + ")" : "") : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     ...modMenuItems(uid),
+    isOwner() && !isOwnerUid(uid) ? {label:"Link an old account…", icon:"users", run:() => linkAccountModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label:"Give 2 more vouch tries (" + vouchTries(uid).left + " left)", icon:"star", run:() => giveVouchTries(uid, 2)} : null,
     canModerate(uid) ? "-" : null,
     canModerate(uid) && !tu ? {label:"Timeout 5 minutes", icon:"hourglass", run:() => setTimeoutFor(uid, 5)} : null,
@@ -2273,6 +2277,7 @@ function installApp(){
 // __MOD__
 // __DAILYPOLL__
 // __SUBMIT__
+// __LINK__
 // __PUSH__
 // __VOUCHES__
 // __FEEDBACK__
