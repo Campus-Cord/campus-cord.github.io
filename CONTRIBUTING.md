@@ -46,6 +46,7 @@ Massimo can also approve changes right inside CampusCord: **Admin → Site chang
 
 ## Ground rules
 
+- **Shop:** Elliott (head developer) can redesign the Shop and add or price items. Everyone else can only change how it looks.
 - **Owner-only areas:** `.github/workflows/`, `scripts/`, payments (`STRIPE_LINKS`, `CATALOG` in `src/app.js`) and the owner/admin checks. Changes there need Massimo to agree first. Ask before opening the PR.
 - **Rules changes are live security.** If you change `firestore.rules`, add tests to `tests/rules.test.mjs` showing both what's now allowed and what's still blocked.
 - Keep pull requests small and about one thing; it makes them faster to review.
