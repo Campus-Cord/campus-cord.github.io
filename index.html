@@ -1403,6 +1403,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .easy .gbtns .btn,.subcard .btn{width:auto;margin:0}
 .esub{margin:2px 0 4px;padding-left:20px;color:var(--muted);font-size:13.5px;line-height:1.6}.esub b{color:var(--text)}
 .cfind.inline{margin:4px 0 0;background:var(--card)}
+
+/* Code finder parts */
+.cfparts{display:flex;flex-wrap:wrap;gap:8px}
+.cfparts .cfcopy.done{opacity:.6}
+.cfparts .cfcopy.done::after{content:" ✓"}
 </style>
 </head>
 <body>
@@ -1515,7 +1520,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-20.1113";
+const APP_VERSION = "2026-11-20.1145";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -4666,17 +4671,23 @@ function codeFinderEl(){
     const r = findCode(v);
     const miss = (r.missing || []).length ? "\n\n(These names don't exist in CampusCord's code, so they're not included: " + r.missing.join(", ") + ". Check the map for the right name.)" : "";
     if (!r.best.length){ out.append(h("p",{class:"note",text: miss ? "None of these exist in the code: " + r.missing.join(", ") + ". Ask your AI to check the map for the right names." : "Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); if (miss) out.append(h("button",{class:"btn small", onclick:() => copy(miss.trim(), "Copied! Paste it to your AI.")}, ic("copy","sm"), " Copy a note for your AI")); return; }
-    // Never hand the AI more than CF_MAX_LINES at once; the rest waits for its next message.
-    const sent = [], later = []; let used = 0;
-    r.best.forEach(b => { const n = b.code.split("\n").length; if (!sent.length || used + n <= CF_MAX_LINES){ sent.push(b); used += n; } else later.push(b); });
-    if (sent.length === 1 && used > CF_MAX_LINES){ const b = sent[0]; sent[0] = Object.assign({}, b, {b:b.a + CF_MAX_LINES - 1, code:b.code.split("\n").slice(0, CF_MAX_LINES).join("\n")}); }
-    r.best = sent;
-    const tooMuch = later.length ? "\n\n(That was a lot of code at once, so I'm sending the rest in my next message: " + later.map(b => b.name).join(", ") + ". Work with this first, or tell me which of those you really need.)" : "";
-    const text = r.best.map(aiCopyText).join("\n\n") + miss + tooMuch;
+    // Split into parts of at most CF_MAX_LINES lines each (a huge piece gets cut into several parts).
+    const pieces = [];
+    r.best.forEach(b => { const ls = b.code.split("\n");
+      for (let k = 0; k < ls.length; k += CF_MAX_LINES) pieces.push(ls.length <= CF_MAX_LINES ? b : Object.assign({}, b, {a:b.a + k, b:Math.min(b.b, b.a + k + CF_MAX_LINES - 1), code:ls.slice(k, k + CF_MAX_LINES).join("\n")})); });
+    const parts = []; let cur = [], used = 0;
+    pieces.forEach(b => { const n = b.code.split("\n").length; if (cur.length && used + n > CF_MAX_LINES){ parts.push(cur); cur = []; used = 0; } cur.push(b); used += n; });
+    if (cur.length) parts.push(cur);
+    const N = parts.length;
+    const partText = (k) => (N > 1 ? "PART " + (k + 1) + " OF " + N + (k + 1 < N ? ". More code is coming, so just reply \"OK, next\" and wait for the next part." : ". That's all the code you asked for. Now continue.") + "\n\n" : "") +
+      parts[k].map(aiCopyText).join("\n\n") + (k === N - 1 ? miss : "");
+    const btnRow = h("div",{class:"cfparts"});
+    parts.forEach((p, k) => btnRow.append(h("button",{class:"btn cfcopy", onclick:e => { copy(partText(k), N > 1 ? "Copied part " + (k + 1) + "! Paste it into your AI." : "Copied! Now paste it into your AI."); e.currentTarget.classList.add("done"); }},
+      ic("copy"), N > 1 ? " Copy part " + (k + 1) + " of " + N : " Copy for AI")));
     out.append(h("div",{class:"cfbig"},
       h("div",null, h("b",{text: r.best.length === 1 ? "Found it: " + r.best[0].name : "Found " + r.best.length + " things: " + r.best.map(b => b.name).join(", ")}),
-        h("div",{class:"note",style:{margin:0},text: later.length ? "That's too much at once, so this copies " + used + " lines. After you paste it, paste the AI's next message here again to get the rest (" + later.map(b => b.name).join(", ") + ")." : "Press the button, then paste into your AI."})),
-      h("button",{class:"btn cfcopy", onclick:() => copy(text, "Copied! Now paste it into your AI.")}, ic("copy"), " Copy for AI")));
+        h("div",{class:"note",style:{margin:0},text: N > 1 ? "That's a lot of code, so it's split into " + N + " parts. Copy part 1 and paste it into your AI, then part 2, and so on." : "Press the button, then paste into your AI."})),
+      btnRow));
     r.best.forEach(b => out.append(hitEl(b, r.best.length === 1)));
     if (r.more.length){ const d = h("details",{class:"cfmore"}, h("summary",{text:"Not the right code? See " + r.more.length + " other matches"}));
       r.more.forEach(b => { const one = hitEl(b, false); one.querySelector(".cfrow").append(h("button",{class:"btn small ghost", onclick:() => copy(aiCopyText(b), "Copied! Now paste it into your AI.")}, "Copy this one")); d.append(one); });
@@ -4945,7 +4956,7 @@ function aiStarter(){
   return `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
 
 IMPORTANT: The full code is too big to send at once, so at the end of this file is a MAP of CampusCord's code: every function and setting, with its file and line number. You have NOT seen the code itself yet. Never guess or invent code.
-When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once. Ask for only what you really need, at most 6 names at a time. The map shows each piece's starting line, so you can see how big it is: keep each request under 1000 lines in total. CampusCord never sends more than 1000 lines at once. If you need more, ask in your next message.
+When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once. Ask for only what you really need, at most 4 names at a time. The map shows how many lines each piece has: add them up and keep each request under 1000 lines. Never ask for whole big files like src/app.js or src/style.css. If the code comes in parts (\"PART 1 OF 3\"), just reply \"OK, next\" until you have the last part.
 
 YOU CAN CHANGE ANYTHING: every file in src/ plus the database rules (firestore.rules and tests/rules.test.mjs). That means the whole app: looks, features, the shop, everything). Massimo reviews every change before it goes live and turns down what he doesn't want, so don't refuse ideas because they seem big or touch something important. Just do them well.
 
@@ -4989,7 +5000,7 @@ function codeMapText(){
     if (/\.m?js$/.test(f.file)){ out.push("\n## " + f.path);
       f.blocks.forEach(b => { const first = (b.code.split("\n").find(l => /^(async function|function|const|let|class)\s/.test(l)) || "").trim();
         const sig = /function/.test(b.kind) ? (first.match(/^(async\s+)?function\s+[\w$]+\s*\([^)]*\)/) || [first.slice(0, 70)])[0] : b.kind + " " + b.name;
-        out.push("L" + b.a + "  " + sig); }); }
+        out.push("L" + b.a + "  " + sig + "  (" + (b.b - b.a + 1) + " lines)"); }); }
     else if (f.file.endsWith(".css")){ out.push("\n## " + f.path + " (ask for CSS by class name, like `.icard`; sections:)");
       f.lines.forEach((l, i) => { const m = l.match(/^\/\*\s*(.{3,60}?)\s*\*\//); if (m) out.push("L" + (i + 1) + "  /* " + m[1] + " */"); }); }
     else out.push("\n## " + f.path + " (" + f.lines.length + " lines; ask for it by file name if you need it)"); });
