@@ -105,12 +105,15 @@ const d_set = (id, patch) => db.collection("devSubs").doc(id).set(Object.assign(
 const git = (...a) => execFileSync("git", a, {cwd:ROOT, stdio:"pipe"}).toString().trim();
 
 // Earlier robot versions misread "FILE: firestore.rules"; test those again.
+// Approved changes that couldn't open a pull request (GitHub setting was off): try again.
+const PR_RETRY = /Couldn't open the GitHub pull request/;
 const RETRY = /changes src\/(firestore\.rules|tests\/)/;
 async function handle(d){
   const x = d.data(), set = patch => d.ref.set(Object.assign({checkedAt:Date.now()}, patch), {merge:true});
   try{
     if (x.status === "rejecting"){ await set({status:"rejected"}); console.log(d.id, "rejected"); return; }
     if (x.status === "failed" && RETRY.test(x.error || "")) x.status = "new";
+    if (x.status === "error" && PR_RETRY.test(x.error || "")) x.status = "approved";
     if (x.status === "new"){
       try{ git("pull", "-q", "--rebase", "origin", "main"); }catch(e){}
       // test on a throwaway copy
@@ -148,7 +151,7 @@ async function handle(d){
 let busy = Promise.resolve();
 const runAll = docs => { busy = busy.then(async () => { for (const d of docs) await handle(d); }); return busy; };
 const Q = db.collection("devSubs").where("status", "in", ["new", "approved", "rejecting"]);
-const failed = (await db.collection("devSubs").where("status", "==", "failed").get()).docs.filter(d => RETRY.test(d.data().error || ""));
+const failed = (await db.collection("devSubs").where("status", "in", ["failed", "error"]).get()).docs.filter(d => RETRY.test(d.data().error || "") || PR_RETRY.test(d.data().error || ""));
 await runAll(failed);
 const mins = Number(process.env.WATCH_MINUTES || 0);
 if (!mins){ await runAll((await Q.get()).docs); process.exit(0); }
