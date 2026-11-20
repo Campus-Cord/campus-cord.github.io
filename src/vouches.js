@@ -10,7 +10,7 @@ function vouchesThisWeek(){ const w = wal(S.uid); return w.vWeek === weekId() ? 
 function nextVouchReward(){ return VOUCH_REWARDS[vouchesThisWeek()] || 0; }
 // Rewards only after the owner (or a developer) approves a vouch. The author's app then claims it automatically.
 // Vouch tries: everyone gets VOUCH_TRIES; the owner can give more (vouchQuota/{uid}.extra).
-const VOUCH_TRIES = 4;
+const VOUCH_TRIES = 4, VOUCH_MIN_CHARS = 40, VOUCH_MIN_WORDS = 8;
 S.vq = {}; S.myVq = null;
 function watchVouchQuota(){
   if (S.vqSub) return; S.vqSub = true;
@@ -112,11 +112,16 @@ function openVouchModal(preTo){
     const starRow = h("div",{class:"vstars"}); const drawStars = () => { starRow.innerHTML = "";
       for (let i = 1; i <= 5; i++) starRow.appendChild(h("button",{class:"vstar" + (i <= stars ? " on" : ""), title:i + " star" + (i > 1 ? "s" : ""), onclick:() => { stars = i; drawStars(); }}, "★"));
       starRow.appendChild(h("span",{class:"vstxt",text:["","Bad","Meh","Okay","Good","Amazing"][stars]})); }; drawStars();
-    const txt = h("textarea",{class:"inp", maxlength:"1000", rows:"4", placeholder:"What was good (or not)? e.g. “Helped me with my homework, super fast and nice.”"});
+    const txt = h("textarea",{class:"inp", maxlength:"1000", rows:"4", placeholder:"Be specific! What do you like, and why? Is there anything that could be better?\ne.g. “Voice chat works way better than Discord on my school Chromebook, and the badges are fun to collect.”"});
+    const meter = h("div",{class:"vmeter"});
+    const upd = () => { const v = txt.value.trim(), w = v ? v.split(/\s+/).length : 0, ok = v.length >= VOUCH_MIN_CHARS && w >= VOUCH_MIN_WORDS;
+      meter.className = "vmeter" + (ok ? " ok" : ""); meter.textContent = ok ? "✓ Long enough. Massimo still decides if it's approved." : w + " / " + VOUCH_MIN_WORDS + " words · one-liners like “it's good” get rejected"; };
+    txt.addEventListener("input", upd); upd();
     const proof = h("span",{class:"note",style:{margin:0},text:"No image"});
     const pick = h("button",{class:"btn small ghost", onclick:() => pickPhotoFile(f => { file = f; proof.textContent = f.name; })}, ic("image","sm"), " Add proof (optional)");
     const go = async () => {
-      const review = txt.value.trim(); if (review.length < 12){ toast("Write a real review — at least a sentence (12+ characters)"); return; }
+      const review = txt.value.trim();
+      if (review.length < VOUCH_MIN_CHARS || review.split(/\s+/).length < VOUCH_MIN_WORDS){ toast("Too short. Write at least " + VOUCH_MIN_WORDS + " words: what you like and why."); return; }
       const why = spamCheck(review); if (why){ toast(why); return; }
       btn.disabled = true; btn.textContent = "Posting…";
       try{
@@ -139,7 +144,7 @@ function openVouchModal(preTo){
     m.append(h("div",{class:"vmhead"}, h("span",{class:"vmic"}, "🎉"), h("div",null, h("h3",{style:{margin:0},text:"Write a vouch"}), h("div",{class:"note",style:{margin:0},text:"Vouch #" + (vouchCount() + 1) + " · shows up in #" + r.name + " for everyone"}))),
       isOwnerUid(S.uid) ? null : h("div",{class:"vreward" + (rw ? "" : " none")}, rw ? [ic("spark","sm"), " Earn ", h("b",{text:"+" + rw + " Sparks"}), " when the owner approves this vouch. Write something real and specific — short or low-effort vouches won't be approved."] : "You've earned this week's vouch rewards — they reset Monday. You can still vouch!"),
       isOwnerUid(S.uid) ? null : h("div",{class:"vptries small"}, "Vouch tries left: ", h("b",{text:tries.left + " of " + tries.total}), tries.left === 1 ? " · this is your last one!" : ""),
-      h("label",{class:"f",text:"Vouching for"}), sel, h("label",{class:"f",text:"Stars"}), starRow, h("label",{class:"f",text:"Review"}), txt,
+      h("label",{class:"f",text:"Vouching for"}), sel, h("label",{class:"f",text:"Stars"}), starRow, h("label",{class:"f",text:"Review"}), txt, meter,
       h("div",{class:"row",style:{marginTop:"10px",alignItems:"center",gap:"10px"}}, pick, proof),
       h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Cancel"), btn));
     setTimeout(() => txt.focus(), 0);

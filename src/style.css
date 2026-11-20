@@ -1261,3 +1261,4 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .btn.approve{background:#3ba55d;color:#fff;font-weight:700}.btn.approve:hover{filter:brightness(1.08)}
 .chcard .foot{gap:8px}
 .vpop .btn{white-space:nowrap}
+.vmeter{font-size:12.5px;color:var(--muted);margin-top:4px}.vmeter.ok{color:#3ba55d;font-weight:600}

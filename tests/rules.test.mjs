@@ -38,7 +38,7 @@ await t("wrong invite code is refused", assertFails(setDoc(doc(as("dave"), "memb
 
 console.log("Rooms");
 await t("member posts in a public room", assertSucceeds(setDoc(doc(as("alice"), "rooms/general/msgs/m1"), { uid: "alice", text: "hi", ts: now })));
-await t("post a vouch", assertSucceeds(vouch("alice", "general", "v1", { uid: "alice", text: "great", ts: now, vouch: { to: "bob", stars: 5, n: 1 } })));
+await t("post a vouch", assertSucceeds(vouch("alice", "general", "v1", { uid: "alice", text: "Bob always helps me with math homework and explains it well", ts: now, vouch: { to: "bob", stars: 5, n: 1 } })));
 await t("can't vouch for yourself", assertFails(vouch("alice", "general", "v2", { uid: "alice", text: "me!", ts: now, vouch: { to: "alice", stars: 5, n: 2 } })));
 await t("can't give 6 stars", assertFails(vouch("alice", "general", "v3", { uid: "alice", text: "wow", ts: now, vouch: { to: "server", stars: 6, n: 3 } })));
 await t("timed-out member can't post", assertFails(setDoc(doc(as("timed"), "rooms/general/msgs/m2"), { uid: "timed", text: "hi", ts: now })));
@@ -104,10 +104,10 @@ await t("dev approves a vouch", assertSucceeds(updateDoc(doc(as("dev"), "rooms/g
 await t("1st approved vouch of the week pays 200", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 200, vWeek: wk, vCount: 1, lastVouch: "general/v1", vPaid: ["general/v1"] })));
 await t("can't claim the same vouch twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 350, vWeek: wk, vCount: 2, lastVouch: "general/v1", vPaid: ["general/v1", "general/v1"] })));
 await t("can't claim someone else's vouch", assertFails(updateDoc(doc(as("bob"), "wallet/bob"), { earned: 200, vWeek: wk, vCount: 1, lastVouch: "general/v1", vPaid: ["general/v1"] })));
-await vouch("alice", "general", "v4", { uid: "alice", text: "again and again", ts: Date.now(), vouch: { to: "server", stars: 4, n: 4 } });
+await vouch("alice", "general", "v4", { uid: "alice", text: "Voice chat works great and it is really easy to use every day", ts: Date.now(), vouch: { to: "server", stars: 4, n: 4 } });
 await updateDoc(doc(as("dev"), "rooms/general/msgs/v4"), { approved: true, approvedBy: "dev" });
 await t("2nd approved vouch of the week pays 150", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 350, vWeek: wk, vCount: 2, lastVouch: "general/v4", vPaid: ["general/v1", "general/v4"] })));
-await vouch("alice", "general", "v5", { uid: "alice", text: "more more more", ts: Date.now(), vouch: { to: "server", stars: 3, n: 5 } });
+await vouch("alice", "general", "v5", { uid: "alice", text: "The badges are fun to collect and the shop has cool stuff in it", ts: Date.now(), vouch: { to: "server", stars: 3, n: 5 } });
 await updateDoc(doc(as("dev"), "rooms/general/msgs/v5"), { approved: true, approvedBy: "dev" });
 await t("3rd vouch of the week pays nothing", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: e0 + 500, vWeek: wk, vCount: 3, lastVouch: "general/v5", vPaid: ["general/v1", "general/v4", "general/v5"] })));
 await t("can't backdate a vouch", assertFails(vouch("alice", "general", "v6", { uid: "alice", text: "old", ts: Date.now() - 864e5 * 9, vouch: { to: "server", stars: 5, n: 6 } })));
@@ -131,7 +131,7 @@ await t("can't rename to someone else's name", assertFails(updateDoc(doc(as("car
 await setDoc(doc(as("owner"), "rooms/vch"), { name: "vouches", type: "vouches", createdAt: 1 });
 await updateDoc(doc(as("owner"), "config/main"), { "nameFlags.carol": { count: 1, at: Date.now() + 1000, active: true } });
 await t("only vouches can be posted in #vouches", assertFails(setDoc(doc(as("alice"), "rooms/vch/msgs/x1"), { uid: "alice", text: "hey", ts: Date.now() })));
-await t("a vouch can be posted in #vouches", assertSucceeds(vouch("alice", "vch", "x2", { uid: "alice", text: "great friend", ts: Date.now(), vouch: { to: "bob", stars: 5, n: 1 } })));
+await t("a vouch can be posted in #vouches", assertSucceeds(vouch("alice", "vch", "x2", { uid: "alice", text: "Bob is a great friend and always answers when I need help", ts: Date.now(), vouch: { to: "bob", stars: 5, n: 1 } })));
 await t("a name-flagged person can't post", assertFails(setDoc(doc(as("carol"), "rooms/general/msgs/c1"), { uid: "carol", text: "hi", ts: Date.now() })));
 await t("can't unlock without actually changing your name", assertFails(updateDoc(doc(as("carol"), "members/carol"), { nickAt: Date.now() + 9000 })));
 await setDoc(doc(as("carol"), "names/carol parker"), { uid: "carol", ts: now });
@@ -180,7 +180,8 @@ await t("can't reset your own tries", assertFails(setDoc(doc(as("alice"), "vouch
 await t("can't give yourself extra tries", assertFails(updateDoc(doc(as("alice"), "vouchQuota/alice"), { extra: 10 })));
 await t("can't use someone else's vouch to fake a try", assertFails(setDoc(doc(as("carol"), "vouchQuota/carol"), { used: 1, lastMsg: "general/v1" })));
 await t("owner gives 2 more tries", assertSucceeds(setDoc(doc(as("owner"), "vouchQuota/alice"), { extra: 2 }, { merge: true })));
-await t("with extra tries the 5th vouch works", assertSucceeds(vouch("alice", "general", "v8", { uid: "alice", text: "thanks for the extra", ts: Date.now(), vouch: { to: "server", stars: 5, n: 8 } })));
+await t("with extra tries the 5th vouch works", assertSucceeds(vouch("alice", "general", "v8", { uid: "alice", text: "Thanks for the extra tries, the new pop-up is really helpful", ts: Date.now(), vouch: { to: "server", stars: 5, n: 8 } })));
+await t("a lazy one-line vouch is blocked", assertFails(vouch("carol", "general", "lz1", { uid: "carol", text: "Everyone is awesome", ts: Date.now(), vouch: { to: "server", stars: 5, n: 9 } })));
 
 console.log("Strikes & warnings");
 await t("owner gives a warning", assertSucceeds(setDoc(doc(as("owner"), "mod/alice/notices/w1"), { kind: "warning", reason: "be nice", at: Date.now(), by: "owner", ackAt: null })));

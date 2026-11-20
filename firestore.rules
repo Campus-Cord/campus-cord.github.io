@@ -269,6 +269,7 @@ service cloud.firestore {
           && (roomOpen() || isAdmin()) && notTimedOut() && !nameLocked()
           && (room().get('type', 'text') != 'vouches' || ('vouch' in request.resource.data))
           && (!('vouch' in request.resource.data) || isOwner() || vouchTryOk(roomId, msgId))
+          && (!('vouch' in request.resource.data) || isOwner() || request.resource.data.text.size() >= 40)
           && (!('vouch' in request.resource.data) || (request.resource.data.vouch.stars is int
               && request.resource.data.vouch.stars >= 1 && request.resource.data.vouch.stars <= 5
               && request.resource.data.vouch.to is string && request.resource.data.vouch.to != request.auth.uid
