@@ -1520,7 +1520,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-20.1159";
+const APP_VERSION = "2026-11-20.1321";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2397,7 +2397,7 @@ function canSeeRoom(r){ return !r.private || isOwner() || (r.allowed || []).incl
 const curRoom = () => S.kind === "room" ? S.rooms.find(r => r.id === S.cur) : null;
 function timeoutUntil(uid){ const t = ((S.config && S.config.timeouts) || {})[uid]; return t && t > Date.now() ? t : 0; }
 const isMuted = id => !!(prefs.muted || {})[id];
-const canPost = () => { const r = curRoom(); if (S.kind === "room" && timeoutUntil(S.uid)) return false; return !(r && r.readonly) || isAdmin(); };
+const canPost = () => { const r = curRoom(); if (timeoutUntil(S.uid) && (S.kind === "room" || S.kind === "group" || (S.kind === "dm" && !String(S.cur).split("_").some(isOwnerUid)))) return false; return !(r && r.readonly) || isAdmin(); };
 // The red NEW line goes away a few seconds after you've actually seen the new messages.
 let newT = null;
 function scheduleNewClear(){ clearTimeout(newT); if (!S.unreadSince) return;
@@ -2968,7 +2968,7 @@ function renderComposer(){
   // #vouches and #daily-poll: no regular chatting, just vouches / voting
   $("cbox").classList.toggle("hidden", !ok || vroom || proom); $("locked").classList.toggle("hidden", ok);
   if (!ok){ const lk = $("locked"); lk.innerHTML = ""; const tu = timeoutUntil(S.uid);
-    lk.append(ic(tu ? "hourglass" : "lock"), dmGone ? "This person isn't in CampusCord anymore." : tu ? "You're timed out until " + fmtTime(tu) + ". You can still read and use DMs." : "Only admins can post in this announcement room."); }
+    lk.append(ic(tu ? "hourglass" : "lock"), dmGone ? "This person isn't in CampusCord anymore." : tu ? "You're timed out until " + fmtTime(tu) + ". You can still read, and you can DM Massimo." : "Only admins can post in this announcement room."); }
   if (S.replyTo) bars.appendChild(h("div",{class:"cbar"}, "Replying to ", h("b",{text:nickOf(S.replyTo.uid)}), h("span",{class:"sp"}), h("button",{class:"ib", style:{width:"24px",height:"24px",fontSize:"13px"}, title:"Cancel reply", onclick:() => { S.replyTo = null; need("composer"); }}, ic("x"))));
   if (S.pending) bars.appendChild(h("div",{class:"cbar"}, h("img",{src:S.pendingUrl}), h("span",{id:"prevName",text:S.pending.name + " · " + Math.round(S.pending.size/1024) + " KB"}), h("span",{class:"sp"}), h("button",{class:"ib", title:"Remove", onclick:() => setPending(null)}, ic("x"))));
   const r = curRoom();
