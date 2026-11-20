@@ -189,21 +189,27 @@ function adminChanges(p, noIntro){
 
 // The Dev panel: its own page on the left bar (</> button), only for developers and the owner.
 function renderDevPage(box){
+  watchSubs();
+  const keep = box.scrollTop, focus = document.activeElement && box.contains(document.activeElement);
+  if (focus && box.querySelector(".easy")){ const old = box.querySelector(".subs"); if (old) old.replaceWith(subsListEl()); return; } // don't wipe what they're typing
   box.innerHTML = "";
   const wrap = h("div",{class:"devpage"});
   if (!(isOwner() || isDev(S.uid))){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
-  const who = isOwner() ? "owner" : "developer";
+  const who = isOwner() ? "owner" : "developer", waiting = S.subs.filter(x => x.status === "ready").length;
   wrap.append(h("div",{class:"devhero"},
     h("div",{class:"devterm"},
       h("div",{class:"devbar"}, h("i"), h("i"), h("i"), h("span",{text:"campuscord — dev"})),
       h("pre",null, h("span",{class:"c1",text:"$ "}), "whoami\n", h("span",{class:"c2",text: nickOf(S.uid) + " (" + who + ")"}), "\n",
-        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: (S.openChanges || 0) + " change" + (S.openChanges === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
+        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: waiting + " change" + (waiting === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
     h("div",{class:"devtxt"}, h("h2",{text:"Dev panel"}),
-      h("p",{text: isOwner() ? "Changes Elliott and other developers send to CampusCord show up here. Green = safe. Press Approve and it's live in about 5 minutes."
-        : "This is where you change CampusCord. Follow the steps, chat with Gemini, and send your change. Massimo approves it and it goes live."}))));
-  wrap.append(codeFinderEl());
-  const p = h("div",{class:"devbody"}); adminChanges(p, true); wrap.append(p);
-  box.append(wrap);
+      h("p",{text: isOwner() ? "Your helpers' changes show up below. Green check = it passed the tests. Press Approve and it's live in a few minutes."
+        : "Change CampusCord with an AI in 3 steps. Massimo approves it, then it's live for everyone."}))));
+  if (isOwner()) wrap.append(subsListEl(), easyPanelEl());
+  else wrap.append(easyPanelEl(), subsListEl());
+  const adv = h("details",{class:"gwrap advanced"}, h("summary",null, ic("code"), " Advanced: Code Finder and GitHub"));
+  adv.append(h("div",{style:{padding:"10px 12px"}}, codeFinderEl(), (() => { const p = h("div",{class:"devbody"}); adminChanges(p, true); return p; })()));
+  wrap.append(adv);
+  box.append(wrap); box.scrollTop = keep;
 }
 
 // ---------------------------------------------------------------- Code Finder

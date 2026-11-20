@@ -33,6 +33,13 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/merge.mjs
+      - name: Test and publish changes sent from the Dev panel
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node scripts/devsubs.mjs
       # Merges made by this robot don't start other workflows, so rebuild the site here.
       - name: Rebuild the site
         if: steps.merge.outputs.merged != '' && steps.merge.outputs.merged != '0'

@@ -533,7 +533,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge(); watchSubs();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -590,7 +590,7 @@ function renderRail(){
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
-  if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: S.openChanges || 0}));
+  if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: (S.openChanges || 0) + (isOwner() ? subsWaiting() : 0)}));
   if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
   r.append(top, bot);
@@ -2272,6 +2272,7 @@ function installApp(){
 // __CHANGES__
 // __MOD__
 // __DAILYPOLL__
+// __SUBMIT__
 // __PUSH__
 // __VOUCHES__
 // __FEEDBACK__

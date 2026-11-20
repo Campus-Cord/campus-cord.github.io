@@ -1365,3 +1365,24 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .cfbig>div{flex:1;min-width:0}.cfcopy{flex:none;background:#3ba55d;color:#fff;font-weight:700}
 .cfmore summary{cursor:pointer;color:var(--muted);font-size:13px;margin:4px 0}.cfmore .cfhit{margin-top:6px}
 .cfbig .cfcopy{width:auto;margin:0;white-space:nowrap}.cfbig>div{flex:1 1 auto}
+
+/* Easy changes */
+.easy{border:1px solid color-mix(in srgb,#3fdc7a 40%,var(--line));border-radius:14px;background:var(--rail);padding:14px 16px;margin:0 0 14px;display:flex;flex-direction:column;gap:14px}
+.ehead h3{margin:0 0 2px;font-size:18px}
+.estep{display:flex;gap:12px;align-items:flex-start}.estep .gbody{flex:1;min-width:0;gap:6px}
+.estep .gnum{background:#1f8f4e;width:30px;height:30px;font-size:15px}
+.eans{width:100%;box-sizing:border-box;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;resize:vertical}
+.eok{background:color-mix(in srgb,#3ba55d 14%,var(--card));border:1px solid color-mix(in srgb,#3ba55d 50%,transparent);border-radius:10px;padding:8px 12px;font-size:14px}
+.ebad{background:color-mix(in srgb,#f0565c 10%,var(--card));border:1px solid color-mix(in srgb,#f0565c 45%,transparent);border-radius:10px;padding:8px 12px;font-size:13.5px}
+.ebad ul{margin:6px 0 8px;padding-left:18px}
+.subs{margin:0 0 14px}
+.subcard{border:1px solid var(--line);border-left:4px solid #ffd166;border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--rail)}
+.subcard.s-ready{border-left-color:#3ba55d}.subcard.s-live{border-left-color:#7c5cff}.subcard.s-failed,.subcard.s-error{border-left-color:#f0565c}.subcard.s-rejected,.subcard.s-rejecting{opacity:.6;border-left-color:var(--line)}
+.subtop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.subtop b{font-size:15px}
+.subst{display:flex;gap:6px;font-size:14px;margin-top:4px;font-weight:600}
+.suberr{margin-top:6px;font-size:13px;color:#f0565c;white-space:pre-wrap}
+.advanced{margin-top:6px}
+.diffmodal{max-width:880px;width:94vw}
+.diffview{max-height:60vh;overflow:auto;background:#0d1117;color:#c9d1d9;border-radius:8px;padding:10px;font-size:12px;line-height:1.45;white-space:pre}
+.diffview .dadd{color:#3fdc7a;background:rgba(63,220,122,.08)}.diffview .ddel{color:#ff7b72;background:rgba(255,123,114,.08)}.diffview .dhunk{color:#79c0ff}
+.easy .gbtns .btn,.subcard .btn{width:auto;margin:0}
