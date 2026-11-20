@@ -513,6 +513,16 @@ function initApp(){
       } });
     const m = {}; snap.docs.forEach(d => m[d.id] = d.data()); S.meta = m; need("side","rail");
   }, ()=>{}));
+  S.unsubApp.push(onSnapshot(query(collection(db, "groups"), where("users","array-contains",S.uid)), snap => {
+    snap.docChanges().forEach(c => { if (c.type === "removed") return; const d = c.doc.data(), id = c.doc.id;
+      if (d.lastUid && d.lastUid !== S.uid && d.lastTs > S.loadedAt && S.notified["g:"+id] !== d.lastTs){
+        S.notified["g:"+id] = d.lastTs;
+        const viewing = S.kind === "group" && S.cur === id && !document.hidden;
+        if (!viewing){ notify(d.name || "Group Chat", d.lastPreview || "sent a message", "group", id, true); if (document.hidden){ S.hiddenCount++; updateTitle(); } }
+      } });
+    S.groups = snap.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => (b.lastTs||b.createdAt||0) - (a.lastTs||a.createdAt||0));
+    need("side","rail","header"); if (S.kind === "home") need("msgs");
+  }, e => console.warn("Groups unavailable", e)));
   S.unsubApp.push(onSnapshot(query(collection(db, "dms"), where("users","array-contains",S.uid)), snap => {
     snap.docChanges().forEach(c => { if (c.type === "removed") return; const d = c.doc.data(), id = c.doc.id;
       if (d.lastUid && d.lastUid !== S.uid && d.lastTs > S.loadedAt && S.notified["d:"+id] !== d.lastTs){
@@ -610,7 +620,7 @@ function renderSide(){
   const hdr = $("sideHdr"), list = $("chList"); hdr.innerHTML = ""; list.innerHTML = "";
   if (S.mode === "dms"){
     hdr.onclick = null; hdr.style.cursor = "default";
-    hdr.append(h("span",{class:"hdric"}, ic("message")), h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
+    hdr.append(h("span",{class:"hdric"}, ic("message")), h("span",{class:"t",text:"Direct Messages"}), h("button",{class:"ib",title:"New Group",onclick:e => { e.stopPropagation(); newGroupModal(); }}, ic("users")), h("button",{class:"ib",title:"New DM",onclick:e => { e.stopPropagation(); newDMModal(); }}, ic("plus")));
     const f = h("input",{class:"dmsearch", placeholder:"Find a conversation", value:S.dmFilter||"", oninput:e => { S.dmFilter = e.target.value; renderDMList(box); }});
     list.appendChild(f);
     const nav = (kind, page, icn, label, extra) => list.appendChild(h("div",{class:"ch navi" + (S.kind === kind && (kind !== "shop" || (page === "ranks") === (S.page === "ranks")) ? " on" : ""), onclick:() => openChat(kind, page || kind)},
@@ -762,9 +772,21 @@ function dmMenu(e, d){ const o = dmOther(d), anchor = e.currentTarget;
 function renderDMList(box){
   box.innerHTML = "";
   const q = (S.dmFilter||"").toLowerCase();
-  const rows = S.dms.filter(d => { const o = dmOther(d); return !isBanned(o) && (member(o) || d.lastTs); }).filter(d => q ? nickOf(dmOther(d)).toLowerCase().includes(q) : !dmHidden(d));
-  if (!rows.length){ box.appendChild(h("div",{class:"empty-note",text: q ? "No matches." : "No DMs yet. Click ＋ above, or click anyone's name and choose Message."})); return; }
-  rows.forEach(d => {
+  let rows = S.dms.filter(d => { const o = dmOther(d); return !isBanned(o) && (member(o) || d.lastTs); })
+    .filter(d => q ? nickOf(dmOther(d)).toLowerCase().includes(q) : !dmHidden(d)).map(d => Object.assign(d, {_k:"dm"}));
+  let grows = (S.groups||[]).filter(g => q ? groupName(g).toLowerCase().includes(q) : true).map(g => Object.assign(g, {_k:"group"}));
+  const all = [...rows, ...grows].sort((a,b) => (b.lastTs||b.createdAt||0) - (a.lastTs||a.createdAt||0));
+  if (!all.length){ box.appendChild(h("div",{class:"empty-note",text: q ? "No matches." : "No DMs or groups yet."})); return; }
+  all.forEach(d => {
+    if (d._k === "group") {
+      const on = S.kind === "group" && S.cur === d.id;
+      const un = !on && d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["group:"+d.id]||0);
+      box.appendChild(h("div",{class:"ch dm" + (on ? " on" : "") + (un ? " unread" : ""), onclick:() => openChat("group", d.id)},
+        h("div",{class:"av sm", style:{backgroundColor:"var(--b3)",display:"flex",alignItems:"center",justifyContent:"center"}}, ic("users","sm")),
+        h("div",{class:"meta"}, h("span",{class:"nm",text:groupName(d)}), typersIn("group", d.id).length ? h("span",{class:"sub",text:"typing…"}) : null),
+        un ? h("span",{class:"newdot",title:"New message"}) : null));
+      return;
+    }
     const o = dmOther(d); const on = S.kind === "dm" && S.cur === d.id;
     const un = !on && d.lastUid && d.lastUid !== S.uid && d.lastTs > (S.lastRead["dm:"+d.id]||0);
     const cs = profile(o).customStatus;
@@ -851,10 +873,11 @@ function renderPromo(){
 }
 
 // ---------------------------------------------------------------- chats
-const base = () => [S.kind === "dm" ? "dms" : "rooms", S.cur];
-const readKey = (kind, id) => (kind === "dm" ? "dm:" : "") + id;
+const base = () => [S.kind === "dm" ? "dms" : S.kind === "group" ? "groups" : "rooms", S.cur];
+const readKey = (kind, id) => (kind === "dm" ? "dm:" : kind === "group" ? "group:" : "") + id;
 const dmIdWith = uid => [S.uid, uid].sort().join("_");
 const dmOther = d => (d.users || (d.id||"").split("_")).find(u => u !== S.uid) || S.uid;
+const groupName = g => g.name || g.users.filter(u => u !== S.uid).map(nickOf).join(", ") || "Group Chat";
 // Private rooms: only the owner and the people on the room's "allowed" list can see them.
 function listNames(a){ return a.length <= 1 ? (a[0] || "you") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
 function roomPeople(r){ const owner = S.config && S.config.ownerUid; return [...new Set([owner, ...(r.allowed || [])])].filter(u => u && member(u) && !isBanned(u)); }
@@ -909,8 +932,8 @@ function openChat(kind, id){
   S.unsubRoom.forEach(u => u()); S.unsubRoom = [];
   if (S.pending) setPending(null);
   Object.assign(S, {kind, cur:id, msgs:[], reacts:[], typing:[], roomLoaded:false, msgLimit:PAGE, hasMore:false, replyTo:null, editing:null, pins:null});
-  if (kind === "dm") S.mode = "dms"; else S.mode = "server";
-  store("chat", {kind, id}); if (kind === "dm") store("lastDM", id); else store("room", id);
+  if (kind === "dm" || kind === "group") S.mode = "dms"; else S.mode = "server";
+  store("chat", {kind, id}); if (kind === "dm" || kind === "group") store("lastDM", id); else store("room", id);
   if (S.rpanel === "pins") S.rpanel = "members";
   subscribeMsgs(true);
   const b = base();
@@ -1676,6 +1699,40 @@ function newDMModal(){
       us.forEach(u => list.appendChild(h("div",{class:"li", style:{cursor:"pointer"}, onclick:() => { close(); openDM(u); }}, avatar(u, "sm", true), paintName(h("span",{class:"nm",text:nickOf(u)}), u)))); };
     f.oninput = draw; draw();
     m.appendChild(h("div",{class:"foot"}, h("button",{class:"btn ghost",onclick:close},"Close")));
+  });
+}
+function newGroupModal(){
+  let sel = [];
+  modal((m, close) => {
+    m.append(h("h3",{text:"New Group Chat"}), h("p",{class:"note",text:"Select friends to add."}));
+    const selDiv = h("div",{style:{marginBottom:"10px",fontSize:"13px",color:"var(--t2)"}}); m.appendChild(selDiv);
+    const f = h("input",{class:"inp", placeholder:"Search friends", style:{marginBottom:"10px"}}); m.appendChild(f);
+    const list = h("div",{class:"list"}); m.appendChild(list);
+    const updateSel = () => { selDiv.textContent = sel.length ? "Selected: " + sel.map(nickOf).join(", ") : ""; };
+    const draw = () => { list.innerHTML = ""; const q = f.value.toLowerCase();
+      const us = Object.keys(S.members).filter(u => u !== S.uid && !isBanned(u) && nickOf(u).toLowerCase().includes(q)).sort((a,b) => (isOn(b) - isOn(a)) || nickOf(a).localeCompare(nickOf(b)));
+      if (!us.length) list.appendChild(h("div",{class:"note",text:"Nobody found."}));
+      us.forEach(u => {
+        const isSel = sel.includes(u);
+        list.appendChild(h("div",{class:"li", style:{cursor:"pointer", backgroundColor: isSel ? "var(--hl)" : ""}, onclick:() => { 
+          if (isSel) sel = sel.filter(x => x !== u); else sel.push(u); 
+          updateSel(); draw(); 
+        }}, avatar(u, "sm", true), paintName(h("span",{class:"nm",text:nickOf(u)}), u), isSel ? h("span",{style:{marginLeft:"auto"}}, ic("check","sm")) : null));
+      }); 
+    };
+    f.oninput = draw; draw();
+    m.appendChild(h("div",{class:"foot"}, 
+      h("button",{class:"btn ghost",onclick:close},"Cancel"),
+      h("button",{class:"btn", onclick:async () => {
+        if (!sel.length) return toast("Select at least one person.");
+        close();
+        const id = rid();
+        try {
+          await setDoc(doc(db, "groups", id), {uid: S.uid, users: [S.uid, ...sel], createdAt: Date.now()});
+          S.mode = "dms"; openChat("group", id);
+        } catch(e) { toast("Couldn't start group: " + errMsg(e)); }
+      }},"Create Group")
+    ));
   });
 }
 function quickSwitcher(){

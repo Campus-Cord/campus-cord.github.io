@@ -321,6 +321,28 @@ service cloud.firestore {
       }
     }
 
+    // ---------------- group chats
+    match /groups/{groupId} {
+      function inGroup() { return isMember() && request.auth.uid in resource.data.users; }
+      allow get: if inGroup();
+      allow list: if isMember() && request.auth.uid in resource.data.users;
+      allow create: if isMember() && ownsNew() && request.auth.uid in request.resource.data.users;
+      allow update: if inGroup() && request.auth.uid in request.resource.data.users;
+      match /msgs/{msgId} {
+        allow read: if inGroup();
+        allow create: if inGroup() && ownsNew() && request.resource.data.text.size() <= 4000 && !nameLocked();
+        allow update: if inGroup() && ownsOld() && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions']) && request.resource.data.text.size() <= 4000;
+        allow update: if inGroup() && changed().hasOnly(['pinned', 'pinnedBy']);
+        allow delete: if inGroup() && ownsOld();
+      }
+      match /reacts/{reactId} {
+        allow read: if inGroup(); allow create: if inGroup() && ownsNew(); allow delete: if inGroup() && ownsOld();
+      }
+      match /typing/{uid} {
+        allow read: if inGroup(); allow write: if inGroup() && uid == request.auth.uid;
+      }
+    }
+
     // ---------------- direct messages (only the two people in it)
     match /dms/{dmId} {
       function inDm() { return isMember() && request.auth.uid in dmId.split('_'); }
