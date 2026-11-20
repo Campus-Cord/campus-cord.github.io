@@ -130,11 +130,55 @@ function priceEl(c){
 }
 function wished(id){ return !!(prefs.wish || {})[id]; }
 function toggleWish(id){ prefs.wish = prefs.wish || {}; if (prefs.wish[id]) delete prefs.wish[id]; else prefs.wish[id] = true; savePrefs(); need("msgs"); }
+// Rarity comes from the price: the pricier, the rarer (just a look; prices don't change).
+const RARITY = [{id:"common", name:"Common", max:300}, {id:"rare", name:"Rare", max:600}, {id:"epic", name:"Epic", max:999}, {id:"legendary", name:"Legendary", max:Infinity}];
+function rarityOf(c){ const p = c.price || 0; if (!p) return {id:"free", name:"Free"}; return RARITY.find(r => p <= r.max); }
 function itemCard(c){
-  return h("div",{class:"icard", onclick:() => itemModal(c)},
-    itemArt(c), itemChip(c),
+  const r = rarityOf(c);
+  const card = h("div",{class:"icard r-" + r.id, onclick:() => itemModal(c)},
+    itemArt(c), itemChip(c), h("i",{class:"ishine"}),
     h("button",{class:"iheart" + (wished(c.id) ? " on" : ""), title: wished(c.id) ? "Remove from wishlist" : "Add to wishlist", onclick:e => { e.stopPropagation(); toggleWish(c.id); }}, ic("heart")),
-    h("div",{class:"iinfo"}, h("div",{class:"iname",text:c.name}), priceEl(c)));
+    h("div",{class:"iinfo"}, h("div",{class:"irar",text:r.name}), h("div",{class:"iname",text:c.name}), priceEl(c)));
+  // little 3D tilt that follows the mouse
+  card.addEventListener("mousemove", e => { const b = card.getBoundingClientRect(), x = (e.clientX - b.left) / b.width - .5, y = (e.clientY - b.top) / b.height - .5;
+    card.style.transform = "perspective(700px) rotateY(" + (x * 8) + "deg) rotateX(" + (-y * 8) + "deg) translateY(-4px)"; card.style.setProperty("--mx", (x + .5) * 100 + "%"); });
+  card.addEventListener("mouseleave", () => { card.style.transform = ""; });
+  return card;
+}
+const etDay = () => Math.floor((Date.now() - 5 * 36e5) / 864e5);
+function spotlightItems(){ const d = etDay(), hash = str => { let x = d * 2654435761 >>> 0; for (const ch of str) x = Math.imul(x ^ ch.charCodeAt(0), 16777619) >>> 0; return x; };
+  return COSM.filter(c => c.price > 0 && !c.own).sort((a, b) => hash(a.id) - hash(b.id)).slice(0, 4); }
+function untilNextDay(){ const ms = (etDay() + 1) * 864e5 + 5 * 36e5 - Date.now(); const hh = Math.floor(ms / 36e5), mm = Math.floor(ms % 36e5 / 6e4); return hh + "h " + mm + "m"; }
+const HERO = [
+  {b:"b_galaxy", chip:"NEW COLLECTION", title:"Deep Space", text:"Go full galaxy: a cosmic ring, falling stars, a midnight nameplate and an animated banner.", bg:"space"},
+  {b:"b_aurora", chip:"JUST DROPPED", title:"Northern Lights", text:"Glowing green and blue light that flows around your avatar and profile.", bg:"aurora"},
+  {b:"b_winter", chip:"SEASONAL", title:"Winter Wonderland", text:"Frosty rings, a snow-day profile and a deep ocean nameplate.", bg:"winter"},
+  {b:"b_love", chip:"FAN FAVORITE", title:"Sweetheart", text:"Cherry blossoms, floating hearts and a cotton-candy name.", bg:"love"},
+];
+function heroEl(){
+  S.heroI = S.heroI || 0;
+  const box = h("div",{class:"sherowrap"});
+  const draw = () => {
+    const hs = HERO[S.heroI % HERO.length], b = BUNDLES.find(x => x.id === hs.b); if (!b) return;
+    box.innerHTML = "";
+    box.append(h("div",{class:"shero hero-" + hs.bg, onclick:() => itemModal(b)},
+      h("div",{class:"pfx pfx-" + b.items[1].slice(2)}), h("div",{class:"hglow"}),
+      h("div",{class:"shtext"}, h("span",{class:"ichip"}, ic("spark"), hs.chip), h("h2",{text:hs.title}), h("p",{text:hs.text}),
+        h("div",{class:"hrow"}, h("button",{class:"btn", onclick:e => { e.stopPropagation(); itemModal(b); }}, ownsBundleFully(S.uid, b) ? "You own this" : "Get the bundle"),
+          ownsBundleFully(S.uid, b) ? null : h("span",{class:"hprice"}, sparkPill(b.price), b.full ? h("s",{text:b.full.toLocaleString()}) : null))),
+      h("div",{class:"shart"}, previewAvatar(b.items[0]), h("div",{class:"pd plate plate-" + b.items[2].slice(2)}, paintName(h("span",{text:nickOf(S.uid)}), S.uid)))),
+      h("div",{class:"hdots"}, HERO.map((_, i) => h("button",{class:"hdot" + (i === S.heroI % HERO.length ? " on" : ""), title:HERO[i].title, onclick:() => { S.heroI = i; draw(); }}))));
+  };
+  draw();
+  clearInterval(S.heroT);
+  S.heroT = setInterval(() => { if (!document.body.contains(box)){ clearInterval(S.heroT); return; } if (box.matches(":hover")) return; S.heroI++; draw(); }, 6000);
+  return box;
+}
+function collectionBar(){
+  const all = COSM.filter(c => !c.own), have = all.filter(c => owns(S.uid, c.id)).length, pct = Math.round(have / all.length * 100);
+  return h("div",{class:"colbar"}, h("div",{class:"colic"}, ic("gem")),
+    h("div",{class:"colmain"}, h("div",{class:"coltop"}, h("b",{text:"Your collection"}), h("span",{text:have + " / " + all.length + " items · " + pct + "%"})),
+      h("div",{class:"coltrack"}, h("div",{class:"colfill",style:{width:Math.max(2, pct) + "%"}}))));
 }
 function itemModal(c){
   modal((m, close, bg) => {
@@ -162,11 +206,11 @@ function itemModal(c){
 }
 
 // ---- Shop page
-const SHOP_TABS = [{id:"featured", name:"Featured"}, {id:"deco", name:"Decorations"}, {id:"pfx", name:"Profile Effects"}, {id:"pban", name:"Banners"}, {id:"plate", name:"Nameplates"}, {id:"bundle", name:"Bundles"}, {id:"ranks", name:"Ranks & Sparks"}];
+const SHOP_TABS = [{id:"featured", name:"Featured", ic:"star"}, {id:"deco", name:"Decorations", ic:"user"}, {id:"pfx", name:"Profile Effects", ic:"sparkles"}, {id:"pban", name:"Banners", ic:"image"}, {id:"plate", name:"Nameplates", ic:"pen"}, {id:"bundle", name:"Bundles", ic:"gem"}, {id:"ranks", name:"Ranks & Sparks", ic:"crown"}];
 function shopHeaderBar(active){
   const bar = h("div",{class:"shopbar"});
   bar.append(h("span",{class:"sbic"}, ic("bag")));
-  SHOP_TABS.forEach(t => bar.appendChild(h("button",{class:"stab" + (active === t.id ? " on" : ""), onclick:() => { S.page = t.id; store("chat", {kind:"shop", id:t.id}); $("msgs").scrollTop = 0; need("msgs"); }}, t.name)));
+  SHOP_TABS.forEach(t => bar.appendChild(h("button",{class:"stab" + (active === t.id ? " on" : ""), onclick:() => { S.page = t.id; store("chat", {kind:"shop", id:t.id}); $("msgs").scrollTop = 0; need("msgs"); }}, ic(t.ic, "sm"), t.name)));
   bar.append(h("span",{class:"sp"}),
     active !== "ranks" ? h("label",{class:"ssearch"}, ic("search"), h("input",{placeholder:"Search the shop", value:S.shopQ || "", oninput:e => { S.shopQ = e.target.value; clearTimeout(S.shopQT); S.shopQT = setTimeout(() => { const pos = e.target.selectionStart; need("msgs"); setTimeout(() => { const i = document.querySelector(".ssearch input"); if (i){ i.focus(); i.selectionStart = i.selectionEnd = pos; } }, 0); }, 250); }})) : null,
     active !== "ranks" ? h("button",{class:"swish" + (S.wishOnly ? " on" : ""), title:"Show my wishlist", onclick:() => { S.wishOnly = !S.wishOnly; need("msgs"); }}, ic("heart")) : null,
@@ -189,14 +233,12 @@ function renderShopPage(box){
   if (tab === "ranks"){ const r = h("div",{class:"ranksinline"}); drawRanks(r, () => need("msgs")); body.appendChild(r); box.appendChild(wrap); box.scrollTop = keep; return; }
   const filtering = (S.shopQ || "").trim() || S.wishOnly;
   if (tab === "featured" && !filtering){
-    const b = BUNDLES[0];
-    body.appendChild(h("div",{class:"shero", onclick:() => itemModal(b)},
-      h("div",{class:"pfx pfx-starfall"}),
-      h("div",{class:"shtext"}, h("span",{class:"ichip"}, ic("spark"), "NEW COLLECTION"), h("h2",{text:"The Cosmic Collection"}), h("p",{text:"Out-of-this-world looks for your avatar, profile and name. Get all three for 15% off."}),
-        h("button",{class:"btn", onclick:e => { e.stopPropagation(); S.page = "bundle"; need("msgs"); }}, "Shop the collection")),
-      h("div",{class:"shart"}, previewAvatar("d_cosmic"), h("div",{class:"pd plate plate-nebula"}, paintName(h("span",{text:nickOf(S.uid)}), S.uid)))));
+    body.append(heroEl(), collectionBar());
     if (!owns(S.uid, "d_bubble")) body.appendChild(h("div",{class:"freebar", onclick:() => itemModal(COSM_BY.d_bubble)}, previewAvatar("d_bubble", "sm"),
       h("div",{style:{flex:"1"}}, h("b",{text:"Free avatar decoration!"}), h("div",{class:"note",style:{margin:0},text:"Claim the Bubble decoration — on the house."})), h("button",{class:"btn small"}, "Claim")));
+    const spot = spotlightItems();
+    body.appendChild(h("div",{class:"ssec spot"}, h("div",{class:"ssh"}, h("h3",null, ic("sparkles"), " Today's Spotlight"), h("span",{class:"spottimer"}, ic("hourglass","sm"), " New picks in " + untilNextDay())),
+      h("div",{class:"igrid"}, spot.map(itemCard))));
     body.append(shopSection("Bundles", [BUNDLES[4], BUNDLES[0], BUNDLES[1], BUNDLES[2]], "bundle"), shopSection("Avatar Decorations", COSM.filter(c => c.type === "deco").slice(0, 4), "deco"),
       shopSection("Animated Banners", COSM.filter(c => c.type === "pban").slice(0, 4), "pban"),
       shopSection("Profile Effects", COSM.filter(c => c.type === "pfx").slice(0, 4), "pfx"), shopSection("Nameplates", COSM.filter(c => c.type === "plate").slice(0, 4), "plate"));

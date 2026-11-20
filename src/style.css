@@ -1262,3 +1262,56 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .chcard .foot{gap:8px}
 .vpop .btn{white-space:nowrap}
 .vmeter{font-size:12.5px;color:var(--muted);margin-top:4px}.vmeter.ok{color:#3ba55d;font-weight:600}
+
+/* ===== Shop makeover ===== */
+.shoppage{position:relative;isolation:isolate}
+.shoppage::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(600px 400px at 85% 0%,color-mix(in srgb,#7c5cff 18%,transparent),transparent 70%),radial-gradient(500px 400px at 0% 30%,color-mix(in srgb,#ff7ac6 10%,transparent),transparent 70%),radial-gradient(600px 500px at 60% 100%,color-mix(in srgb,#3fb8ff 10%,transparent),transparent 70%);animation:shopglow 14s ease-in-out infinite alternate}
+@keyframes shopglow{to{filter:hue-rotate(40deg)}}
+.stab{display:inline-flex;align-items:center;gap:6px}.stab .i{opacity:.7}.stab.on .i{opacity:1;color:#c9b8ff}
+.stab.on::after{background:linear-gradient(90deg,#7c5cff,#ff7ac6);height:3px}
+.sbal{background:linear-gradient(135deg,#7c5cff,#c25cff)!important;color:#fff!important;box-shadow:0 4px 16px rgba(124,92,255,.35)}
+/* hero carousel */
+.sherowrap{position:relative;margin-bottom:14px}
+.shero{min-height:250px;animation:heroin .5s ease}
+@keyframes heroin{from{opacity:.3;transform:scale(.99)}to{opacity:1;transform:none}}
+.shero .hglow{position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,rgba(255,255,255,.08),transparent 30%);animation:spin 12s linear infinite;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.shtext h2{font-size:38px;text-shadow:0 4px 24px rgba(0,0,0,.4)}
+.hrow{display:flex;align-items:center;gap:12px}.hprice{display:flex;align-items:center;gap:8px;font-weight:700}.hprice s{opacity:.6;font-size:13px}
+.hero-aurora{background:radial-gradient(600px 300px at 80% 50%,rgba(62,207,160,.5),transparent 70%),radial-gradient(400px 250px at 10% 100%,rgba(63,184,255,.35),transparent 70%),linear-gradient(135deg,#06201e,#0b2d3a 50%,#0a1630)!important}
+.hero-winter{background:radial-gradient(600px 300px at 80% 50%,rgba(150,210,255,.45),transparent 70%),radial-gradient(400px 250px at 10% 100%,rgba(255,255,255,.18),transparent 70%),linear-gradient(135deg,#0d1b33,#16304f 50%,#0b1424)!important}
+.hero-love{background:radial-gradient(600px 300px at 80% 50%,rgba(255,122,198,.5),transparent 70%),radial-gradient(400px 250px at 10% 100%,rgba(255,180,120,.3),transparent 70%),linear-gradient(135deg,#2b0c22,#4a1438 50%,#2a0f2e)!important}
+.shart .av.xl{width:130px;height:130px;font-size:46px;animation:float 4s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-8px)}}
+.hdots{position:absolute;bottom:14px;left:36px;display:flex;gap:6px;z-index:6}
+.hdot{width:8px;height:8px;border-radius:4px;border:0;padding:0;background:rgba(255,255,255,.35);transition:width .25s,background .25s;cursor:pointer}.hdot.on{width:24px;background:#fff}
+/* collection bar */
+.colbar{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:14px}
+.colic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7c5cff,#3fb8ff);color:#fff;flex:none}
+.colmain{flex:1;min-width:0}.coltop{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}.coltop span{color:var(--muted)}
+.coltrack{height:8px;border-radius:4px;background:color-mix(in srgb,var(--muted) 20%,transparent);overflow:hidden}
+.colfill{height:100%;border-radius:4px;background:linear-gradient(90deg,#7c5cff,#ff7ac6,#f5b83d);background-size:200% 100%;animation:colmove 3s linear infinite}
+@keyframes colmove{to{background-position:200% 0}}
+/* spotlight */
+.ssh h3{display:flex;align-items:center;gap:6px}
+.spottimer{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#f5b83d;background:color-mix(in srgb,#f5b83d 12%,transparent);border:1px solid color-mix(in srgb,#f5b83d 35%,transparent);padding:4px 10px;border-radius:999px}
+.spot .igrid{padding:14px;border-radius:16px;background:linear-gradient(135deg,color-mix(in srgb,#f5b83d 10%,transparent),color-mix(in srgb,#ff7ac6 8%,transparent));border:1px solid color-mix(in srgb,#f5b83d 25%,transparent)}
+/* cards: rarity, shine, tilt */
+.icard{transition:transform .12s ease-out,box-shadow .2s,border-color .2s;--rc:var(--line);border-color:var(--rc)}
+.icard .art{transition:transform .3s}.icard:hover .art{transform:scale(1.05)}
+.irar{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--rc);margin-bottom:2px}
+.icard.r-common{--rc:#8b93a1}.icard.r-free{--rc:#3ba55d}
+.icard.r-rare{--rc:#3fb8ff}.icard.r-rare:hover{box-shadow:0 12px 30px rgba(63,184,255,.25)}
+.icard.r-epic{--rc:#b26bff}.icard.r-epic:hover{box-shadow:0 12px 34px rgba(178,107,255,.35)}
+.icard.r-legendary{--rc:#f5b83d;border-color:transparent;background:linear-gradient(var(--card),var(--card)) padding-box,linear-gradient(var(--ang,0deg),#f5b83d,#ff7a59,#ff7ac6,#f5b83d) border-box;animation:legend 4s linear infinite}
+.icard.r-legendary:hover{box-shadow:0 14px 40px rgba(245,184,61,.35)}
+@property --ang{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes legend{to{--ang:360deg}}
+.icard.r-legendary .irar{background:linear-gradient(90deg,#f5b83d,#ff7ac6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ishine{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .2s;background:radial-gradient(260px circle at var(--mx,50%) 30%,rgba(255,255,255,.14),transparent 60%)}
+.icard:hover .ishine{opacity:1}
+@media (prefers-reduced-motion: reduce){.shoppage::before,.colfill,.icard.r-legendary,.shero .hglow,.shart .av.xl{animation:none}}
+/* tabs with icons need a bit more room */
+@media (max-width:1500px){ .stab .i{display:none} .stab.on .i{display:inline-flex} }
+@media (max-width:1300px){ .ssearch{width:40px;padding:0;justify-content:center}.ssearch input{width:0;flex:0;padding:0}.ssearch:focus-within{width:150px;padding:0 10px}.ssearch:focus-within input{flex:1} }
+.shopbar .sbal,.shopbar .swish{flex:none}
