@@ -290,6 +290,7 @@ function aiCopyText(b){
   const what = b.kind === "css" ? "this CSS from " + b.file : b.kind === "file" ? "the whole file " + b.file : b.kind + " " + b.name + " from " + b.file;
   return "Here's " + what + " (line" + (b.a === b.b ? " " + b.a : "s " + b.a + "–" + b.b) + "). This is the current code on the real site:\n\n```" + (b.file.endsWith(".css") ? "css" : b.file.endsWith(".html") ? "html" : "js") + "\n" + b.code + "\n```";
 }
+const CF_MAX_LINES = 1000;
 function codeFinderEl(){
   const box = h("div",{class:"cfind"});
   const q = h("textarea",{class:"inp cfq", rows:"3", placeholder:"Paste what your AI said here (the whole message is fine), or just type a name like messageEl"});
@@ -303,10 +304,16 @@ function codeFinderEl(){
     const r = findCode(v);
     const miss = (r.missing || []).length ? "\n\n(These names don't exist in CampusCord's code, so they're not included: " + r.missing.join(", ") + ". Check the map for the right name.)" : "";
     if (!r.best.length){ out.append(h("p",{class:"note",text: miss ? "None of these exist in the code: " + r.missing.join(", ") + ". Ask your AI to check the map for the right names." : "Couldn't tell what code the AI wants. Ask your AI: \"What's the exact name of the function you need?\" and paste its answer here."})); if (miss) out.append(h("button",{class:"btn small", onclick:() => copy(miss.trim(), "Copied! Paste it to your AI.")}, ic("copy","sm"), " Copy a note for your AI")); return; }
-    const text = r.best.map(aiCopyText).join("\n\n") + miss;
+    // Never hand the AI more than CF_MAX_LINES at once; the rest waits for its next message.
+    const sent = [], later = []; let used = 0;
+    r.best.forEach(b => { const n = b.code.split("\n").length; if (!sent.length || used + n <= CF_MAX_LINES){ sent.push(b); used += n; } else later.push(b); });
+    if (sent.length === 1 && used > CF_MAX_LINES){ const b = sent[0]; sent[0] = Object.assign({}, b, {b:b.a + CF_MAX_LINES - 1, code:b.code.split("\n").slice(0, CF_MAX_LINES).join("\n")}); }
+    r.best = sent;
+    const tooMuch = later.length ? "\n\n(That was a lot of code at once, so I'm sending the rest in my next message: " + later.map(b => b.name).join(", ") + ". Work with this first, or tell me which of those you really need.)" : "";
+    const text = r.best.map(aiCopyText).join("\n\n") + miss + tooMuch;
     out.append(h("div",{class:"cfbig"},
       h("div",null, h("b",{text: r.best.length === 1 ? "Found it: " + r.best[0].name : "Found " + r.best.length + " things: " + r.best.map(b => b.name).join(", ")}),
-        h("div",{class:"note",style:{margin:0},text:"Press the button, then paste into your AI."})),
+        h("div",{class:"note",style:{margin:0},text: later.length ? "That's too much at once, so this copies " + used + " lines. After you paste it, paste the AI's next message here again to get the rest (" + later.map(b => b.name).join(", ") + ")." : "Press the button, then paste into your AI."})),
       h("button",{class:"btn cfcopy", onclick:() => copy(text, "Copied! Now paste it into your AI.")}, ic("copy"), " Copy for AI")));
     r.best.forEach(b => out.append(hitEl(b, r.best.length === 1)));
     if (r.more.length){ const d = h("details",{class:"cfmore"}, h("summary",{text:"Not the right code? See " + r.more.length + " other matches"}));
