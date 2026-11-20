@@ -153,13 +153,13 @@ function changeGuide(){
 }
 
 // Owner: count waiting changes once at startup so the Admin button shows a red number.
-function checkChangesBadge(){ if (!isOwner() || S.changesChecked) return; S.changesChecked = true;
+function checkChangesBadge(){ if (!(isOwner() || isDev(S.uid)) || S.changesChecked) return; S.changesChecked = true;
   loadChanges(false).then(() => need("rail")).catch(() => {}); setTimeout(() => { S.changesChecked = false; }, 10 * 60000); }
-function adminChanges(p){
+function adminChanges(p, noIntro){
   watchApprovals();
   const guide = h("details",{class:"gwrap"}, h("summary",null, ic("info"), isOwner() ? " How changes work (and how Elliott sends them)" : " How to make a change to CampusCord"), changeGuide());
   if (!isOwner()) guide.open = true;
-  p.append(h("p",{class:"note",style:{marginTop:0},text: isOwner()
+  p.append(noIntro ? null : h("p",{class:"note",style:{marginTop:0},text: isOwner()
     ? "When someone changes the site, it shows up here. Green light = it passed the safety tests. Press Approve and it goes live in about 5 minutes."
     : "Want to change something on CampusCord? Follow the steps below. Massimo approves every change before it goes live."}), guide);
   const list = h("div",{class:"chlist"}, h("p",{class:"note",text:"Loading changes from GitHub…"}));
@@ -175,4 +175,22 @@ function adminChanges(p){
   refresh.onclick = () => { list.innerHTML = ""; list.append(h("p",{class:"note",text:"Refreshing…"})); draw(true); };
   p.append(h("div",{class:"chtop"}, h("h4",{text:"Waiting for approval"}), refresh), list, histEl);
   draw(false);
+}
+
+// The Dev panel: its own page on the left bar (</> button), only for developers and the owner.
+function renderDevPage(box){
+  box.innerHTML = "";
+  const wrap = h("div",{class:"devpage"});
+  if (!(isOwner() || isDev(S.uid))){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
+  const who = isOwner() ? "owner" : "developer";
+  wrap.append(h("div",{class:"devhero"},
+    h("div",{class:"devterm"},
+      h("div",{class:"devbar"}, h("i"), h("i"), h("i"), h("span",{text:"campuscord — dev"})),
+      h("pre",null, h("span",{class:"c1",text:"$ "}), "whoami\n", h("span",{class:"c2",text: nickOf(S.uid) + " (" + who + ")"}), "\n",
+        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: (S.openChanges || 0) + " change" + (S.openChanges === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
+    h("div",{class:"devtxt"}, h("h2",{text:"Dev panel"}),
+      h("p",{text: isOwner() ? "Changes Elliott and other developers send to CampusCord show up here. Green = safe. Press Approve and it's live in about 5 minutes."
+        : "This is where you change CampusCord. Follow the steps, chat with Gemini, and send your change. Massimo approves it and it goes live."}))));
+  const p = h("div",{class:"devbody"}); adminChanges(p, true); wrap.append(p);
+  box.append(wrap);
 }

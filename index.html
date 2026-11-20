@@ -1330,6 +1330,24 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 @media (max-width:1500px){ .stab .i{display:none} .stab.on .i{display:inline-flex} }
 @media (max-width:1300px){ .ssearch{width:40px;padding:0;justify-content:center}.ssearch input{width:0;flex:0;padding:0}.ssearch:focus-within{width:150px;padding:0 10px}.ssearch:focus-within input{flex:1} }
 .shopbar .sbal,.shopbar .swish{flex:none}
+
+/* Dev panel */
+.devglyph{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:800;font-size:13px;letter-spacing:-.04em}
+.devri .ri,.ri.devri{background:linear-gradient(135deg,#0d1117,#1f2a1f);color:#3fdc7a;box-shadow:inset 0 0 0 1px rgba(63,220,122,.35)}
+.devpage{max-width:980px;margin:0 auto;padding:20px 24px 40px}
+.devhero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;align-items:center;margin-bottom:18px}
+@media (max-width:900px){.devhero{grid-template-columns:1fr}}
+.devterm{background:#0d1117;border:1px solid #2a3340;border-radius:12px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.devbar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:#161b22;border-bottom:1px solid #2a3340;font-size:12px;color:#8b949e}
+.devbar i{width:10px;height:10px;border-radius:50%;background:#ff5f56}.devbar i:nth-child(2){background:#ffbd2e}.devbar i:nth-child(3){background:#27c93f}.devbar span{margin-left:8px;font-family:ui-monospace,Menlo,monospace}
+.devterm pre{margin:0;padding:14px 16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;line-height:1.6;color:#c9d1d9;white-space:pre-wrap}
+.devterm .c1{color:#3fdc7a}.devterm .c2{color:#79c0ff}.devterm .c3{color:#f5b83d}
+.devterm .cur{color:#3fdc7a;animation:blink 1s steps(1) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.devtxt h2{margin:0 0 6px;font-size:28px;font-family:ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+.devtxt p{margin:0;color:var(--muted);line-height:1.5}
+.devbody .gwrap{border-color:color-mix(in srgb,#3fdc7a 35%,var(--line))}
+.devbody .gnum{background:#1f8f4e;font-family:ui-monospace,Menlo,monospace}
 </style>
 </head>
 <body>
@@ -1442,7 +1460,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-19.2018";
+const APP_VERSION = "2026-11-19.2134";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2018,7 +2036,8 @@ function renderRail(){
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
-  if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length + (S.openChanges || 0) : 0}));
+  if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: S.openChanges || 0}));
+  if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
   r.append(top, bot);
 }
@@ -2304,7 +2323,7 @@ async function openDM(uid){
   }
   S.mode = "dms"; openChat("dm", id);
 }
-const isPage = k => k === "home" || k === "shop" || k === "quests" || k === "feedback";
+const isPage = k => k === "home" || k === "shop" || k === "quests" || k === "feedback" || k === "dev";
 function goDMs(){
   if (S.kind === "dm" || (isPage(S.kind) && S.kind !== "home")){ openChat("home", "home"); return; }
   if (S.kind === "home") return;
@@ -2371,9 +2390,10 @@ function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
   icon.innerHTML = "";
   $("btnPins").classList.toggle("hidden", isPage(S.kind)); $("search").parentElement.classList.toggle("hidden", isPage(S.kind));
-  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests" || S.kind === "feedback"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
+  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests" || S.kind === "feedback" || S.kind === "dev"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
   if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
   if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn badges"; updateTitle(); return; }
+  if (S.kind === "dev"){ icon.appendChild(h("span",{class:"devglyph",text:"</>"})); t.textContent = "Dev panel"; d.textContent = "Change CampusCord's code · only developers can see this"; updateTitle(); return; }
   if (S.kind === "feedback"){ icon.appendChild(ic("message")); t.textContent = "Feedback"; d.textContent = "Bugs, ideas and vouches"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
@@ -2453,6 +2473,7 @@ function renderMessages(){
   if (S.kind === "shop"){ renderShopPage(box); return; }
   if (S.kind === "quests"){ renderQuestsPage(box); return; }
   if (S.kind === "feedback"){ renderFeedbackPage(box); return; }
+  if (S.kind === "dev"){ renderDevPage(box); return; }
   const atBottom = S.stickBottom !== false;
   const prevTop = box.scrollTop;
   box.innerHTML = "";
@@ -2716,7 +2737,7 @@ async function loadPins(){
 }
 function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
-  if (S.kind === "shop" || S.kind === "quests" || S.kind === "feedback"){ p.classList.add("hidden"); return; }
+  if (S.kind === "shop" || S.kind === "quests" || S.kind === "feedback" || S.kind === "dev"){ p.classList.add("hidden"); return; }
   const narrow = window.innerWidth < 1100;
   if (S.rpanel === null && prefs.showMembers === false || !S.rpanel || (narrow && S.rpanel === "members" && !S.rpanelForced)){ p.classList.add("hidden"); $("btnMembers").classList.remove("on"); return; }
   p.classList.remove("hidden");
@@ -3364,14 +3385,13 @@ function openAdmin(start){
   bigModal([
     {header:(S.config && S.config.serverName) || "CampusCord"},
     {id:"overview", label:"Overview", icon:"grid", render:adminOverview, hidden:!isOwner()},
-    {id:"changes", label:"Site changes" + (S.openChanges ? " (" + S.openChanges + ")" : ""), icon:"code", render:adminChanges, hidden:!(isOwner() || isDev(S.uid))},
     {id:"rooms", label:"Rooms", icon:"hash", render:adminRooms},
     {id:"members", label:"Members & roles", icon:"users", render:adminMembers, hidden:!isOwner()},
     {header:"Monetization", hidden:!isOwner()},
     {id:"shop", label:"Shop & Stripe", icon:"bag", render:adminShop, hidden:!isOwner()},
     {id:"appeals", icon:"alert", label:"Ban appeals" + (openAppeals().length ? " (" + openAppeals().length + ")" : ""), render:adminAppeals, hidden:!isOwner()},
     {id:"orders", icon:"receipt", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isOwner()},
-  ], isOwner() ? (start || "overview") : (start === "rooms" ? "rooms" : "changes"));
+  ], isOwner() ? (start || "overview") : "rooms");
 }
 async function downloadBackup(btn, st){
   const old = btn.innerHTML; btn.disabled = true;
@@ -4388,13 +4408,13 @@ function changeGuide(){
 }
 
 // Owner: count waiting changes once at startup so the Admin button shows a red number.
-function checkChangesBadge(){ if (!isOwner() || S.changesChecked) return; S.changesChecked = true;
+function checkChangesBadge(){ if (!(isOwner() || isDev(S.uid)) || S.changesChecked) return; S.changesChecked = true;
   loadChanges(false).then(() => need("rail")).catch(() => {}); setTimeout(() => { S.changesChecked = false; }, 10 * 60000); }
-function adminChanges(p){
+function adminChanges(p, noIntro){
   watchApprovals();
   const guide = h("details",{class:"gwrap"}, h("summary",null, ic("info"), isOwner() ? " How changes work (and how Elliott sends them)" : " How to make a change to CampusCord"), changeGuide());
   if (!isOwner()) guide.open = true;
-  p.append(h("p",{class:"note",style:{marginTop:0},text: isOwner()
+  p.append(noIntro ? null : h("p",{class:"note",style:{marginTop:0},text: isOwner()
     ? "When someone changes the site, it shows up here. Green light = it passed the safety tests. Press Approve and it goes live in about 5 minutes."
     : "Want to change something on CampusCord? Follow the steps below. Massimo approves every change before it goes live."}), guide);
   const list = h("div",{class:"chlist"}, h("p",{class:"note",text:"Loading changes from GitHub…"}));
@@ -4410,6 +4430,24 @@ function adminChanges(p){
   refresh.onclick = () => { list.innerHTML = ""; list.append(h("p",{class:"note",text:"Refreshing…"})); draw(true); };
   p.append(h("div",{class:"chtop"}, h("h4",{text:"Waiting for approval"}), refresh), list, histEl);
   draw(false);
+}
+
+// The Dev panel: its own page on the left bar (</> button), only for developers and the owner.
+function renderDevPage(box){
+  box.innerHTML = "";
+  const wrap = h("div",{class:"devpage"});
+  if (!(isOwner() || isDev(S.uid))){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
+  const who = isOwner() ? "owner" : "developer";
+  wrap.append(h("div",{class:"devhero"},
+    h("div",{class:"devterm"},
+      h("div",{class:"devbar"}, h("i"), h("i"), h("i"), h("span",{text:"campuscord — dev"})),
+      h("pre",null, h("span",{class:"c1",text:"$ "}), "whoami\n", h("span",{class:"c2",text: nickOf(S.uid) + " (" + who + ")"}), "\n",
+        h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: (S.openChanges || 0) + " change" + (S.openChanges === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
+    h("div",{class:"devtxt"}, h("h2",{text:"Dev panel"}),
+      h("p",{text: isOwner() ? "Changes Elliott and other developers send to CampusCord show up here. Green = safe. Press Approve and it's live in about 5 minutes."
+        : "This is where you change CampusCord. Follow the steps, chat with Gemini, and send your change. Massimo approves it and it goes live."}))));
+  const p = h("div",{class:"devbody"}); adminChanges(p, true); wrap.append(p);
+  box.append(wrap);
 }
 
 // ---------------------------------------------------------------- strikes, warnings, suspensions
