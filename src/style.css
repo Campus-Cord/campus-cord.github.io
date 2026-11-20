@@ -1347,3 +1347,15 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .dailypoll .dpname{color:#c9b8ff;font-weight:800}
 .dailypoll .poll{max-width:460px}
 .dpnext{margin:6px 0 0;font-size:12px}
+
+/* Code Finder */
+.cfind{border:1px solid color-mix(in srgb,#3fdc7a 35%,var(--line));border-radius:12px;background:var(--rail);padding:12px 14px;margin:0 0 14px}
+.cfhead{display:flex;gap:10px;align-items:center;margin-bottom:10px}.cfic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#0d1117;color:#3fdc7a;flex:none}
+.cfind .row{display:flex;gap:8px}.cfsel{width:150px;flex:none}
+.cfout{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.cfhit{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--card)}
+.cfrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cfrow .sp{flex:1}
+.cfkind{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#3fdc7a;background:#0d1117;border-radius:5px;padding:2px 6px}
+.cfname{font-family:ui-monospace,Menlo,monospace;font-size:13.5px;word-break:break-all}
+.cfcode{margin:8px 0 0;max-height:260px;overflow:auto;background:#0d1117;color:#c9d1d9;border-radius:8px;padding:10px;font-size:12px;line-height:1.5;white-space:pre}
+.cfcode.hidden{display:none}
