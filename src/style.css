@@ -1399,3 +1399,13 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .acctsafe.ok{display:block;border-color:#3ba55d40;background:#3ba55d12}
 .loginbox{background:var(--bg3,#1e1f22);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;gap:4px;font-size:15px}
 .gate .jlogin{width:100%;margin-top:10px}
+
+/* Music Player */
+.mhost{position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;bottom:0;right:0}
+.mbar{border-top:1px solid var(--line)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.mcard{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg2);color:var(--fg);cursor:pointer;transition:border-color .15s,background .15s}
+.mcard:hover{border-color:var(--acc);background:var(--bg3)}
+.mcard.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,var(--bg2))}
+.mcard b{font-size:13px}
+.mcard span{font-size:11px;color:var(--mut)}

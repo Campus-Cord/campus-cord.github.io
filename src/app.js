@@ -802,6 +802,7 @@ function renderDMList(box){
 function renderMe(){
   enforceNameLock(); enforceMod();
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
+  const mb = $("mbar"); if (mb){ mb.innerHTML = ""; const mbar = musicBarEl(); if (mbar) mb.appendChild(mbar); }
   const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
   const mic = $("meMic"), hd = $("meDeaf"); mic.innerHTML = ""; hd.innerHTML = "";
   mic.appendChild(ic(V.muted || V.deaf ? "micoff" : "mic")); mic.classList.toggle("off", V.muted || V.deaf); mic.title = V.muted ? "Unmute" : "Mute";
@@ -816,6 +817,7 @@ function renderMe(){
 $("meSettings").onclick = () => openSettings("account");
 $("meMic").onclick = () => setMute(!V.muted || V.deaf ? !V.muted : false);
 $("meDeaf").onclick = () => setDeaf(!V.deaf);
+$("btnMusic").onclick = () => openMusicModal();
 $("btnShop").onclick = () => openShop();
 $("btnHelp").onclick = () => openHelp();
 const HELP = [
@@ -1169,6 +1171,7 @@ function embedsFor(text){
           box.appendChild(h("iframe",{src:"https://www.youtube-nocookie.com/embed/" + vid + "?autoplay=1", allow:"accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture", allowfullscreen:true, title:"YouTube video"})); }},
         h("img",{src:"https://i.ytimg.com/vi/" + vid + "/hqdefault.jpg", alt:"", loading:"lazy"}), h("span",{class:"ytplay"}));
       out.push(box);
+      out.push(h("button",{class:"btn small ghost", style:{marginTop:"4px"}, onclick:() => playMusic(vid, "YouTube Track")}, ic("headphones","sm"), " Listen in player"));
     } else if (/\.(png|jpe?g|gif|webp)(\?|#|$)/i.test(u)){
       out.push(h("img",{class:"att", src:u, loading:"lazy", referrerpolicy:"no-referrer", onclick:() => lightbox(u), onerror:function(){ this.remove(); }}));
     } });
@@ -2368,3 +2371,93 @@ if (location.protocol === "file:"){
 }
 
 boot();
+
+const MUSIC_PRESETS = [
+  { id: "jfKfPfyJRdk", title: "Lofi Hip Hop Radio", sub: "Chill beats to study/relax" },
+  { id: "4xDzrJKXOOY", title: "Synthwave Radio", sub: "Retro chill & gaming beats" },
+  { id: "5qap5aO4i9A", title: "Chillhop Beats", sub: "Smooth instrumental hip hop" },
+  { id: "lTRiuFIWV54", title: "1 A.M Study Session", sub: "Warm lofi & ambient" }
+];
+const M = { vid: null, title: "", open: false };
+
+function parseYouTubeId(raw){
+  if (!raw) return null;
+  const s = raw.trim();
+  if (/^[\w-]{11}$/.test(s)) return s;
+  const m = s.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/shorts\/|youtube\.com\/embed\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+
+function playMusic(vid, title){
+  if (!vid) return;
+  M.vid = vid;
+  M.title = title || "YouTube Track";
+  ensureMusicHost();
+  renderMe();
+  toast("Now playing: " + M.title);
+}
+
+function stopMusic(){
+  M.vid = null;
+  M.title = "";
+  const host = $("musicHost");
+  if (host) host.innerHTML = "";
+  renderMe();
+}
+
+function ensureMusicHost(){
+  let host = $("musicHost");
+  if (!host){
+    host = h("div",{id:"musicHost", class:"mhost hidden"});
+    document.body.appendChild(host);
+  }
+  host.innerHTML = "";
+  if (M.vid){
+    host.appendChild(h("iframe",{
+      src: "https://www.youtube-nocookie.com/embed/" + M.vid + "?autoplay=1&loop=1&playlist=" + M.vid,
+      allow: "accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture",
+      title: "CampusCord Music Player"
+    }));
+  }
+}
+
+function musicBarEl(){
+  if (!M.vid) return null;
+  return h("div",{class:"vbar mbar"},
+    h("div",{class:"vinfo", onclick:() => openMusicModal()},
+      h("b",{class:"ok"}, ic("headphones","sm"), " Playing Music"),
+      h("span",{text: M.title})),
+    h("button",{class:"ib", title:"Open player", onclick:() => openMusicModal()}, ic("sparkles")),
+    h("button",{class:"ib danger", title:"Stop music", onclick:() => stopMusic()}, ic("phoneoff")));
+}
+
+function openMusicModal(){
+  modal((m, close) => {
+    const inp = h("input",{class:"inp", placeholder:"Paste a YouTube link or video ID…", autocomplete:"off"});
+    const go = () => {
+      const id = parseYouTubeId(inp.value);
+      if (!id) return toast("Paste a valid YouTube link first!");
+      playMusic(id, "Custom YouTube Track");
+      close();
+    };
+    inp.onkeydown = e => { if (e.key === "Enter") go(); };
+    m.append(
+      h("h2",{style:{marginTop:0}}, "CampusCord Music"),
+      h("p",{class:"sub"}, "Pick a station or paste any YouTube song link to listen while you chat."),
+      h("div",{style:{display:"flex", gap:"8px", marginBottom:"14px"}},
+        inp,
+        h("button",{class:"btn", onclick: go}, "Play")),
+      h("label",{class:"f"}, "Built-in Stations"),
+      h("div",{class:"mgrid"},
+        ...MUSIC_PRESETS.map(p => h("button",{
+          class: "mcard" + (M.vid === p.id ? " on" : ""),
+          onclick: () => { playMusic(p.id, p.title); close(); }
+        },
+          h("b",{text: p.title}),
+          h("span",{text: p.sub})))),
+      M.vid ? h("div",{style:{marginTop:"14px", display:"flex", justifyContent:"space-between", alignItems:"center"}},
+        h("span",{class:"sub", style:{margin:0}}, "Playing: " + M.title),
+        h("button",{class:"btn danger small", onclick:() => { stopMusic(); close(); }}, "Stop Music")) : null
+    );
+  });
+}
