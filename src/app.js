@@ -4,7 +4,7 @@
 const firebaseConfig = __FIREBASE_CONFIG__;
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, EmailAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
@@ -369,6 +369,7 @@ function setupJoin(){
   if (isOwner()){ $("j-codewrap").classList.add("hidden"); $("j-title").textContent = "Welcome back, admin"; $("j-sub").textContent = "Choose the name your friends will see."; }
   $("j-id").textContent = "Your ID: " + S.uid + "  (click to copy)";
   $("j-id").onclick = () => copy(S.uid, "ID copied");
+  $("j-login").onclick = loginModal;
   setTimeout(()=> $("j-nick").focus(), 50);
 }
 // A random ID for this browser, saved with the member profile. Banning someone also bans their browser, so making a
@@ -494,7 +495,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.announceJoin && S.rooms.length){ S.announceJoin = false; announceJoin(); }
-    watchVouches(); maybeVouchPopup();
+    watchVouches(); maybeVouchPopup(); setTimeout(maybePasswordNudge, 6000);
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
     syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
@@ -1841,7 +1842,7 @@ function paneAccount(p){
     h("button",{class:"btn small", style:{marginTop:"16px"}, onclick:async () => { const v = n.value.trim(); if (v.length < 2){ toast("Name needs at least 2 characters"); return; }
       try{ await changeNick(v, {patch:{color}}); toast("Saved"); }catch(e){ toast(e.message || ("Couldn't save: " + errMsg(e))); } }}, "Save changes"),
     h("label",{class:"f",text:"Your user ID"}), h("div",{class:"li"}, h("span",{class:"nm",style:{fontFamily:"monospace",fontSize:"12px"},text:S.uid}), h("button",{class:"btn small ghost",onclick:() => copy(S.uid,"ID copied")},"Copy")),
-    h("p",{class:"note",text:"Your login is saved in this browser. If you clear your browser data or use another browser, you'll join as a new person."}));
+    accountSafetyEl());
 }
 function paneProfile(p){
   const pr = profile(S.uid);
@@ -2047,11 +2048,22 @@ function adminOverview(p){
     const sw = h("button",{class:"sw" + (on ? " on" : ""), onclick:async () => { on = !on; sw.classList.toggle("on", on); try{ await updateDoc(doc(db, "config/main"), {spamFilter:on}); toast(on ? "Spam filter on" : "Spam filter off"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }});
     p.append(h("div",{class:"toggle",style:{marginTop:"14px"}}, h("div",{class:"tl"}, h("b",{},"Spam filter"), h("span",{text:"Slows down people who flood the chat, repeat the same message, mass-@mention or post walls of links. Repeat offenders get paused for 30 seconds. Doesn't apply to you."})), sw)); }
   if (isOwner()){ const t = (S.config && S.config.turn) || {};
-    const u1 = h("input",{class:"inp", placeholder:"turn:relay.example.com:3478", value:t.urls || ""}), u2 = h("input",{class:"inp", placeholder:"username", value:t.username || ""}), u3 = h("input",{class:"inp", placeholder:"password / credential", value:t.credential || "", type:"password"});
-    p.append(h("div",{class:"preview-card",style:{marginTop:"14px"}}, h("b",{text:"Voice relay (optional)"}),
-      h("div",{class:"note",style:{margin:"2px 0 8px"},text:"If friends on school Wi-Fi or hotspots can't hear each other, paste a TURN relay from a free Metered or Cloudflare account here. Until then a free public relay is used."}),
-      h("div",{class:"row"}, u1), h("div",{class:"row",style:{marginTop:"6px"}}, u2, u3,
-        h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {turn: u1.value.trim() ? {urls:u1.value.trim(), username:u2.value.trim(), credential:u3.value.trim()} : deleteField()}); toast("Voice relay saved — rejoin voice to use it"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")))); }
+    // Paste anything Metered shows (the iceServers code or just the username/password): we pick out what's needed.
+    const box = h("textarea",{class:"inp", rows:"4", placeholder:"Paste the TURN server code from your Metered dashboard here"});
+    const parseTurn = txt => { const urls = [...new Set((txt.match(/turns?:[^\s"',\]\}]+/g) || []))];
+      const user = (txt.match(/username["']?\s*[:=]\s*["']([^"']+)["']/) || [])[1], cred = (txt.match(/credential["']?\s*[:=]\s*["']([^"']+)["']/) || [])[1];
+      return urls.length && user && cred ? {urls:urls.join(", "), username:user, credential:cred} : null; };
+    p.append(h("div",{class:"preview-card",style:{marginTop:"14px"}}, h("b",{text:"Voice relay " + (t.urls ? "✅ set up" : "⚠️ not set up")}),
+      h("div",{class:"note",style:{margin:"2px 0 8px"}}, t.urls ? "Voice works on school Wi-Fi. To change it, paste new code below." :
+        h("span",null, "Without this, voice usually fails on school Wi-Fi. It's free: ",
+          h("a",{href:"https://dashboard.metered.ca/signup?tool=turnserver", target:"_blank", rel:"noopener", text:"make a Metered account"}),
+          ", open TURN Server, press \"Show ICE Servers Array\" (or the credentials), copy it all and paste it here.")),
+      box,
+      h("div",{class:"row",style:{marginTop:"6px",justifyContent:"flex-end"}},
+        t.urls ? h("button",{class:"btn small ghost", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {turn:deleteField()}); toast("Voice relay removed"); refreshOpenPane(); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Remove") : null,
+        h("button",{class:"btn small", onclick:async () => { const v = parseTurn(box.value);
+          if (!v){ toast("Couldn't find the TURN address, username and password in that. Copy the whole thing from Metered."); return; }
+          try{ await updateDoc(doc(db, "config/main"), {turn:v}); toast("Voice relay saved! Leave and rejoin voice to use it."); box.value = ""; refreshOpenPane(); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")))); }
   if (isOwner()){ const last = prefs.lastBackup; const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
     const st = h("span",{class:"note",style:{margin:0},text: last ? "Last downloaded " + (days === 0 ? "today" : days === 1 ? "yesterday" : days + " days ago") + "." : "You haven't downloaded a backup yet."});
     p.append(h("div",{class:"preview-card bkcard"}, h("div",{style:{flex:"1"}}, h("b",{text:"Backups"}),
@@ -2335,6 +2347,7 @@ function installApp(){
 // __DAILYPOLL__
 // __SUBMIT__
 // __LINK__
+// __ACCOUNT__
 // __PUSH__
 // __VOUCHES__
 // __FEEDBACK__

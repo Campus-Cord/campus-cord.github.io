@@ -1393,3 +1393,9 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .cfparts{display:flex;flex-wrap:wrap;gap:8px}
 .cfparts .cfcopy.done{opacity:.6}
 .cfparts .cfcopy.done::after{content:" ✓"}
+
+/* Account protection */
+.acctsafe{display:flex;gap:12px;align-items:center;margin-top:16px;border:1px solid #f0b23240;background:#f0b23212}
+.acctsafe.ok{display:block;border-color:#3ba55d40;background:#3ba55d12}
+.loginbox{background:var(--bg3,#1e1f22);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;gap:4px;font-size:15px}
+.gate .jlogin{width:100%;margin-top:10px}

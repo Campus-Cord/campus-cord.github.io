@@ -4,12 +4,11 @@ const VOICE_MAX = 20;
 // Firestore only carries the connection setup ("signals") and who is in the room — never the audio.
 // STUN finds each person's public address. A TURN relay passes audio along when two networks can't connect directly
 // (school/work Wi-Fi, some phone hotspots). Audio stays encrypted end-to-end, so a relay can't listen in.
-// The owner can add their own relay in Admin → Overview; until then a free public relay is used as a fallback.
+// The owner adds a relay (a free Metered account) in Admin → Overview. The old public relay stopped working.
 function rtcConfig(){
   const ice = [{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]}];
   const t = S.config && S.config.turn;
   if (t && t.urls) ice.push({urls:String(t.urls).split(/[\s,]+/).filter(Boolean), username:t.username || "", credential:t.credential || ""});
-  else ice.push({urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"], username:"openrelayproject", credential:"openrelayproject"});
   return {iceServers:ice};
 }
 const VOICE_STALE = 95000;
