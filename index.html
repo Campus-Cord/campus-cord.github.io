@@ -1408,6 +1408,12 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .cfparts{display:flex;flex-wrap:wrap;gap:8px}
 .cfparts .cfcopy.done{opacity:.6}
 .cfparts .cfcopy.done::after{content:" ✓"}
+
+/* Account protection */
+.acctsafe{display:flex;gap:12px;align-items:center;margin-top:16px;border:1px solid #f0b23240;background:#f0b23212}
+.acctsafe.ok{display:block;border-color:#3ba55d40;background:#3ba55d12}
+.loginbox{background:var(--bg3,#1e1f22);border-radius:10px;padding:12px 14px;margin:8px 0;display:grid;gap:4px;font-size:15px}
+.gate .jlogin{width:100%;margin-top:10px}
 </style>
 </head>
 <body>
@@ -1440,6 +1446,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
   <div class="colors" id="j-colors"></div>
   <button class="btn" id="j-go">Join CampusCord</button>
   <div class="err" id="j-err"></div>
+  <button class="btn ghost jlogin" id="j-login">Already have an account? Log in</button>
   <div class="myid" id="j-id" title="Click to copy"></div>
 </div></div>
 
@@ -1516,11 +1523,11 @@ const firebaseConfig = {
 };
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, EmailAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-20.1321";
+const APP_VERSION = "2026-11-20.2302";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -1881,6 +1888,7 @@ function setupJoin(){
   if (isOwner()){ $("j-codewrap").classList.add("hidden"); $("j-title").textContent = "Welcome back, admin"; $("j-sub").textContent = "Choose the name your friends will see."; }
   $("j-id").textContent = "Your ID: " + S.uid + "  (click to copy)";
   $("j-id").onclick = () => copy(S.uid, "ID copied");
+  $("j-login").onclick = loginModal;
   setTimeout(()=> $("j-nick").focus(), 50);
 }
 // A random ID for this browser, saved with the member profile. Banning someone also bans their browser, so making a
@@ -2006,7 +2014,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.announceJoin && S.rooms.length){ S.announceJoin = false; announceJoin(); }
-    watchVouches(); maybeVouchPopup();
+    watchVouches(); maybeVouchPopup(); setTimeout(maybePasswordNudge, 6000);
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
     syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
@@ -3353,7 +3361,7 @@ function paneAccount(p){
     h("button",{class:"btn small", style:{marginTop:"16px"}, onclick:async () => { const v = n.value.trim(); if (v.length < 2){ toast("Name needs at least 2 characters"); return; }
       try{ await changeNick(v, {patch:{color}}); toast("Saved"); }catch(e){ toast(e.message || ("Couldn't save: " + errMsg(e))); } }}, "Save changes"),
     h("label",{class:"f",text:"Your user ID"}), h("div",{class:"li"}, h("span",{class:"nm",style:{fontFamily:"monospace",fontSize:"12px"},text:S.uid}), h("button",{class:"btn small ghost",onclick:() => copy(S.uid,"ID copied")},"Copy")),
-    h("p",{class:"note",text:"Your login is saved in this browser. If you clear your browser data or use another browser, you'll join as a new person."}));
+    accountSafetyEl());
 }
 function paneProfile(p){
   const pr = profile(S.uid);
@@ -3559,11 +3567,22 @@ function adminOverview(p){
     const sw = h("button",{class:"sw" + (on ? " on" : ""), onclick:async () => { on = !on; sw.classList.toggle("on", on); try{ await updateDoc(doc(db, "config/main"), {spamFilter:on}); toast(on ? "Spam filter on" : "Spam filter off"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }});
     p.append(h("div",{class:"toggle",style:{marginTop:"14px"}}, h("div",{class:"tl"}, h("b",{},"Spam filter"), h("span",{text:"Slows down people who flood the chat, repeat the same message, mass-@mention or post walls of links. Repeat offenders get paused for 30 seconds. Doesn't apply to you."})), sw)); }
   if (isOwner()){ const t = (S.config && S.config.turn) || {};
-    const u1 = h("input",{class:"inp", placeholder:"turn:relay.example.com:3478", value:t.urls || ""}), u2 = h("input",{class:"inp", placeholder:"username", value:t.username || ""}), u3 = h("input",{class:"inp", placeholder:"password / credential", value:t.credential || "", type:"password"});
-    p.append(h("div",{class:"preview-card",style:{marginTop:"14px"}}, h("b",{text:"Voice relay (optional)"}),
-      h("div",{class:"note",style:{margin:"2px 0 8px"},text:"If friends on school Wi-Fi or hotspots can't hear each other, paste a TURN relay from a free Metered or Cloudflare account here. Until then a free public relay is used."}),
-      h("div",{class:"row"}, u1), h("div",{class:"row",style:{marginTop:"6px"}}, u2, u3,
-        h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {turn: u1.value.trim() ? {urls:u1.value.trim(), username:u2.value.trim(), credential:u3.value.trim()} : deleteField()}); toast("Voice relay saved — rejoin voice to use it"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")))); }
+    // Paste anything Metered shows (the iceServers code or just the username/password): we pick out what's needed.
+    const box = h("textarea",{class:"inp", rows:"4", placeholder:"Paste the TURN server code from your Metered dashboard here"});
+    const parseTurn = txt => { const urls = [...new Set((txt.match(/turns?:[^\s"',\]\}]+/g) || []))];
+      const user = (txt.match(/username["']?\s*[:=]\s*["']([^"']+)["']/) || [])[1], cred = (txt.match(/credential["']?\s*[:=]\s*["']([^"']+)["']/) || [])[1];
+      return urls.length && user && cred ? {urls:urls.join(", "), username:user, credential:cred} : null; };
+    p.append(h("div",{class:"preview-card",style:{marginTop:"14px"}}, h("b",{text:"Voice relay " + (t.urls ? "✅ set up" : "⚠️ not set up")}),
+      h("div",{class:"note",style:{margin:"2px 0 8px"}}, t.urls ? "Voice works on school Wi-Fi. To change it, paste new code below." :
+        h("span",null, "Without this, voice usually fails on school Wi-Fi. It's free: ",
+          h("a",{href:"https://dashboard.metered.ca/signup?tool=turnserver", target:"_blank", rel:"noopener", text:"make a Metered account"}),
+          ", open TURN Server, press \"Show ICE Servers Array\" (or the credentials), copy it all and paste it here.")),
+      box,
+      h("div",{class:"row",style:{marginTop:"6px",justifyContent:"flex-end"}},
+        t.urls ? h("button",{class:"btn small ghost", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {turn:deleteField()}); toast("Voice relay removed"); refreshOpenPane(); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Remove") : null,
+        h("button",{class:"btn small", onclick:async () => { const v = parseTurn(box.value);
+          if (!v){ toast("Couldn't find the TURN address, username and password in that. Copy the whole thing from Metered."); return; }
+          try{ await updateDoc(doc(db, "config/main"), {turn:v}); toast("Voice relay saved! Leave and rejoin voice to use it."); box.value = ""; refreshOpenPane(); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")))); }
   if (isOwner()){ const last = prefs.lastBackup; const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
     const st = h("span",{class:"note",style:{margin:0},text: last ? "Last downloaded " + (days === 0 ? "today" : days === 1 ? "yesterday" : days + " days ago") + "." : "You haven't downloaded a backup yet."});
     p.append(h("div",{class:"preview-card bkcard"}, h("div",{style:{flex:"1"}}, h("b",{text:"Backups"}),
@@ -5321,6 +5340,96 @@ function adoptLinkedProfile(){
     if (Object.keys(patch).length) setMyProfile(patch).then(() => toast("Your old account's profile was added to this one ✨")).catch(() => {}); });
 }
 
+// ---------------------------------------------------------------- login name + password (so people never lose their account)
+// Everyone starts with a Firebase "anonymous" account, which lives only in this browser. If the browser forgets it
+// (school Chromebooks, clearing data, a new device), that account is gone. Adding a login name + password turns it into
+// a normal account with the SAME user ID, so they can log back in anywhere and keep their name, Sparks and messages.
+// Login names become fake emails (name@login.campuscord.app) because Firebase needs an email; nothing is ever emailed.
+const LOGIN_DOMAIN = "@login.campuscord.app";
+const loginSlug = n => String(n || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, ".").replace(/^\.+|\.+$/g, "").slice(0, 30);
+const loginEmail = n => loginSlug(n) + LOGIN_DOMAIN;
+function hasPassword(){ const u = auth && auth.currentUser; return !!(u && !u.isAnonymous); }
+function myLoginName(){ const u = auth && auth.currentUser; return u && u.email ? u.email.replace(LOGIN_DOMAIN, "") : ""; }
+function loginErr(e){ const c = (e && e.code) || "";
+  if (c.includes("email-already-in-use") || c.includes("credential-already-in-use")) return "That login name is taken. Try another one.";
+  if (c.includes("weak-password")) return "The password needs at least 6 characters.";
+  if (c.includes("operation-not-allowed")) return "Logging in isn't turned on yet. Massimo needs to turn on Email/Password in Firebase.";
+  if (c.includes("invalid-credential") || c.includes("wrong-password") || c.includes("user-not-found") || c.includes("invalid-login")) return "Wrong login name or password.";
+  if (c.includes("too-many-requests")) return "Too many tries. Wait a few minutes and try again.";
+  if (c.includes("network")) return "No internet connection.";
+  return "Something went wrong (" + errMsg(e) + ")"; }
+
+// Make a password for the account you're using now.
+function setPasswordModal(){
+  modal((m, close) => {
+    const name = h("input",{class:"inp", maxlength:"30", autocomplete:"username", value: loginSlug(nickOf(S.uid))});
+    const pw = h("input",{class:"inp", type:"password", autocomplete:"new-password", placeholder:"At least 6 characters"});
+    const pw2 = h("input",{class:"inp", type:"password", autocomplete:"new-password", placeholder:"Type it again"});
+    const err = h("div",{class:"err"});
+    const go = h("button",{class:"btn", onclick:async () => { err.textContent = "";
+      const s = loginSlug(name.value);
+      if (s.length < 3){ err.textContent = "The login name needs at least 3 letters or numbers."; return; }
+      if (pw.value.length < 6){ err.textContent = "The password needs at least 6 characters."; return; }
+      if (pw.value !== pw2.value){ err.textContent = "The two passwords don't match."; return; }
+      go.disabled = true; go.textContent = "Saving…";
+      try{ await linkWithCredential(auth.currentUser, EmailAuthProvider.credential(loginEmail(s), pw.value));
+        prefs.pwNudge = Date.now(); savePrefs(); close();
+        modal((m2, close2) => m2.append(h("h3",{text:"🔒 Your account is safe!"}),
+          h("p",{class:"note",text:"If CampusCord ever asks you to join again, press \"Log in\" and use:"}),
+          h("div",{class:"loginbox"}, h("div",null, "Login name: ", h("b",{text:s})), h("div",null, "Password: the one you just made")),
+          h("p",{class:"note",text:"Take a picture or write it down. Nobody can reset it, not even Massimo."}),
+          h("div",{class:"row",style:{justifyContent:"flex-end"}}, h("button",{class:"btn",onclick:close2},"Got it"))));
+        need("me");
+      }catch(e){ err.textContent = loginErr(e); go.disabled = false; go.textContent = "Save my password"; }
+    }}, "Save my password");
+    m.append(h("h3",{text:"🔒 Protect your account"}),
+      h("p",{class:"note",text:"Right now your account only lives in this browser. If the browser forgets you, you'd have to start over with no Sparks or items. Make a login name and password so you can always log back in, on any device."}),
+      h("label",{class:"f",text:"Login name"}), name,
+      h("label",{class:"f",text:"Password"}), pw, pw2, err,
+      h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"12px"}}, h("button",{class:"btn ghost",onclick:() => { prefs.pwNudge = Date.now(); savePrefs(); close(); }},"Later"), go));
+    setTimeout(() => pw.focus(), 50);
+  });
+}
+
+// Log back into an account that has a password (from the join screen).
+function loginModal(){
+  modal((m, close) => {
+    const name = h("input",{class:"inp", maxlength:"30", autocomplete:"username", placeholder:"Your login name"});
+    const pw = h("input",{class:"inp", type:"password", autocomplete:"current-password", placeholder:"Password"});
+    const err = h("div",{class:"err"});
+    const go = h("button",{class:"btn", onclick:async () => { err.textContent = "";
+      if (!loginSlug(name.value) || !pw.value){ err.textContent = "Type your login name and password."; return; }
+      go.disabled = true; go.textContent = "Logging in…";
+      try{ await signInWithEmailAndPassword(auth, loginEmail(name.value), pw.value); location.reload(); }
+      catch(e){ err.textContent = loginErr(e); go.disabled = false; go.textContent = "Log in"; }
+    }}, "Log in");
+    pw.onkeydown = e => { if (e.key === "Enter") go.click(); };
+    m.append(h("h3",{text:"Log in"}), h("p",{class:"note",text:"Use the login name and password you made in Settings → My Account."}),
+      h("label",{class:"f",text:"Login name"}), name, h("label",{class:"f",text:"Password"}), pw, err,
+      h("p",{class:"note",text:"Never made a password? Ask Massimo to link your old account to your new one."}),
+      h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"8px"}}, h("button",{class:"btn ghost",onclick:close},"Cancel"), go));
+    setTimeout(() => name.focus(), 50);
+  });
+}
+
+// The card in Settings → My Account.
+function accountSafetyEl(){
+  if (hasPassword()) return h("div",{class:"preview-card acctsafe ok"}, h("b",{text:"🔒 Your account is protected"}),
+    h("div",{class:"note",style:{margin:"2px 0 0"}}, "Login name: ", h("b",{text:myLoginName()}), ". If CampusCord ever asks you to join again, press \"Log in\"."));
+  return h("div",{class:"preview-card acctsafe"}, h("div",{style:{flex:"1"}}, h("b",{text:"⚠️ Your account isn't protected"}),
+    h("div",{class:"note",style:{margin:"2px 0 0"},text:"If this browser forgets you, you lose your account. Make a password so you can always log back in."})),
+    h("button",{class:"btn small", onclick:setPasswordModal}, "Make a password"));
+}
+
+// Ask once a week until they make one (owner: every day). Waits if another window is open.
+function maybePasswordNudge(){
+  if (hasPassword() || S.routed !== "app" || window.__ccNoPwNudge || window.__ccNoPop) return;
+  const gap = isOwner() ? 864e5 : 7 * 864e5;
+  if (prefs.pwNudge && Date.now() - prefs.pwNudge < gap) return;
+  if ($("layer") && $("layer").children.length){ setTimeout(maybePasswordNudge, 30000); return; }
+  prefs.pwNudge = Date.now(); savePrefs(); setPasswordModal();
+}
+
 // ---------------------------------------------------------------- phone & desktop push notifications
 // Each device that turns this on saves a push "subscription" in push/{uid}/subs/{id}. The Notify GitHub Action checks
 // every few minutes for new DMs, @mentions (and, for the owner, vouches and feedback) and sends a real notification.
@@ -5841,12 +5950,11 @@ const VOICE_MAX = 20;
 // Firestore only carries the connection setup ("signals") and who is in the room — never the audio.
 // STUN finds each person's public address. A TURN relay passes audio along when two networks can't connect directly
 // (school/work Wi-Fi, some phone hotspots). Audio stays encrypted end-to-end, so a relay can't listen in.
-// The owner can add their own relay in Admin → Overview; until then a free public relay is used as a fallback.
+// The owner adds a relay (a free Metered account) in Admin → Overview. The old public relay stopped working.
 function rtcConfig(){
   const ice = [{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302","stun:stun.cloudflare.com:3478"]}];
   const t = S.config && S.config.turn;
   if (t && t.urls) ice.push({urls:String(t.urls).split(/[\s,]+/).filter(Boolean), username:t.username || "", credential:t.credential || ""});
-  else ice.push({urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"], username:"openrelayproject", credential:"openrelayproject"});
   return {iceServers:ice};
 }
 const VOICE_STALE = 95000;
