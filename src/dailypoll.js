@@ -50,9 +50,10 @@ async function ensureDailyPoll(r){
 }
 // The daily poll shows as posted by "Daily Poll", not by whoever happened to open the room first.
 function dailyPollEl(m, reacts){
+  const locked = isPollLocked(m);
   return h("div",{class:"msg first dailypoll", id:"m-" + m.id},
     h("div",{class:"gut"}, h("div",{class:"av dpav"}, "📊")),
     h("div",{class:"body"}, h("div",{class:"meta"}, h("span",{class:"n dpname",text:"Daily Poll"}), h("span",{class:"tag dev noi"}, h("b",{text:"BOT"})), h("span",{class:"t",text:fmtDay(m.ts)})),
       pollEl(m, reacts || {}),
-      h("div",{class:"note dpnext",text:"A new poll drops every day at midnight."})));
+      h("div",{class:"note dpnext",text: locked ? "Voting is closed for this poll." : "A new poll drops every day at midnight."})));
 }

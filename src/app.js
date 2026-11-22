@@ -1144,18 +1144,25 @@ function messageEl(m, first, reacts){
   return row;
 }
 // ---------------------------------------------------------------- polls
+function isPollLocked(m){
+  if (!m || !m.daily) return false;
+  if (m.daily !== etDay()) return true;
+  return (S.msgs || []).some(x => x.daily && x.daily > m.daily);
+}
 function pollEl(m, reacts){
+  const locked = isPollLocked(m);
   const opts = (m.poll.opts || []).slice(0, 10);
   const counts = opts.map((_, i) => (reacts["poll:" + i] || []).length);
   const total = counts.reduce((a, b) => a + b, 0);
-  const box = h("div",{class:"poll"}, h("div",{class:"pq"}, ic("grid","sm"), h("span",{text:m.poll.q})));
+  const box = h("div",{class:"poll" + (locked ? " locked" : "")}, h("div",{class:"pq"}, ic("grid","sm"), h("span",{text:m.poll.q})));
   opts.forEach((o, i) => { const arr = reacts["poll:" + i] || []; const mine = arr.some(x => x.uid === S.uid); const pct = total ? Math.round(counts[i] / total * 100) : 0;
-    box.appendChild(h("button",{class:"popt" + (mine ? " mine" : ""), title: arr.map(x => nickOf(x.uid)).join(", ") || "No votes yet", onclick:() => votePoll(m, i)},
+    box.appendChild(h("button",{class:"popt" + (mine ? " mine" : ""), disabled: locked || null, style: locked ? {cursor:"default", opacity: mine ? "1" : "0.75"} : null, title: arr.map(x => nickOf(x.uid)).join(", ") || "No votes yet", onclick: locked ? null : () => votePoll(m, i)},
       h("i",{class:"bar", style:{width:pct + "%"}}), h("span",{class:"ot"}, mine ? ic("check","sm") : null, h("span",{text:o})), h("b",{text: pct + "%"}))); });
-  box.appendChild(h("div",{class:"pf",text: total + " vote" + (total === 1 ? "" : "s") + " · click an option to vote, click again to remove"}));
+  box.appendChild(h("div",{class:"pf",text: total + " vote" + (total === 1 ? "" : "s") + (locked ? " · Poll closed (final results)" : " · click an option to vote, click again to remove")}));
   return box;
 }
 async function votePoll(m, i){
+  if (isPollLocked(m)) return toast("This daily poll is closed.");
   const b = base(); const mine = S.reacts.filter(x => x.mid === m.id && x.uid === S.uid && String(x.e).startsWith("poll:"));
   const had = mine.some(x => x.e === "poll:" + i);
   try{ for (const x of mine) await deleteDoc(doc(db, ...b, "reacts", x.id));
