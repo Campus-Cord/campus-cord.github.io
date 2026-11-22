@@ -1,12 +1,12 @@
 name: Test helper changes
 
 # Keeps a robot watching CampusCord's Dev panel so changes from helpers get tested within
-# seconds (GitHub's 5-minute timer is unreliable). Each run watches for about 55 minutes;
-# the hourly timer starts the next one. Approved changes to database rules become a pull
+# seconds. Each run watches for about 5 hours; GitHub's timer (every 30 minutes, but often late)
+# queues the next one, so gaps in the timer matter much less. Approved changes to database rules become a pull
 # request that Massimo merges himself.
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/30 * * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -23,7 +23,7 @@ concurrency:
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 62
+    timeout-minutes: 320
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,7 +37,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           GITHUB_TOKEN: ${{ github.token }}
-          WATCH_MINUTES: "55"
+          WATCH_MINUTES: "300"
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
