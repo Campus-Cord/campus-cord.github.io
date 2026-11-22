@@ -602,6 +602,7 @@ function renderRail(){
   const mc = Object.values(S.mentions).reduce((a,b) => a + b, 0);
   top.appendChild(railItem({label:"Rooms", tip: name + " — all rooms", on: S.mode === "server", cls:"srv", onclick:() => goServer(), oncontextmenu:e => serverMenu(e),
     content: h("span",{class:"srvic",text:(S.config && S.config.serverIcon) || "CC"}), badge: mc, dot: !mc && S.rooms.some(roomUnread)}));
+  bot.appendChild(railItem({label:"Games", tip:"Daily Mini Games — Wordle, Spelling Bee, Sudoku & Crossword", cls:"gamesri", on: S.kind === "games", onclick:() => openChat("games", "hub"), content:ic("grid")}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
   if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: (S.openChanges || 0) + (isOwner() ? subsWaiting() : 0)}));
@@ -906,7 +907,7 @@ async function openDM(uid){
   }
   S.mode = "dms"; openChat("dm", id);
 }
-const isPage = k => k === "home" || k === "shop" || k === "quests" || k === "feedback" || k === "dev";
+const isPage = k => k === "home" || k === "shop" || k === "quests" || k === "feedback" || k === "dev" || k === "games";
 function goDMs(){
   if (S.kind === "dm" || (isPage(S.kind) && S.kind !== "home")){ openChat("home", "home"); return; }
   if (S.kind === "home") return;
@@ -974,7 +975,8 @@ function renderHeader(){
   const icon = $("topIcon"), t = $("topTitle"), d = $("topDesc");
   icon.innerHTML = "";
   $("btnPins").classList.toggle("hidden", isPage(S.kind)); $("search").parentElement.classList.toggle("hidden", isPage(S.kind));
-  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests" || S.kind === "feedback" || S.kind === "dev"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
+  $("btnMembers").classList.toggle("hidden", S.kind === "shop" || S.kind === "quests" || S.kind === "feedback" || S.kind === "dev" || S.kind === "games"); $("btnShop").classList.toggle("hidden", S.kind === "shop");
+  if (S.kind === "games"){ icon.appendChild(ic("grid")); t.textContent = "Daily Mini Games"; d.textContent = "Wordle, Spelling Bee, Sudoku & Mini Crossword · 5 plays each per day"; updateTitle(); return; }
   if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
   if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn badges"; updateTitle(); return; }
   if (S.kind === "dev"){ icon.appendChild(h("span",{class:"devglyph",text:"</>"})); t.textContent = "Dev panel"; d.textContent = "Change CampusCord's code · only developers can see this"; updateTitle(); return; }
@@ -1054,6 +1056,7 @@ function renderHome(box){
 function renderMessages(){
   const box = $("msgs");
   if (S.kind === "home"){ renderHome(box); return; }
+  if (S.kind === "games"){ renderGamesPage(box); return; }
   if (S.kind === "shop"){ renderShopPage(box); return; }
   if (S.kind === "quests"){ renderQuestsPage(box); return; }
   if (S.kind === "feedback"){ renderFeedbackPage(box); return; }
@@ -1331,7 +1334,7 @@ async function loadPins(){
 }
 function renderRPanel(){
   const p = $("rpanel"); p.innerHTML = ""; p.classList.remove("wide");
-  if (S.kind === "shop" || S.kind === "quests" || S.kind === "feedback" || S.kind === "dev"){ p.classList.add("hidden"); return; }
+  if (S.kind === "shop" || S.kind === "quests" || S.kind === "feedback" || S.kind === "dev" || S.kind === "games"){ p.classList.add("hidden"); return; }
   const narrow = window.innerWidth < 1100;
   if (S.rpanel === null && prefs.showMembers === false || !S.rpanel || (narrow && S.rpanel === "members" && !S.rpanelForced)){ p.classList.add("hidden"); $("btnMembers").classList.remove("on"); return; }
   p.classList.remove("hidden");
