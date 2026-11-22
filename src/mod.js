@@ -73,6 +73,7 @@ async function endSuspension(uid){
 }
 
 function modMenuItems(uid){
+  if (!isOwner() && isHeadDev(S.uid) && uid !== S.uid && !isOwnerUid(uid) && !isHeadDev(uid)) return ["-", {label:"Give warning…", icon:"alert", run:() => giveWarning(uid)}];
   if (!isOwner() || uid === S.uid) return [];
   const n = strikesOf(uid), sus = suspendedUntil(uid);
   return ["-",

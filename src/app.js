@@ -195,6 +195,9 @@ const devUntil = uid => ((S.config && S.config.devUntil) || {})[uid] || 0;
 const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid)) && (!devUntil(uid) || devUntil(uid) > Date.now());
 // Designers made CampusCord's look (logo, role tags). A title + badge + ring; no extra admin powers.
 const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid));
+// Head developers: developers with extra powers (the owner picks them).
+const isHeadDev = uid => isDev(uid) && ((S.config && S.config.headDevs) || []).includes(uid);
+const canPostAnnouncements = () => isOwner() || isHeadDev(S.uid);
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
 // Linked accounts: an old account's uid points at the new one (config/main.aliases), so its messages show the new person.
 function realUid(uid){ const al = (S.config && S.config.aliases) || {}; let u = uid, n = 0; while (al[u] && n++ < 5) u = al[u]; return u; }
@@ -265,6 +268,7 @@ function miniTags(uid){ CHIP_MINI = true; try{ return roleTags(uid, true); } fin
 function roleTags(uid, compact){
   const out = [];
   if (isOwnerUid(uid)) out.push(chip("admin",null,"OWNER","Owner of CampusCord"));
+  else if (isHeadDev(uid)) out.push(chip("dev headdev","code","HEAD DEV","Head Developer"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   if (isDesigner(uid) && !isOwnerUid(uid)) out.push(chip("design","pen","DESIGN","Designer — made CampusCord's look"));
   const r = rankOf(uid);
@@ -310,7 +314,7 @@ function boot(){
 
 function start(){
   onSnapshot(doc(db, "config/main"), snap => {
-    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true;
+    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true; if (S.routed === "app") setTimeout(maybeHeadDevPopup, 1500);
     if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
     route(); applyPrefs(); adoptLinkedProfile(); need("rail","side","header","msgs","rpanel","me","composer");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
@@ -497,7 +501,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.announceJoin && S.rooms.length){ S.announceJoin = false; announceJoin(); }
-    watchVouches(); maybeVouchPopup(); setTimeout(maybePasswordNudge, 6000);
+    watchVouches(); maybeVouchPopup(); setTimeout(maybePasswordNudge, 6000); setTimeout(maybeHeadDevPopup, 2500);
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
     syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
@@ -891,7 +895,7 @@ function canSeeRoom(r){ return !r.private || isOwner() || (r.allowed || []).incl
 const curRoom = () => S.kind === "room" ? S.rooms.find(r => r.id === S.cur) : null;
 function timeoutUntil(uid){ const t = ((S.config && S.config.timeouts) || {})[uid]; return t && t > Date.now() ? t : 0; }
 const isMuted = id => !!(prefs.muted || {})[id];
-const canPost = () => { const r = curRoom(); if (timeoutUntil(S.uid) && (S.kind === "room" || S.kind === "group" || (S.kind === "dm" && !String(S.cur).split("_").some(isOwnerUid)))) return false; return !(r && r.readonly) || isAdmin(); };
+const canPost = () => { const r = curRoom(); if (timeoutUntil(S.uid) && (S.kind === "room" || S.kind === "group" || (S.kind === "dm" && !String(S.cur).split("_").some(isOwnerUid)))) return false; return !(r && r.readonly) || canPostAnnouncements(); };
 // The red NEW line goes away a few seconds after you've actually seen the new messages.
 let newT = null;
 function scheduleNewClear(){ clearTimeout(newT); if (!S.unreadSince) return;
@@ -1278,7 +1282,7 @@ function serverMenu(ev){
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
 }
-function canModerate(uid){ return isAdmin() && uid !== S.uid && !isOwnerUid(uid) && (isOwner() || !isDev(uid)); }
+function canModerate(uid){ return isAdmin() && uid !== S.uid && !isOwnerUid(uid) && (isOwner() || !isDev(uid) || (isHeadDev(S.uid) && !isHeadDev(uid))); }
 function memberMenu(ev, uid){
   const tu = timeoutUntil(uid);
   ctxMenu(ev, [
@@ -1287,6 +1291,8 @@ function memberMenu(ev, uid){
     uid !== S.uid && S.kind === "room" && canPost() ? {label:"Mention", icon:"message", run:() => insertAt("@" + nickOf(uid) + " ")} : null,
     isOwner() && uid !== S.uid ? "-" : null,
     isOwner() && uid !== S.uid ? (nameLocked(uid) ? {label:"Remove name flag", icon:"check", run:() => clearNameFlag(uid)} : {label:"Not their real name…", icon:"alert", danger:true, run:() => flagName(uid)}) : null,
+    isOwner() && uid !== S.uid ? {label: isHeadDev(uid) ? "Remove Head Dev" : "Make Head Dev", icon:"star", run:() => setHeadDev(uid, !isHeadDev(uid))} : null,
+    !isOwner() && isHeadDev(S.uid) && uid !== S.uid && !isOwnerUid(uid) && !isHeadDev(uid) ? {label: isDev(uid) ? "Remove developer" : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" + (devUntil(uid) ? " (until " + devTimeLabel(devUntil(uid)) + ")" : "") : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isDesigner(uid) ? "Remove designer" : "Make designer", icon:"pen", run:() => setDesigner(uid, !isDesigner(uid))} : null,
     ...modMenuItems(uid),
@@ -1815,7 +1821,7 @@ function roomModal(room, cat){
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, ic("volume","sm"), " Voice channel"), h("span",{text:"People can talk live (up to 20). It also has a text chat."})), vsw),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, "🎉 Vouches channel"), h("span",{text:"People post star-rated vouch cards with /vouch"})), (() => { const b = h("button",{class:"sw" + (vch ? " on" : ""), onclick:() => { vch = !vch; b.classList.toggle("on", vch); }}); return b; })()),
       h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{}, "📊 Daily poll channel"), h("span",{text:"A new poll every day; people just vote, no chatting"})), (() => { const b = h("button",{class:"sw" + (pch ? " on" : ""), onclick:() => { pch = !pch; b.classList.toggle("on", pch); }}); return b; })()),
-      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only admins and developers can post"})), sw));
+      h("div",{class:"toggle"}, h("div",{class:"tl"}, h("b",{text:"Announcement room"}), h("span",{text:"Only Head Devs and the owner can post"})), canPostAnnouncements() ? sw : h("span",{class:"note",style:{margin:0},text: ro ? "On" : "Off"})));
     let priv = !!(room && room.private); const allowed = new Set((room && room.allowed) || []);
     const people = h("div",{class:"list picker" + (priv ? "" : " hidden")});
     const drawPeople = () => { people.innerHTML = "";
@@ -2272,6 +2278,28 @@ function adminOrders(p){
 async function setDesigner(uid, on){
   try{ await updateDoc(doc(db, "config/main"), {designers: on ? arrayUnion(uid) : arrayRemove(uid)}); toast(on ? nickOf(uid) + " is now a Designer ✏️" : nickOf(uid) + " is no longer a designer"); refreshOpenPane(); }
   catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+async function setHeadDev(uid, on){
+  try{ await updateDoc(doc(db, "config/main"), on ? {headDevs:arrayUnion(uid), admins:arrayUnion(uid), ["devUntil." + uid]:deleteField()} : {headDevs:arrayRemove(uid)});
+    toast(on ? nickOf(uid) + " is now Head Dev 👑" : nickOf(uid) + " is a regular developer again"); refreshOpenPane(); need("members", "side", "msgs"); }
+  catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+// Shown once to a new head developer.
+function maybeHeadDevPopup(){
+  if (!isHeadDev(S.uid) || S.routed !== "app" || window.__ccNoPop) return;
+  const key = "headDevSeen_" + S.uid; try{ if (localStorage.getItem(key)) return; }catch(e){ return; }
+  if ($("layer").children.length){ setTimeout(maybeHeadDevPopup, 5000); return; }
+  try{ localStorage.setItem(key, "1"); }catch(e){}
+  modal((m, close) => m.append(h("div",{class:"hdpop"},
+    h("div",{class:"hdcrown",text:"👑"}), h("h2",{text:"You are Head Dev!"}),
+    h("p",{class:"note",text:"You lead CampusCord's developers. Here's what you can do now:"}),
+    h("ul",{class:"hdlist"},
+      h("li",null, "✅ ", h("b",{text:"Approve changes"}), " from helpers in the </> Dev panel"),
+      h("li",null, "💻 ", h("b",{text:"Make and remove developers"})),
+      h("li",null, "🛡️ ", h("b",{text:"Moderate developers"}), ": time out, warn or kick them"),
+      h("li",null, "📣 ", h("b",{text:"Post in announcements"})),
+      h("li",null, "🏷️ ", h("b",{text:"HEAD DEV"}), " tag next to your name")),
+    h("button",{class:"btn",onclick:close},"Let's go"))), "hdmodal");
 }
 async function setDev(uid, on, ms){
   try{ const until = on && ms ? Date.now() + ms : 0;

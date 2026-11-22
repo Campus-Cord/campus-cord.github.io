@@ -121,9 +121,12 @@ function fullCodeText(){ return "I attached ALL of CampusCord's code. Follow the
 
 // ---- submissions
 S.subs = [];
+// The owner and head developers see and decide every change (head devs: not ones that touch payments/owner stuff).
+const seesAllSubs = () => isOwner() || isHeadDev(S.uid);
+const canDecide = x => isOwner() || (isHeadDev(S.uid) && !(x.flags && x.flags.length));
 function watchSubs(){
   if (S.subsSub || !(isOwner() || isDev(S.uid))) return; S.subsSub = true;
-  const q = isOwner() ? collection(db, "devSubs") : query(collection(db, "devSubs"), where("uid", "==", S.uid));
+  const q = seesAllSubs() ? collection(db, "devSubs") : query(collection(db, "devSubs"), where("uid", "==", S.uid));
   onSnapshot(q, s => { S.subs = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a, b) => b.ts - a.ts); need("rail"); if (S.kind === "dev") need("msgs"); }, () => {});
 }
 const subsWaiting = () => S.subs.filter(x => x.status === "ready").length;
@@ -157,13 +160,13 @@ const SUB_STATUS = {
 function subCard(x){
   const st = SUB_STATUS[x.status] || ["•", x.status];
   const card = h("div",{class:"subcard s-" + x.status},
-    h("div",{class:"subtop"}, h("b",{text:x.title}), h("span",{class:"note",style:{margin:0},text:(isOwner() ? "from " + (x.nick || "someone") + " · " : "") + fmtDay(x.ts)})),
-    h("div",{class:"subst"}, h("span",{text:st[0]}), h("span",{text: x.status === "ready" && !isOwner() ? "Passed the tests. Waiting for Massimo to approve it." : st[1]})),
+    h("div",{class:"subtop"}, h("b",{text:x.title}), h("span",{class:"note",style:{margin:0},text:(seesAllSubs() ? "from " + (x.nick || "someone") + " · " : "") + fmtDay(x.ts)})),
+    h("div",{class:"subst"}, h("span",{text:st[0]}), h("span",{text: x.status === "ready" && !canDecide(x) ? (seesAllSubs() ? "Passed the tests. It touches payments or owner stuff, so only the owner can approve it." : "Passed the tests. Waiting to be approved.") : st[1]})),
     x.files ? h("div",{class:"note",style:{margin:"2px 0 0"},text:"Changes " + x.files.join(", ")}) : null,
     x.error && x.status !== "pr" && x.status !== "live" ? h("div",{class:"suberr",text:x.error}) : null,
-    x.flags && x.flags.length && isOwner() ? h("div",{class:"chalert",text:"⚠️ This touches payments or owner stuff (" + x.flags.join(", ") + "). Look at the code carefully before approving."}) : null);
+    x.flags && x.flags.length && seesAllSubs() ? h("div",{class:"chalert",text:"⚠️ This touches payments or owner stuff (" + x.flags.join(", ") + "). Look at the code carefully before approving."}) : null);
   const btns = h("div",{class:"foot",style:{justifyContent:"flex-start",marginTop:"8px",flexWrap:"wrap",gap:"8px"}});
-  if (isOwner() && x.status === "ready"){
+  if (canDecide(x) && x.status === "ready"){
     btns.append(h("button",{class:"btn approve", onclick:e => { e.currentTarget.disabled = true; decideSub(x, true); }}, ic("check"), " Approve & put it live"),
       h("button",{class:"btn ghost", onclick:() => confirmBox("Turn down \"" + x.title + "\"?", (x.nick || "They") + " can send a new version.", "Turn down", () => decideSub(x, false))}, "Turn down"));
   }
@@ -220,9 +223,9 @@ function easyPanelEl(){
   return box;
 }
 function subsListEl(){
-  const list = S.subs.filter(x => isOwner() || x.uid === S.uid);
-  const wrap = h("div",{class:"subs"}, h("div",{class:"chtop"}, h("h4",{text: isOwner() ? "Changes from your helpers" : "Your changes"})));
-  if (!list.length) wrap.append(h("p",{class:"note",text: isOwner() ? "Nothing yet. When a helper sends a change, it shows up here with an Approve button." : "Nothing sent yet. Your changes show up here after you send them."}));
+  const list = S.subs.filter(x => seesAllSubs() || x.uid === S.uid);
+  const wrap = h("div",{class:"subs"}, h("div",{class:"chtop"}, h("h4",{text: seesAllSubs() ? "Changes from your helpers" : "Your changes"})));
+  if (!list.length) wrap.append(h("p",{class:"note",text: seesAllSubs() ? "Nothing yet. When a helper sends a change, it shows up here with an Approve button." : "Nothing sent yet. Your changes show up here after you send them."}));
   list.slice(0, 15).forEach(x => wrap.append(subCard(x)));
   return wrap;
 }

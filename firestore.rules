@@ -17,6 +17,8 @@ service cloud.firestore {
     // Developers; temporary ones (devUntil) lose their powers when the time runs out.
     function isAdmin() { return isOwner() || (isMember() && request.auth.uid in cfg().get('admins', [])
       && (!(request.auth.uid in cfg().get('devUntil', {})) || cfg().devUntil[request.auth.uid] > request.time.toMillis())); }
+    // Head developers (config.headDevs, set by the owner): developers with extra powers.
+    function isHeadDev() { return isAdmin() && request.auth.uid in cfg().get('headDevs', []); }
     function ownsNew() { return request.resource.data.uid == request.auth.uid; }
     function ownsOld() { return resource.data.uid == request.auth.uid; }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
@@ -43,6 +45,17 @@ service cloud.firestore {
         && !request.resource.data.get('banned', []).hasAny(resource.data.get('admins', []))
         && !(resource.data.ownerUid in request.resource.data.get('timeouts', {}))
         && !request.resource.data.get('timeouts', {}).keys().hasAny(resource.data.get('admins', []));
+    // Head developers can also make/remove developers and moderate developers, but never the owner or a head developer,
+    // and they can't change who is a head developer.
+    allow update: if isHeadDev() && !isOwner()
+        && changed().hasOnly(['banned', 'bannedNames', 'timeouts', 'bannedDevices', 'bannedDevNames', 'banReasons', 'admins', 'devUntil'])
+        && !(resource.data.ownerUid in request.resource.data.get('banned', []))
+        && !request.resource.data.get('banned', []).hasAny(resource.data.get('headDevs', []))
+        && !(resource.data.ownerUid in request.resource.data.get('timeouts', {}))
+        && !request.resource.data.get('timeouts', {}).keys().hasAny(resource.data.get('headDevs', []))
+        && request.resource.data.get('admins', []) is list
+        && request.resource.data.get('admins', []).hasAll(resource.data.get('headDevs', []))
+        && !request.resource.data.get('devUntil', {}).diff(resource.data.get('devUntil', {})).affectedKeys().hasAny(resource.data.get('headDevs', []));
     }
     // Shop prices + Stripe payment links: everyone reads, only the owner edits.
     match /config/shop {
@@ -111,6 +124,10 @@ service cloud.firestore {
       match /notices/{nid} {
         allow read: if signedIn() && (uid == request.auth.uid || isOwner());
         allow create, update, delete: if isOwner();
+        // Head developers can send warnings (not strikes) to anyone except the owner and other head developers.
+        allow create: if isHeadDev() && uid != cfg().ownerUid && !(uid in cfg().get('headDevs', []))
+          && request.resource.data.keys().hasOnly(['kind', 'reason', 'at', 'by', 'ackAt'])
+          && request.resource.data.kind == 'warning' && request.resource.data.by == request.auth.uid && request.resource.data.ackAt == null;
         allow update: if signedIn() && uid == request.auth.uid && resource.data.ackAt == null
           && changed().hasOnly(['ackAt']) && request.resource.data.ackAt is int;
       }
@@ -118,13 +135,14 @@ service cloud.firestore {
     // Easy changes from the Dev panel: developers send an AI's answer; the robot tests it;
     // only the owner can approve or turn it down. Nobody but the owner and the sender can read it.
     match /devSubs/{id} {
-      allow read: if isOwner() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow read: if isOwner() || isHeadDev() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isAdmin() && request.resource.data.keys().hasOnly(['uid', 'nick', 'title', 'answer', 'ts', 'status'])
         && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'new'
         && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 100
         && request.resource.data.answer is string && request.resource.data.answer.size() <= 300000
         && request.resource.data.ts is int;
-      allow update: if isOwner() && changed().hasOnly(['status', 'decidedAt'])
+      // The owner decides; head developers can too, except changes that touch payments/owner stuff (flags).
+      allow update: if (isOwner() || (isHeadDev() && resource.data.get('flags', []).size() == 0)) && changed().hasOnly(['status', 'decidedAt'])
         && ((resource.data.status == 'ready' && request.resource.data.status in ['approved', 'rejecting'])
           || (resource.data.status in ['new', 'failed'] && request.resource.data.status == 'rejecting'));
       allow delete: if isOwner() || (signedIn() && resource.data.uid == request.auth.uid
@@ -285,9 +303,11 @@ service cloud.firestore {
       function roomAdmin() { return isAdmin() && inRoom(); }
       allow read: if isMember();
       // Only the owner can make a room private or change who is in it.
-      allow create: if isOwner() || (isAdmin() && !request.resource.data.get('private', false));
-      allow update: if isOwner() || (isAdmin() && !resource.data.get('private', false) && !request.resource.data.get('private', false));
-      allow delete: if isOwner() || (isAdmin() && !resource.data.get('private', false));
+      // Only the owner and head developers can make or unmake announcement (read-only) rooms.
+      allow create: if isOwner() || (isAdmin() && !request.resource.data.get('private', false) && (isHeadDev() || !request.resource.data.get('readonly', false)));
+      allow update: if isOwner() || (isAdmin() && !resource.data.get('private', false) && !request.resource.data.get('private', false)
+        && (isHeadDev() || request.resource.data.get('readonly', false) == resource.data.get('readonly', false)));
+      allow delete: if isOwner() || (isAdmin() && !resource.data.get('private', false) && (isHeadDev() || !resource.data.get('readonly', false)));
 
       // Each vouch uses one "vouch try" (vouchQuota/{uid}.used, written in the same batch).
       function vouchTryOk(rid, mid) {
@@ -299,7 +319,7 @@ service cloud.firestore {
       match /msgs/{msgId} {
         allow read: if inRoom();
         allow create: if inRoom() && ownsNew() && request.resource.data.text.size() <= 4000
-          && (roomOpen() || isAdmin()) && notTimedOut() && !nameLocked()
+          && (roomOpen() || isOwner() || isHeadDev()) && notTimedOut() && !nameLocked()
           && (room().get('type', 'text') != 'vouches' || ('vouch' in request.resource.data))
           && (!('vouch' in request.resource.data) || isOwner() || vouchTryOk(roomId, msgId))
           && (!('vouch' in request.resource.data) || isOwner() || request.resource.data.text.size() >= 40)

@@ -1448,3 +1448,13 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
   35% { opacity: 1; }
   100% { opacity: 0; visibility: hidden; }
 }
+
+/* Head Dev */
+.tag.headdev{background:linear-gradient(90deg,#f5b301,#ff7a18);color:#1a1200}
+.hdpop{text-align:center;padding:6px 4px}
+.hdcrown{font-size:54px;animation:hdbounce 1.2s ease-in-out infinite}
+@keyframes hdbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.hdpop h2{margin:6px 0 4px;font-size:26px;background:linear-gradient(90deg,#f5b301,#ff7a18);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hdlist{list-style:none;padding:0;margin:12px auto 16px;text-align:left;display:grid;gap:8px;max-width:360px}
+.hdlist li{background:var(--bg3,#1e1f22);border-radius:10px;padding:9px 12px;font-size:14px}
+.hdpop .btn{min-width:160px}

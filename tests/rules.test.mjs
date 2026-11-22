@@ -252,6 +252,43 @@ await t("can't delete your own warning", assertFails(deleteDoc(doc(as("alice"), 
 await t("person accepts the warning", assertSucceeds(updateDoc(doc(as("alice"), "mod/alice/notices/w1"), { ackAt: Date.now() })));
 await t("can only accept once", assertFails(updateDoc(doc(as("alice"), "mod/alice/notices/w1"), { ackAt: Date.now() + 5 })));
 
+console.log("Head developers");
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, "config/main"), { admins: ["dev", "head"], headDevs: ["head"], timeouts: {} }, { merge: true });
+  await setDoc(doc(db, "members/head"), { nick: "head", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST" });
+  await setDoc(doc(db, "rooms/news"), { name: "announcements", readonly: true });
+  await setDoc(doc(db, "devSubs/h1"), { uid: "dev", nick: "Dev", title: "Blue", answer: "x", ts: now, status: "ready", flags: [] });
+  await setDoc(doc(db, "devSubs/h2"), { uid: "dev", nick: "Dev", title: "Sparks", answer: "x", ts: now, status: "ready", flags: ["earned:"] });
+});
+await t("head dev posts in announcements", assertSucceeds(setDoc(doc(as("head"), "rooms/news/msgs/a1"), { uid: "head", text: "News!", ts: now })));
+await t("owner posts in announcements", assertSucceeds(setDoc(doc(as("owner"), "rooms/news/msgs/a2"), { uid: "owner", text: "Hi", ts: now })));
+await t("regular developer can't post in announcements", assertFails(setDoc(doc(as("dev"), "rooms/news/msgs/a3"), { uid: "dev", text: "Hi", ts: now })));
+await t("member can't post in announcements", assertFails(setDoc(doc(as("alice"), "rooms/news/msgs/a4"), { uid: "alice", text: "Hi", ts: now })));
+await t("regular developer can't turn announcements into a normal room", assertFails(updateDoc(doc(as("dev"), "rooms/news"), { readonly: false })));
+await t("regular developer can't delete announcements", assertFails(deleteDoc(doc(as("dev"), "rooms/news"))));
+await t("head dev can rename announcements", assertSucceeds(updateDoc(doc(as("head"), "rooms/news"), { topic: "Big news" })));
+await t("head dev sees helpers' changes", assertSucceeds(getDoc(doc(as("head"), "devSubs/h1"))));
+await t("regular developer can't see others' changes", assertFails(getDoc(doc(as("dev"), "devSubs/h2"))));
+await t("head dev approves a change", assertSucceeds(updateDoc(doc(as("head"), "devSubs/h1"), { status: "approved", decidedAt: Date.now() })));
+await t("head dev can't approve a change that touches Sparks", assertFails(updateDoc(doc(as("head"), "devSubs/h2"), { status: "approved", decidedAt: Date.now() })));
+await t("regular developer can't approve", assertFails(updateDoc(doc(as("dev"), "devSubs/h2"), { status: "rejecting", decidedAt: Date.now() })));
+await t("head dev makes someone a developer", assertSucceeds(updateDoc(doc(as("head"), "config/main"), { admins: ["dev", "head", "bob"], "devUntil.bob": Date.now() + 3600000 })));
+await t("head dev removes a developer", assertSucceeds(updateDoc(doc(as("head"), "config/main"), { admins: ["dev", "head"], "devUntil.bob": deleteField() })));
+await t("head dev times out a developer", assertSucceeds(updateDoc(doc(as("head"), "config/main"), { timeouts: { dev: Date.now() + 60000 } })));
+await t("head dev can't time out the owner", assertFails(updateDoc(doc(as("head"), "config/main"), { timeouts: { owner: Date.now() + 60000 } })));
+await t("head dev can't remove themselves as head dev", assertFails(updateDoc(doc(as("head"), "config/main"), { headDevs: [] })));
+await t("head dev can't make someone else head dev", assertFails(updateDoc(doc(as("head"), "config/main"), { headDevs: ["head", "bob"] })));
+await t("head dev can't put a timer on their own dev status", assertFails(updateDoc(doc(as("head"), "config/main"), { "devUntil.head": Date.now() + 1000 })));
+await t("regular developer can't make developers", assertFails(updateDoc(doc(as("dev"), "config/main"), { admins: ["dev", "head", "alice"] })));
+await t("regular developer can't time out the head dev", assertFails(updateDoc(doc(as("dev"), "config/main"), { timeouts: { head: Date.now() + 60000 } })));
+await t("head dev can't touch the shop", assertFails(setDoc(doc(as("head"), "config/shop"), { items: {} })));
+await t("head dev warns a developer", assertSucceeds(setDoc(doc(as("head"), "mod/dev/notices/hw1"), { kind: "warning", reason: "Be nice", at: Date.now(), by: "head", ackAt: null })));
+await t("head dev can't give strikes", assertFails(setDoc(doc(as("head"), "mod/dev/notices/hw2"), { kind: "strike", reason: "x", at: Date.now(), by: "head", ackAt: null })));
+await t("head dev can't warn the owner", assertFails(setDoc(doc(as("head"), "mod/owner/notices/hw3"), { kind: "warning", reason: "x", at: Date.now(), by: "head", ackAt: null })));
+await t("owner makes someone head dev", assertSucceeds(updateDoc(doc(as("owner"), "config/main"), { headDevs: ["head", "dev"] })));
+await t("owner removes a head dev", assertSucceeds(updateDoc(doc(as("owner"), "config/main"), { headDevs: ["head"] })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
