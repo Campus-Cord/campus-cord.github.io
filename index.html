@@ -2640,20 +2640,50 @@ function reactionRow(m, reacts){
   wrap.appendChild(h("button",{class:"rc add", title:"Add reaction", onclick:ev => quickReact(ev, m)}, ic("smileplus")));
   return wrap;
 }
+function blockedKey(){ return "cc_blocked_" + (S.uid || "guest"); }
+function getBlocked(){
+  try {
+    const raw = typeof store === "function" ? store(blockedKey()) : JSON.parse(localStorage.getItem(blockedKey()) || "[]");
+    return Array.isArray(raw) ? raw : [];
+  } catch(e){ return []; }
+}
+function isBlocked(uid){ return !!uid && uid !== S.uid && getBlocked().includes(uid); }
+function toggleBlock(uid){
+  if (!uid || uid === S.uid) return;
+  const cur = new Set(getBlocked());
+  const nowBlocked = !cur.has(uid);
+  if (nowBlocked) cur.add(uid); else cur.delete(uid);
+  const list = [...cur];
+  try {
+    if (typeof store === "function") store(blockedKey(), list);
+    else localStorage.setItem(blockedKey(), JSON.stringify(list));
+  } catch(e){}
+  if (typeof setDoc === "function" && typeof doc === "function" && typeof db !== "undefined" && S.uid){
+    setDoc(doc(db, "users", S.uid), { blocked: list }, { merge: true }).catch(() => {});
+  }
+  document.querySelectorAll('#msgs [data-uid="' + uid + '"]').forEach(el => {
+    el.style.display = nowBlocked ? "none" : "";
+  });
+  toast(nowBlocked ? "Blocked " + nickOf(uid) + " — their messages are now hidden." : "Unblocked " + nickOf(uid) + " — their messages are visible again.");
+  if (typeof need === "function") need("msgs");
+}
+
 function messageEl(m, first, reacts){
   if (m.daily && m.poll) return dailyPollEl(m, reacts);
-  if (m.vouch){ const el = vouchEl(m); const rw = reactionRow(m, reacts); if (rw) el.querySelector(".body").appendChild(rw); el.oncontextmenu = e => msgMenu(e, m); return el; }
+  if (m.vouch){ const el = vouchEl(m); const rw = reactionRow(m, reacts); if (rw) el.querySelector(".body").appendChild(rw); el.oncontextmenu = e => msgMenu(e, m); el.dataset.uid = m.uid || ""; if (isBlocked(m.uid)) el.style.display = "none"; return el; }
   if (m.join){ const line = JOIN_LINES[parseInt(m.id.replace(/\D/g, "").slice(-3) || "0", 10) % JOIN_LINES.length];
-    return h("div",{class:"msg joinmsg first", id:"m-" + m.id}, h("div",{class:"gut"}, h("span",{class:"joinic"}, ic("arrowdown"))),
-      h("div",{class:"body"}, h("div",{class:"jl"}, paintName(h("b",{class:"n",text:nickOf(m.uid), onclick:e => openProfile(m.uid, e.target)}), m.uid), " " + line, h("span",{class:"t",text:" " + fmtDay(m.ts)})))); }
+    const jel = h("div",{class:"msg joinmsg first", id:"m-" + m.id, "data-uid": m.uid || ""}, h("div",{class:"gut"}, h("span",{class:"joinic"}, ic("arrowdown"))),
+      h("div",{class:"body"}, h("div",{class:"jl"}, paintName(h("b",{class:"n",text:nickOf(m.uid), onclick:e => openProfile(m.uid, e.target)}), m.uid), " " + line, h("span",{class:"t",text:" " + fmtDay(m.ts)}))));
+    if (isBlocked(m.uid)) jel.style.display = "none";
+    return jel; }
   const mentioned = m.uid !== S.uid && ((m.mentions||[]).includes(S.uid) || m.everyone || (m.reply && m.reply.uid === S.uid));
-  const row = h("div",{class:"msg" + (first ? " first" : "") + (mentioned ? " mention" : ""), id:"m-" + m.id});
+  const row = h("div",{class:"msg" + (first ? " first" : "") + (mentioned ? " mention" : ""), id:"m-" + m.id, "data-uid": m.uid || ""});
   const gut = h("div",{class:"gut"});
   if (first){ const a = avatar(m.uid); a.onclick = e => openProfile(m.uid, a); gut.appendChild(a); }
   else gut.appendChild(h("span",{class:"tm",text:fmtTime(m.ts)}));
   row.appendChild(gut);
   const body = h("div",{class:"body"});
-  if (m.reply){ const r = m.reply; body.appendChild(h("div",{class:"reply", onclick:() => jumpTo(r.id)}, h("b",{text:"@" + nickOf(r.uid)}), h("span",{text:r.text || "Click to see attachment"}))); }
+  if (m.reply){ const r = m.reply; body.appendChild(h("div",{class:"reply", onclick:() => jumpTo(r.id)}, h("b",{text:"@" + nickOf(r.uid)}), h("span",{text: isBlocked(r.uid) ? "Message from blocked user" : (r.text || "Click to see attachment")}))); }
   if (first){ const n = paintName(h("span",{class:"n",text:nickOf(m.uid), onclick:e => openProfile(m.uid, e.target)}), m.uid);
     body.appendChild(h("div",{class:"meta"}, n, ...roleTags(m.uid, true), gem(m.uid), h("span",{class:"t",text:fmtDay(m.ts)}))); }
   if (S.editing === m.id) body.appendChild(editBox(m));
@@ -2683,6 +2713,7 @@ function messageEl(m, first, reacts){
     (mine || (isAdmin() && S.kind === "room")) ? h("button",{title:"Delete", onclick:e => { if (e.shiftKey) deleteMsg(m); else confirmBox("Delete message?", "This can't be undone. (Tip: hold Shift to skip this.)", "Delete", () => deleteMsg(m)); }, class:"danger"}, ic("trash")) : null);
   row.appendChild(tools);
   row.addEventListener("contextmenu", e => msgMenu(e, m));
+  if (isBlocked(m.uid)) row.style.display = "none";
   return row;
 }
 // ---------------------------------------------------------------- polls
@@ -2945,11 +2976,13 @@ function openProfile(uid, anchor, self){
       h("div",{class:"pname"}, paintName(h("span",{text:nickOf(uid)}), uid), ...miniTags(uid)),
       h("div",{class:"pstat",text: (p.customStatus ? p.customStatus + " · " : "") + ({online:"Online",idle:"Idle",dnd:"Do Not Disturb",offline:"Offline"}[st])}),
       timeoutUntil(uid) ? h("div",{class:"pstat tmo"}, ic("hourglass","sm"), " Timed out until " + fmtTime(timeoutUntil(uid))) : null,
+      uid !== S.uid && isBlocked(uid) ? h("div",{class:"pstat tmo", text:"Blocked · You won't see their messages"}) : null,
       p.bio ? h("div",{class:"sect"}, h("h4",{text:"About me"}), h("div",{text:p.bio})) : null,
       vouchProfileEl(uid),
       h("div",{class:"sect"}, h("h4",{text:"Member since"}), h("div",{text: member(uid).joinedAt ? new Date(member(uid).joinedAt).toLocaleDateString([], {month:"long", day:"numeric", year:"numeric"}) : "—"})),
       h("div",{class:"acts"},
         uid === S.uid ? h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openSettings("profile"); }}, "Edit profile") : h("button",{class:"btn small", onclick:() => { closeLayer("profile"); openDM(uid); }}, ic("message"), " Message"),
+        uid !== S.uid ? h("button",{class:"btn small" + (isBlocked(uid) ? "" : " danger"), onclick:() => { toggleBlock(uid); closeLayer("profile"); }}, isBlocked(uid) ? "Unblock" : "Block") : null,
         uid === S.uid ? statusPicker() : null,
         isAdmin() && uid !== S.uid && !isOwnerUid(uid) && !(isDev(uid) && !isOwner()) ? h("button",{class:"btn small danger", onclick:() => { closeLayer("profile"); kickWithReason(uid); }}, "Kick") : null),
       isOwner() && uid !== S.uid ? h("div",{class:"proles"}, h("span",{class:"pl",text:"Roles"}),
