@@ -1417,3 +1417,34 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
   pointer-events: none;
   z-index: 9999;
 }
+/* welcome splash screen */
+.welcome-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg, #111214);
+  color: var(--txt, #f2f3f5);
+  pointer-events: none;
+  animation: welcomeSplashFade 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.welcome-splash-inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.welcome-splash-inner h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+@keyframes welcomeSplashFade {
+  0% { opacity: 1; }
+  35% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}

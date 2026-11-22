@@ -289,6 +289,8 @@ function syncLoops(){ animSyncQ = 0; if (!document.getAnimations) return;
 new MutationObserver(() => { if (!animSyncQ) animSyncQ = requestAnimationFrame(syncLoops); }).observe(document.documentElement, {childList:true, subtree:true});
 // ---------------------------------------------------------------- boot
 function boot(){
+  const splash = $("welcome-splash");
+  if (splash) setTimeout(() => splash.remove(), 3100);
   applyPrefs();
   document.querySelectorAll("[data-ic]").forEach(b => b.prepend(ic(b.dataset.ic)));
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "PASTE_HERE"){ gateMsg("Not configured", "Paste your Firebase config at the top of the script."); return; }
