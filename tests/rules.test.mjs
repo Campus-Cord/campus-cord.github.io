@@ -2,7 +2,7 @@
 // before firestore.rules is published; if any check fails, nothing is deployed.
 import { readFileSync } from "node:fs";
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
-import { doc, setDoc, updateDoc, getDoc, deleteDoc, getDocs, collection, query, where, writeBatch } from "firebase/firestore";
+import { doc, setDoc, updateDoc, getDoc, deleteDoc, getDocs, collection, query, where, writeBatch, deleteField } from "firebase/firestore";
 
 const env = await initializeTestEnvironment({ projectId: "demo-campuscord", firestore: { rules: readFileSync("firestore.rules", "utf8") } });
 const now = Date.now();
