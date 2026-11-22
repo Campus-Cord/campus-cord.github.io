@@ -1926,7 +1926,7 @@ function shopButton(c){
   if (!it.link) return h("button",{class:"btn buy",disabled:true},"Coming soon");
   return h("button",{class:"btn buy", onclick:() => buy(c.id)}, c.tier ? "Get " + c.name : "Buy");
 }
-function openShop(tab){ openChat("shop", tab || "featured"); }
+function openShop(tab){ openChat("shop", tab || "featured"); shopFireworks(); }
 function drawRanks(m, draw){
   const close = () => {};
   m.innerHTML = "";

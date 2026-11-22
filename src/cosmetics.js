@@ -328,6 +328,106 @@ function renderShopPage(box){
   box.appendChild(wrap); box.scrollTop = keep;
 }
 
+function playShopFanfare(){
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    if (!audioCtx) audioCtx = new Ctx();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const now = audioCtx.currentTime;
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, now + i * 0.07);
+      gain.gain.setValueAtTime(0.001, now + i * 0.07);
+      gain.gain.exponentialRampToValueAtTime(0.08, now + i * 0.07 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.07 + 0.35);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now + i * 0.07); osc.stop(now + i * 0.07 + 0.36);
+    });
+  } catch (e) {}
+}
+
+function shopFireworks(){
+  playShopFanfare();
+  const old = document.querySelector(".shop-fw-canvas");
+  if (old) old.remove();
+  const c = document.createElement("canvas");
+  c.className = "shop-fw-canvas";
+  document.body.appendChild(c);
+  const ctx = c.getContext("2d");
+  const resize = () => { c.width = window.innerWidth; c.height = window.innerHeight; };
+  resize();
+  const colors = ["#ff4d6d", "#ffd166", "#06d6a0", "#4cc9f0", "#c77dff", "#ff9e00", "#ffffff"];
+  const rockets = [];
+  const sparks = [];
+  const launch = (delay) => setTimeout(() => {
+    if (!c.isConnected) return;
+    rockets.push({
+      x: c.width * (0.2 + Math.random() * 0.6),
+      y: c.height + 10,
+      vx: (Math.random() - 0.5) * 3,
+      vy: -(c.height * (0.014 + Math.random() * 0.006)),
+      targetY: c.height * (0.18 + Math.random() * 0.28),
+      color: colors[Math.floor(Math.random() * colors.length)]
+    });
+  }, delay);
+
+  [0, 180, 360, 580, 820].forEach(launch);
+
+  let raf;
+  const start = performance.now();
+  function tick(now){
+    if (now - start > 3200){ c.remove(); return; }
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.22)";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.globalCompositeOperation = "lighter";
+
+    for (let i = rockets.length - 1; i >= 0; i--){
+      const r = rockets[i];
+      r.x += r.vx; r.y += r.vy; r.vy *= 0.985;
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = r.color;
+      ctx.fill();
+      if (r.y <= r.targetY || r.vy > -1.5){
+        for (let k = 0; k < 42; k++){
+          const ang = (Math.PI * 2 * k) / 42 + (Math.random() - 0.5) * 0.2;
+          const spd = 2 + Math.random() * 5.5;
+          sparks.push({
+            x: r.x, y: r.y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            alpha: 1,
+            decay: 0.015 + Math.random() * 0.015,
+            size: 2 + Math.random() * 2.5,
+            color: Math.random() > 0.25 ? r.color : "#ffffff"
+          });
+        }
+        rockets.splice(i, 1);
+      }
+    }
+
+    for (let i = sparks.length - 1; i >= 0; i--){
+      const s = sparks[i];
+      s.x += s.vx; s.y += s.vy;
+      s.vx *= 0.96; s.vy = s.vy * 0.96 + 0.08;
+      s.alpha -= s.decay;
+      if (s.alpha <= 0){ sparks.splice(i, 1); continue; }
+      ctx.globalAlpha = s.alpha;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    raf = requestAnimationFrame(tick);
+  }
+  raf = requestAnimationFrame(tick);
+}
+
 // ---- Quests page
 function renderQuestsPage(box){
   const keep = box.scrollTop; box.innerHTML = "";

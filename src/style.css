@@ -1409,3 +1409,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .mcard.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 14%,var(--bg2))}
 .mcard b{font-size:13px}
 .mcard span{font-size:11px;color:var(--mut)}
+.shop-fw-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+}
