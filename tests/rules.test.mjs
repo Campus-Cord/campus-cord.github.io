@@ -259,7 +259,7 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, "members/head"), { nick: "head", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST" });
   await setDoc(doc(db, "rooms/news"), { name: "announcements", readonly: true });
   await setDoc(doc(db, "devSubs/h1"), { uid: "dev", nick: "Dev", title: "Blue", answer: "x", ts: now, status: "ready", flags: [] });
-  await setDoc(doc(db, "devSubs/h2"), { uid: "dev", nick: "Dev", title: "Sparks", answer: "x", ts: now, status: "ready", flags: ["earned:"] });
+  await setDoc(doc(db, "devSubs/h2"), { uid: "bob", nick: "Bob", title: "Sparks", answer: "x", ts: now, status: "ready", flags: ["earned:"] });
 });
 await t("head dev posts in announcements", assertSucceeds(setDoc(doc(as("head"), "rooms/news/msgs/a1"), { uid: "head", text: "News!", ts: now })));
 await t("owner posts in announcements", assertSucceeds(setDoc(doc(as("owner"), "rooms/news/msgs/a2"), { uid: "owner", text: "Hi", ts: now })));
