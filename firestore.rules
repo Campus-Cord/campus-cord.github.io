@@ -195,7 +195,8 @@ service cloud.firestore {
       // The owner approves, or asks someone to sign again (redo + a short note).
       allow update: if isOwner() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved', 'redo', 'redoNote', 'redoPart'])
         && request.resource.data.get('redo', false) is bool
-        && request.resource.data.get('redoPart', 'all') in ['all', 'signature', 'name', 'statement'] && request.resource.data.get('redoNote', '') is string
+        // one or more parts, like "signature" or "name,signature"
+        && request.resource.data.get('redoPart', 'all').matches('^(all|(signature|name|statement)(,(signature|name|statement)){0,2})$') && request.resource.data.get('redoNote', '') is string
         && request.resource.data.get('redoNote', '').size() <= 200;
       allow delete: if isOwner();
     }

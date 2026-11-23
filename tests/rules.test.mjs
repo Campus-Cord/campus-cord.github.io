@@ -315,6 +315,7 @@ await t("signature can't have extra fields", assertFails(setDoc(doc(as("bob"), "
 await t("member can't approve themselves", assertFails(updateDoc(doc(as("alice"), "signatures/alice"), { approved: 3 })));
 await t("owner approves a signature", assertSucceeds(updateDoc(doc(as("owner"), "signatures/alice"), { approved: 3 })));
 await t("owner asks someone to redo their signature", assertSucceeds(updateDoc(doc(as("owner"), "signatures/alice"), { redo: true, redoPart: "signature", redoNote: "Sign it properly." })));
+await t("owner asks to fix several parts", assertSucceeds(updateDoc(doc(as("owner"), "signatures/alice"), { redo: true, redoPart: "name,signature", redoNote: "Real name and a real signature." })));
 await t("redo part must be a real part", assertFails(updateDoc(doc(as("owner"), "signatures/alice"), { redoPart: "anything" })));
 await t("member can't clear the redo themselves", assertFails(updateDoc(doc(as("alice"), "signatures/alice"), { redo: false })));
 await t("member re-signs (rewrites their signature)", assertSucceeds(setDoc(doc(as("alice"), "signatures/alice"), sig("alice"))));
