@@ -934,6 +934,7 @@ function mgPlaysUsed(game){
 }
 
 function mgPlaysLeft(game){
+  if (game === "flappy") return Infinity;
   return Math.max(0, MG_DAILY_LIMIT - mgPlaysUsed(game));
 }
 
@@ -1017,7 +1018,8 @@ function mgCompletePuzzle(game, won){
   if (!p || p.done) return;
   p.done = true;
   if (won !== undefined) p.won = !!won;
-  st.plays[game] = Math.min(MG_DAILY_LIMIT, (st.plays[game] || 0) + 1);
+  if (game === "flappy") st.plays[game] = (st.plays[game] || 0) + 1;
+  else st.plays[game] = Math.min(MG_DAILY_LIMIT, (st.plays[game] || 0) + 1);
   if (won) st.wins[game] = (st.wins[game] || 0) + 1;
   mgSave(st);
 }
@@ -1075,6 +1077,7 @@ function wordleScoreRow(guess, target){
 }
 
 function mgTopBar(meta, p){
+  const isUnlimited = meta.id === "flappy";
   const left = mgPlaysLeft(meta.id);
   const used = mgPlaysUsed(meta.id);
   return h("div",{class:"mg-topbar"},
@@ -1082,12 +1085,14 @@ function mgTopBar(meta, p){
     h("div",{class:"mg-toptitle"},
       h("span",{style:{fontSize:"20px"},text:meta.icon}),
       h("b",{text:meta.name}),
-      p ? h("span",{class:"mg-pill",text:"Puzzle #" + p.playNum + " of " + MG_DAILY_LIMIT}) : null
+      p ? h("span",{class:"mg-pill",text:isUnlimited ? "Run #" + p.playNum + " · Unlimited" : "Puzzle #" + p.playNum + " of " + MG_DAILY_LIMIT}) : null
     ),
     h("div",{class:"mg-topright"},
-      h("div",{class:"mg-pips",title:left + " plays remaining today"},
-        ...Array.from({length:MG_DAILY_LIMIT}, (_, i) => h("span",{class:"mg-pip" + (i < used ? " used" : "")}))
-      ),
+      isUnlimited
+        ? h("span",{class:"mg-pill",text:"∞ Unlimited Plays"})
+        : h("div",{class:"mg-pips",title:left + " plays remaining today"},
+            ...Array.from({length:MG_DAILY_LIMIT}, (_, i) => h("span",{class:"mg-pip" + (i < used ? " used" : "")}))
+          ),
       h("button",{class:"btn ghost small",onclick:() => mgHelpModal(meta.id)}, "? How to Play")
     )
   );
@@ -1104,21 +1109,25 @@ function renderGamesPage(box){
   const wrap = h("div",{class:"mg-wrap"});
   if (page === "hub"){
     const st = mgState();
-    const totalLeft = MG_META.reduce((sum, g) => sum + mgPlaysLeft(g.id), 0);
+    const dailyGames = MG_META.filter(g => g.id !== "flappy");
+    const totalLeft = dailyGames.reduce((sum, g) => sum + mgPlaysLeft(g.id), 0);
     wrap.appendChild(h("div",{class:"mg-hero"},
       h("div",{class:"mg-hero-badge"}, "DAILY ARCADE · RESETS MIDNIGHT ET"),
       h("h2",{text:"CampusCord Mini Games"}),
-      h("p",{text:"Five daily games & brainteasers. You get 5 plays of each game every day — " + totalLeft + " total plays left today!"}),
+      h("p",{text:"Daily brainteasers (5 plays each — " + totalLeft + " left today) plus unlimited Flappy Cord!"}),
       h("div",{class:"mg-hero-actions"},
         h("button",{class:"btn small",onclick:() => mgHelpModal("wordle")}, "? How to Play")
       )
     ));
     const grid = h("div",{class:"mg-hub-grid"});
     MG_META.forEach(g => {
+      const isUnlimited = g.id === "flappy";
       const left = mgPlaysLeft(g.id);
       const used = mgPlaysUsed(g.id);
       const act = st.active[g.id];
-      const statusText = act && !act.done ? "In progress (Puzzle #" + act.playNum + ")" : left > 0 ? left + " of 5 plays left today" : "All 5 plays done today!";
+      const statusText = isUnlimited
+        ? (act && !act.done ? "In progress (Run #" + act.playNum + ")" : "Unlimited plays · " + used + " played today")
+        : (act && !act.done ? "In progress (Puzzle #" + act.playNum + ")" : left > 0 ? left + " of 5 plays left today" : "All 5 plays done today!");
       grid.appendChild(h("div",{class:"mg-card", style:{"--mg-accent": g.accent}, onclick:() => openChat("games", g.id)},
         h("div",{class:"mg-card-top"},
           h("span",{class:"mg-card-icon",text:g.icon}),
@@ -1127,11 +1136,13 @@ function renderGamesPage(box){
         h("h3",{text:g.name}),
         h("p",{text:g.tagline}),
         h("div",{class:"mg-card-foot"},
-          h("div",{class:"mg-pips"}, ...Array.from({length:MG_DAILY_LIMIT}, (_, i) => h("span",{class:"mg-pip" + (i < used ? " used" : "")}))),
+          isUnlimited
+            ? h("span",{class:"mg-pill",text:"∞ Unlimited"})
+            : h("div",{class:"mg-pips"}, ...Array.from({length:MG_DAILY_LIMIT}, (_, i) => h("span",{class:"mg-pip" + (i < used ? " used" : "")}))),
           h("span",{class:"mg-card-stat",text:statusText})
         ),
         h("div",{class:"mg-card-btns"},
-          h("button",{class:"btn small", style:{background:g.accent, color:"#111", fontWeight:"700"}}, act && !act.done ? "Resume" : left > 0 ? "Play" : "View Board"),
+          h("button",{class:"btn small", style:{background:g.accent, color:"#111", fontWeight:"700"}}, act && !act.done ? "Resume" : (isUnlimited || left > 0) ? "Play" : "View Board"),
           h("button",{class:"btn ghost small", onclick:e => { e.stopPropagation(); mgHelpModal(g.id); }}, "? Rules")
         )
       ));
@@ -1641,6 +1652,10 @@ function dailyPollEl(m, reacts){
       h("div",{class:"note dpnext",text: locked ? "Voting is closed for this poll." : "A new poll drops every day at midnight."})));
 }
 function renderFlappy(wrap, p){
+  if (window._flappyRaf){
+    cancelAnimationFrame(window._flappyRaf);
+    window._flappyRaf = null;
+  }
   const bestKey = "cc_flappy_best";
   let best = Number(mgReadStore(bestKey) || 0);
   const box = h("div", {class: "flp-wrap"});
@@ -1658,16 +1673,14 @@ function renderFlappy(wrap, p){
   function showResult(){
     resSlot.innerHTML = "";
     if (!p.done) return;
-    const left = mgPlaysLeft("flappy");
     const shareTxt = "CampusCord Flappy Cord #" + p.playNum + "\nScore: " + p.score + " (Best: " + best + ")";
     resSlot.appendChild(h("div", {class: "mg-result"},
       h("b", {text: p.score >= 5 ? "Nice flight! Run complete!" : "Crashed!"}),
       h("div", {class: "note", text: "Final Score: " + p.score + " · Best: " + best + (p.score >= 5 ? " (Counts as a win!)" : "")}),
       h("div", {class: "mg-res-btns"},
         h("button", {class: "btn small", onclick: () => mgCopyText(shareTxt, "Score copied!")}, "Share Score"),
-        left > 0
-          ? h("button", {class: "btn primary small", onclick: () => mgStartNextPuzzle("flappy")}, "Next Run (" + left + " left)")
-          : h("button", {class: "btn small", onclick: () => openChat("games", "hub")}, "Back to Games")
+        h("button", {class: "btn primary small", onclick: () => mgStartNextPuzzle("flappy")}, "Play Again (Unlimited)"),
+        h("button", {class: "btn small", onclick: () => openChat("games", "hub")}, "Back to Games")
       )
     ));
   }
@@ -1698,6 +1711,7 @@ function renderFlappy(wrap, p){
   let pipes = [];
   let frame = 0;
   let lastTs = 0;
+  let active = true;
 
   function spawnPipe(x){
     const minTop = 58;
@@ -1707,7 +1721,7 @@ function renderFlappy(wrap, p){
   }
 
   function flap(){
-    if (!document.body.contains(canvas)) return;
+    if (!active || !document.body.contains(canvas)) return;
     if (state === "ready"){
       state = "playing";
       pipes = [];
@@ -1716,6 +1730,8 @@ function renderFlappy(wrap, p){
       velY = FLAP;
     } else if (state === "playing"){
       velY = FLAP;
+    } else if (state === "dead"){
+      mgStartNextPuzzle("flappy");
     }
   }
 
@@ -1728,7 +1744,11 @@ function renderFlappy(wrap, p){
   function finishRun(){
     if (state === "dead") return;
     state = "dead";
-    window._flappyFlap = null;
+    active = false;
+    if (window._flappyRaf){
+      cancelAnimationFrame(window._flappyRaf);
+      window._flappyRaf = null;
+    }
     if (score > best){
       best = score;
       mgWriteStore(bestKey, String(best));
@@ -1868,13 +1888,18 @@ function renderFlappy(wrap, p){
   }
 
   function loop(ts){
-    if (!document.body.contains(canvas)){
-      window._flappyFlap = null;
+    if (!active || !document.body.contains(canvas)){
+      if (window._flappyFlap === flap) window._flappyFlap = null;
       return;
     }
     if (!lastTs) lastTs = ts;
-    const dt = Math.min(2, (ts - lastTs) / 16.667);
+    const rawDt = (ts - lastTs) / 16.667;
     lastTs = ts;
+    if (rawDt > 5){
+      window._flappyRaf = requestAnimationFrame(loop);
+      return;
+    }
+    const dt = Math.min(1.5, Math.max(0.25, rawDt));
     frame += dt;
 
     if (state === "ready"){
@@ -1924,8 +1949,8 @@ function renderFlappy(wrap, p){
     }
 
     draw();
-    requestAnimationFrame(loop);
+    window._flappyRaf = requestAnimationFrame(loop);
   }
 
-  requestAnimationFrame(loop);
+  window._flappyRaf = requestAnimationFrame(loop);
 }
