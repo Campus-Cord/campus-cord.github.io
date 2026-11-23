@@ -1473,6 +1473,19 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .hdlist{list-style:none;padding:0;margin:12px auto 16px;text-align:left;display:grid;gap:8px;max-width:360px}
 .hdlist li{background:var(--bg3,#1e1f22);border-radius:10px;padding:9px 12px;font-size:14px}
 .hdpop .btn{min-width:160px}
+
+/* CampusCord Rules */
+#rulesgate{z-index:9998}
+.rbox{max-width:540px;max-height:92vh;overflow:auto;text-align:left}
+.rbox .nlic,.rbox h2,.rbox>.note{text-align:center}
+.rlist{display:grid;gap:8px;margin:12px 0}
+.ritem{display:flex;gap:10px;align-items:flex-start;background:var(--bg3,#1e1f22);border-radius:10px;padding:10px 12px}
+.ric{font-size:20px;line-height:1.2}
+.ritem b{font-size:14px}
+.rdesc{font-size:13px;color:var(--muted,#b5bac1);margin-top:2px}
+.ragree{display:flex;gap:10px;align-items:flex-start;margin:6px 0 12px;font-size:14px;cursor:pointer}
+.ragree input{width:18px;height:18px;margin-top:2px;flex:none}
+.rbox>.btn{width:100%}
 </style>
 </head>
 <body>
@@ -1596,7 +1609,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-23.1357";
+const APP_VERSION = "2026-11-23.1405";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2395,7 +2408,7 @@ function renderDMList(box){
   });
 }
 function renderMe(){
-  enforceNameLock(); enforceMod();
+  enforceNameLock(); enforceMod(); enforceRules();
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
   const mb = $("mbar"); if (mb){ mb.innerHTML = ""; const mbar = musicBarEl(); if (mbar) mb.appendChild(mbar); }
   const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
@@ -2453,7 +2466,8 @@ function openHelp(initial){
     const inp = h("input",{class:"inp", placeholder:"Ask a question, e.g. how do I make a poll?", onkeydown:e => { if (e.key === "Enter"){ ask(inp.value); inp.value = ""; } }});
     m.append(h("h3",null, "Help"), h("p",{class:"note",style:{marginTop:0},text:"Ask anything about using CampusCord."}), chat,
       h("div",{class:"row",style:{marginTop:"10px"}}, inp, h("button",{class:"btn small", onclick:() => { ask(inp.value); inp.value = ""; }}, "Ask")),
-      h("div",{class:"hsug"}, HELP.slice(0, 6).map(x => h("button",{onclick:() => ask(x.q)}, x.q))));
+      h("div",{class:"hsug"}, HELP.slice(0, 6).map(x => h("button",{onclick:() => ask(x.q)}, x.q))),
+      h("button",{class:"btn small ghost",style:{marginTop:"10px"},onclick:rulesModal}, "📜 Read the CampusCord Rules"));
     bot("Hi! I can explain any CampusCord feature. Pick a question below or type your own.");
     if (initial) ask(initial);
     setTimeout(() => inp.focus(), 0);
@@ -2866,6 +2880,7 @@ function serverMenu(ev){
     isOwner() ? {label:"Add section", icon:"plus", run:() => newCategory()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
+    {label:"CampusCord Rules", icon:"info", run:() => rulesModal()},
     {label:"Feedback & bugs", icon:"message", run:() => openChat("feedback", "all")},
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
@@ -3798,6 +3813,7 @@ function adminMembers(p){
         h("div",{class:"amsub"}, h("span",{class:"ambd", title:bl.map(x => badgeTitle(x.b, x.st)).join(", ")}, ...bl.slice(0, 8).map(x => badgeEl(x.b, x.st, "sm")), bl.length > 8 ? h("small",{text:"+" + (bl.length - 8)}) : null),
           isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
           !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null,
+          h("span",{class:"s",title: S.members[u].rulesAt ? "Agreed " + fmtDay(S.members[u].rulesAt) : "", text: (S.members[u].rulesOk || 0) >= RULES_V ? "📜 agreed to rules" : "📜 hasn't agreed yet"}),
           nameFlagLabel(u) ? h("span",{class:"s",style:{color: nameLocked(u) ? "#f0565c" : ""},text:nameFlagLabel(u)}) : null)),
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => devModal(u)}, isDev(u) ? (devUntil(u) ? "⏱ DEV" : "✓ DEV") : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
@@ -5263,6 +5279,41 @@ function enforceMod(){
     h("p",{class:"note",text:"From the owner · " + fmtDay(n.at)}),
     ok)));
 }
+
+// ---------------------------------------------------------------- CampusCord Rules (everyone agrees before using the app)
+// Bump RULES_V when the rules change and everyone has to agree again.
+const RULES_V = 1;
+const RULES = [
+  ["🏫", "CampusCord is not a school app", "It's a private chat run by students. No school made it, runs it, or is responsible for it."],
+  ["📚", "I follow my school's rules", "I won't use CampusCord in class or when a teacher says not to. If my school doesn't allow it on school devices or Wi-Fi, I won't use it there."],
+  ["🙋", "I'm responsible for what I do", "Everyone is responsible for their own messages, pictures and actions. Nobody else is responsible for what I post."],
+  ["💬", "I'm kind", "No bullying, threats, hate, or anything inappropriate. No posting other people's pictures or private stuff without asking."],
+  ["🔒", "I keep personal info private", "I don't share my address, phone number, passwords, or anyone else's."],
+  ["🧑‍🤝‍🧑", "I talk to an adult if something's wrong", "If something here makes me uncomfortable or unsafe, I tell a parent or trusted adult."],
+  ["⚖️", "Breaking the rules has consequences", "I can be warned, timed out, or removed."],
+];
+function rulesListEl(){ return h("div",{class:"rlist"}, RULES.map(([ic, t, d], i) =>
+  h("div",{class:"ritem"}, h("div",{class:"ric",text:ic}), h("div",null, h("b",{text:(i + 1) + ". " + t}), h("div",{class:"rdesc",text:d}))))); }
+function enforceRules(){
+  const me = member(S.uid), el = document.getElementById("rulesgate");
+  const need = me && (me.rulesOk || 0) < RULES_V && S.routed === "app";
+  if (!need){ if (el) el.remove(); return; }
+  if (el) return;
+  const box = h("input",{type:"checkbox", id:"rules-ok"});
+  const go = h("button",{class:"btn", disabled:true}, "I agree");
+  box.onchange = () => { go.disabled = !box.checked; };
+  go.onclick = async () => { go.disabled = true; go.textContent = "Saving…";
+    try{ await updateDoc(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:Date.now()}); }
+    catch(e){ go.disabled = false; go.textContent = "I agree"; toast("Couldn't save: " + errMsg(e)); } };
+  document.body.appendChild(h("div",{id:"rulesgate",class:"modlayer"}, h("div",{class:"nlbox rbox"},
+    h("div",{class:"nlic",text:"📜"}), h("h2",{text:"CampusCord Rules"}),
+    h("p",{class:"note",text:"Read these and agree before using CampusCord."}),
+    rulesListEl(),
+    h("label",{class:"ragree",for:"rules-ok"}, box, h("span",{text:"I've read the rules. I agree to follow them, and I understand I'm responsible for what I do on CampusCord."})),
+    go)));
+}
+function rulesModal(){ modal((m, close) => m.append(h("h3",{text:"📜 CampusCord Rules"}), rulesListEl(),
+  h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"10px"}}, h("button",{class:"btn",onclick:close},"Close")))); }
 
 // ---------------------------------------------------------------- #daily-poll
 // A room of type "poll": no regular chatting, just one new poll every day (midnight Eastern).
