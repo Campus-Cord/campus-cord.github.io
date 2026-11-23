@@ -309,6 +309,10 @@ await t("signature must be a picture", assertFails(setDoc(doc(as("bob"), "signat
 await t("signature can't have extra fields", assertFails(setDoc(doc(as("bob"), "signatures/bob"), sig("bob", { approved: 3 }))));
 await t("member can't approve themselves", assertFails(updateDoc(doc(as("alice"), "signatures/alice"), { approved: 3 })));
 await t("owner approves a signature", assertSucceeds(updateDoc(doc(as("owner"), "signatures/alice"), { approved: 3 })));
+await t("owner asks someone to redo their signature", assertSucceeds(updateDoc(doc(as("owner"), "signatures/alice"), { redo: true, redoPart: "signature", redoNote: "Sign it properly." })));
+await t("redo part must be a real part", assertFails(updateDoc(doc(as("owner"), "signatures/alice"), { redoPart: "anything" })));
+await t("member can't clear the redo themselves", assertFails(updateDoc(doc(as("alice"), "signatures/alice"), { redo: false })));
+await t("member re-signs (rewrites their signature)", assertSucceeds(setDoc(doc(as("alice"), "signatures/alice"), sig("alice"))));
 await t("owner can't change what someone signed", assertFails(updateDoc(doc(as("owner"), "signatures/alice"), { typed: "changed" })));
 
 await env.cleanup();

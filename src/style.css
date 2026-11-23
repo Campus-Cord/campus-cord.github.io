@@ -1532,3 +1532,12 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 #rulesgate .sigwrap,#rulesgate .sigpad{height:170px}
 #rulesgate .btn.big{padding:16px;font-size:18px}
 @media (max-width:600px){ #rulesgate .adoc{padding:20px 18px} }
+
+.aredo{background:#ff4d6d22;border:1px solid #ff4d6d77;border-radius:10px;padding:10px 14px;margin:12px auto 0;text-align:center;max-width:600px;font-size:15px}
+.aredo b{display:block;color:#ff8da1;margin-bottom:2px}
+.agredo{font-size:12px;color:#ffb35c;font-weight:700}
+
+#rulesgate .rpart{justify-content:center}
+#rulesgate .rpart>*{max-width:640px;width:100%;margin-left:auto;margin-right:auto}
+.rchip.on{background:#5865f2;color:#fff;border-color:#5865f2}
+#rulesgate .rpart>.newupd{width:auto;max-width:none}

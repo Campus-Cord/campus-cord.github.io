@@ -206,11 +206,18 @@ function printAgreement(g){
   document.body.appendChild(f); f.srcdoc = html;
   f.onload = () => { setTimeout(() => { try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ toast("Couldn't open the copy"); } setTimeout(() => f.remove(), 60000); }, 200); };
 }
+// Watch my own signature, so the owner can ask me to sign again.
+let mySigSub = null;
+function watchMySig(){ if (mySigSub || !S.uid || isOwner()) return;
+  mySigSub = onSnapshot(doc(db, "signatures", S.uid), d => { S.mySig = d.exists() ? d.data() : null; enforceRules(); }, () => {}); }
 function enforceRules(){
   const me = member(S.uid), el = document.getElementById("rulesgate");
-  const need = me && !isOwner() && (me.rulesOk || 0) < RULES_V && S.routed === "app";
+  const redo = !!(S.mySig && S.mySig.redo);
+  const need = me && !isOwner() && ((me.rulesOk || 0) < RULES_V || redo) && S.routed === "app";
   if (!need){ if (el) el.remove(); return; }
-  if (el) return;
+  if (el){ if (el.dataset.redo === String(redo)) return; el.remove(); }
+  const part = redo ? (S.mySig.redoPart || "all") : "all";
+  if (redo && part !== "all" && S.mySig.sigId){ document.body.appendChild(redoPartEl(part)); return; }
   const PH = agreePhrase(S.uid);
   const typed = h("input",{class:"inp atype", maxlength:"200", placeholder:"Type the statement above", autocomplete:"off", spellcheck:"false"});
   const full = h("input",{class:"inp", maxlength:"60", placeholder:"First and last name", autocomplete:"name"});
@@ -222,7 +229,8 @@ function enforceRules(){
     typed.classList.toggle("ok", okT); full.classList.toggle("ok", okN); go.disabled = !(okT && okN && okS);
     hint.textContent = !okT ? "" : !okS ? "Now sign in the box with your mouse or finger." : !okN ? "Type your first and last name." : "✅ Ready to sign"; };
   typed.oninput = check; full.oninput = check; pad.onchange = check;
-  typed.onpaste = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
+  typed.onpaste = typed.ondrop = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
+  full.onpaste = full.ondrop = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
   go.onclick = async () => { go.disabled = true; go.textContent = "Saving…";
     try{ const at = Date.now(), b = writeBatch(db);
       const g = {v:RULES_V, at, nick:nickOf(S.uid), typed:typed.value.trim().slice(0, 200), img:pad.image(), fullName:full.value.trim().replace(/\s+/g, " ").slice(0, 60), sigId:makeSigId(S.uid, at)};
@@ -241,8 +249,9 @@ function enforceRules(){
     if (docEl.getBoundingClientRect().bottom <= page.getBoundingClientRect().bottom + 12){ const a = document.querySelector("#rulesgate .asign"); if (a) a.classList.remove("locked");
     const sc = document.querySelector("#rulesgate .ascroll"); if (sc) sc.remove(); page.removeEventListener("scroll", unlock); } };
   setTimeout(() => { const page = document.querySelector("#rulesgate .rbox"); if (page){ page.addEventListener("scroll", unlock); unlock(); } }, 300);
-  document.body.appendChild(h("div",{id:"rulesgate",class:"modlayer"}, h("div",{class:"nlbox rbox"},
-    h("div",{class:"newupd",text:"NEW UPDATE"}),
+  document.body.appendChild(h("div",{id:"rulesgate",class:"modlayer","data-redo":String(redo)}, h("div",{class:"nlbox rbox"},
+    h("div",{class:"newupd",text: redo ? "SIGN AGAIN" : "NEW UPDATE"}),
+    redo ? h("div",{class:"aredo"}, h("b",{text:"You need to sign this agreement again."}), S.mySig.redoNote ? h("div",{text:S.mySig.redoNote}) : null) : null,
     h("h1",{class:"ahead",text:"THIS IS ON YOU!"}),
     h("div",{class:"asub",text:"You are responsible for yourself."}),
     h("p",{class:"note",text:"Read the agreement. To keep using CampusCord, you must sign it."}),
@@ -286,8 +295,63 @@ async function adminAgreements(p){
         ok(u) ? h("span",{class:"agok",text:"✅ Approved"}) : btn),
       signed(u) ? h("div",{class:"agmeta"}, g.fullName ? h("span",null, "Name: ", h("b",{text:g.fullName})) : null,
         g.sigId ? h("span",null, "ID: ", h("b",{text:g.sigId})) : null,
-        h("button",{class:"linkbtn",style:{float:"none"},onclick:() => printAgreement(g)}, "Copy (PDF)")) : null,
+        h("button",{class:"linkbtn",style:{float:"none"},onclick:() => printAgreement(g)}, "Copy (PDF)"),
+        g.redo ? h("span",{class:"agredo",text:"⏳ Asked to fix " + ({signature:"signature", name:"name", statement:"statement"}[g.redoPart] || "everything")}) : h("button",{class:"linkbtn",style:{float:"none"},onclick:() => askResign(u, p)}, "Ask to fix something")) : null,
       signed(u) ? h("div",{class:"agdoc"},
         h("div",{class:"agsig",text:"“" + (g.typed || "") + "”"}),
         g.img ? h("img",{class:"agimg", src:g.img, alt:"Signature of " + nickOf(u)}) : null) : null)); });
+}
+
+// Only the part the owner asked to fix (signature, name or statement). Everything else they signed stays the same.
+function redoPartEl(part){
+  const g = S.mySig, PH = agreePhrase(S.uid), hint = h("div",{class:"ahint"});
+  const go = h("button",{class:"btn big", disabled:true}, "Save");
+  const noPaste = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
+  let body, value, ok;
+  if (part === "signature"){ const pad = sigPad(); pad.onchange = () => { go.disabled = pad.ink() <= 150; };
+    body = h("div",null, h("label",{class:"alabel"}, "Sign again ", h("button",{class:"linkbtn", onclick:() => pad.clear()}, "Clear")),
+      h("div",{class:"sigwrap"}, pad.el, h("div",{class:"sigline"}, h("span",{text:"✕"}))));
+    value = () => ({img:pad.image()}); }
+  else if (part === "name"){ const full = h("input",{class:"inp", maxlength:"60", placeholder:"First and last name", autocomplete:"name"});
+    full.onpaste = full.ondrop = noPaste;
+    full.oninput = () => { ok = /^[A-Za-z][A-Za-z'.-]+(\s+[A-Za-z'.-]+)+$/.test(full.value.trim()); full.classList.toggle("ok", ok); go.disabled = !ok; };
+    body = h("div",null, h("label",{class:"alabel",text:"Type your real first and last name:"}), full);
+    value = () => ({fullName:full.value.trim().replace(/\s+/g, " ").slice(0, 60)}); }
+  else { const typed = h("input",{class:"inp atype", maxlength:"200", placeholder:"Type the statement above", autocomplete:"off", spellcheck:"false"});
+    typed.onpaste = typed.ondrop = noPaste;
+    typed.oninput = () => { ok = normPhrase(typed.value) === normPhrase(PH); typed.classList.toggle("ok", ok); go.disabled = !ok; };
+    body = h("div",null, h("label",{class:"alabel",text:"Type this statement exactly:"}), h("div",{class:"aphrase",text:PH}), typed);
+    value = () => ({typed:typed.value.trim().slice(0, 200)}); }
+  go.onclick = async () => { go.disabled = true; go.textContent = "Saving…";
+    try{ const at = Date.now();
+      // Rewrite the whole signature (without the owner's redo/approval marks) with just this part changed.
+      const nw = {v:g.v, at, nick:nickOf(S.uid), typed:g.typed, img:g.img, fullName:g.fullName || "", sigId:g.sigId};
+      await setDoc(doc(db, "signatures", S.uid), Object.assign(nw, value())); toast("Saved. Thanks!"); }
+    catch(e){ go.disabled = false; go.textContent = "Save"; toast("Couldn't save: " + errMsg(e)); } };
+  const what = {signature:"your signature", name:"your full name", statement:"the statement"}[part];
+  return h("div",{id:"rulesgate",class:"modlayer","data-redo":"true"}, h("div",{class:"nlbox rbox rpart"},
+    h("div",{class:"newupd",text:"FIX YOUR AGREEMENT"}),
+    h("h1",{class:"ahead",text:"Redo " + what}),
+    g.redoNote ? h("div",{class:"aredo"}, h("b",{text:"What's wrong:"}), h("div",{text:g.redoNote})) : null,
+    h("div",{class:"asign"}, body, hint), go,
+    h("div",{class:"asmall",style:{textAlign:"center",marginTop:"8px"},text:"Agreement " + g.sigId + " · everything else you signed stays the same."})));
+}
+// Owner: ask someone to sign the agreement again, with a reason they'll see.
+const RESIGN_PARTS = [["signature", "✍️ Signature", "Your signature is unclear. Sign it properly."], ["name", "🪪 Full name", "Use your real first and last name."],
+  ["statement", "💬 Statement", "Type the statement correctly."], ["all", "📜 Everything", "Please read the agreement and sign it again."]];
+function askResign(uid, pane){
+  modal((m, close) => {
+    let part = "signature";
+    const note = h("textarea",{class:"inp", rows:"2", maxlength:"200", text:RESIGN_PARTS[0][2]});
+    const chips = h("div",{class:"rchips"}, RESIGN_PARTS.map(([k, label, def]) => { const b = h("button",{class:"rchip" + (k === part ? " on" : ""), type:"button", text:label,
+      onclick:() => { part = k; note.value = def; chips.querySelectorAll(".rchip").forEach(x => x.classList.remove("on")); b.classList.add("on"); }}); return b; }));
+    m.append(h("h3",{text:"What does " + nickOf(uid) + " need to fix?"}),
+      h("p",{class:"note",text:"Only that part pops up on their screen. They can't use CampusCord until they fix it."}),
+      chips, h("label",{class:"f",text:"What they'll see"}), note,
+      h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"10px"}}, h("button",{class:"btn ghost",onclick:close},"Cancel"),
+        h("button",{class:"btn", onclick:async e => { e.target.disabled = true;
+          try{ await updateDoc(doc(db, "signatures", uid), {redo:true, redoPart:part, redoNote:note.value.trim().slice(0, 200)}); close(); toast(nickOf(uid) + " has to fix it");
+            pane.innerHTML = ""; adminAgreements(pane); }
+          catch(err){ e.target.disabled = false; toast("Couldn't save: " + errMsg(err)); } }}, "Send")));
+  });
 }
