@@ -266,6 +266,7 @@ service cloud.firestore {
           : qid == 'dq_' + string(todayEt()) + '_dq_gif1' ? 50
           : qid == 'dq_' + string(todayEt()) + '_dq_poll1' ? 50
           : qid == 'dq_' + string(todayEt()) + '_dq_vouch1' ? 90
+          : qid == 'dq_' + string(todayEt()) + '_dq_game1' ? 75
           : -1;
       }
       allow update: if mine()
@@ -300,12 +301,14 @@ service cloud.firestore {
         && fbPost().uid == uid && fbPost().status in ['planned', 'working', 'done']
         && nw().earned == ow().earned + 200;
       // daily reward
+      // Streak: claiming again within 48 hours adds 1, otherwise it starts over at 1. Every 7th day in a row pays +150 extra.
       allow update: if mine()
-        && changed().hasOnly(['earned', 'lastDaily'])
+        && changed().hasOnly(['earned', 'lastDaily', 'streak'])
         && nw().lastDaily >= ow().lastDaily + 72000000
         && nw().lastDaily <= request.time.toMillis() + 300000
         && nw().lastDaily >= request.time.toMillis() - 300000
-        && nw().earned == ow().earned + cat().daily;
+        && nw().get('streak', 0) == (nw().lastDaily - ow().lastDaily <= 172800000 ? ow().get('streak', 0) + 1 : 1)
+        && nw().earned == ow().earned + cat().daily + (nw().get('streak', 0) % 7 == 0 ? 150 : 0);
     }
     // Shop orders. Buyers create their own pending order; only the owner approves.
     match /orders/{orderId} {

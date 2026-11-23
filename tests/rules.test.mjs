@@ -99,8 +99,8 @@ await t("claim the free decoration", assertSucceeds(updateDoc(doc(as("alice"), "
 await t("can't buy without enough Sparks", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 700, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
 await t("can't underpay", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 1, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
 await t("can't add Sparks to yourself", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 99999 })));
-await t("daily reward works", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 210, lastDaily: Date.now() })));
-await t("daily reward can't be claimed twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 260, lastDaily: Date.now() + 1000 })));
+await t("daily reward works", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 210, lastDaily: Date.now(), streak: 1 })));
+await t("daily reward can't be claimed twice", assertFails(updateDoc(doc(as("alice"), "wallet/alice"), { earned: 260, lastDaily: Date.now() + 1000, streak: 2 })));
 await t("owner can gift Sparks", assertSucceeds(updateDoc(doc(as("owner"), "wallet/alice"), { earned: 1150 })));
 await t("buy at the catalog price", assertSucceeds(updateDoc(doc(as("alice"), "wallet/alice"), { spent: 700, items: ["d_bubble", "d_cosmic"], lastItem: "d_cosmic" })));
 await t("others can't touch your wallet", assertFails(updateDoc(doc(as("bob"), "wallet/alice"), { spent: 0 })));
@@ -319,6 +319,24 @@ await t("redo part must be a real part", assertFails(updateDoc(doc(as("owner"), 
 await t("member can't clear the redo themselves", assertFails(updateDoc(doc(as("alice"), "signatures/alice"), { redo: false })));
 await t("member re-signs (rewrites their signature)", assertSucceeds(setDoc(doc(as("alice"), "signatures/alice"), sig("alice"))));
 await t("owner can't change what someone signed", assertFails(updateDoc(doc(as("owner"), "signatures/alice"), { typed: "changed" })));
+
+console.log("Daily streak");
+const DAILY = 50, dqGame = `dq_${dqDay}_dq_game1`;
+const DAY = 86400000, base = { earned: 1000, spent: 0, items: [], quests: [], lastItem: "", lastQuest: "" };
+const putW = async (who, w) => env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), "wallet/" + who), w); });
+await putW("carol", { ...base, lastDaily: Date.now() - DAY, streak: 3 });
+await t("streak goes up when claiming the next day", assertSucceeds(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + DAILY, lastDaily: Date.now(), streak: 4 })));
+await putW("carol", { ...base, lastDaily: Date.now() - DAY, streak: 3 });
+await t("can't skip ahead in the streak", assertFails(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + DAILY, lastDaily: Date.now(), streak: 6 })));
+await putW("carol", { ...base, lastDaily: Date.now() - 3 * DAY, streak: 5 });
+await t("missing a day restarts the streak", assertSucceeds(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + DAILY, lastDaily: Date.now(), streak: 1 })));
+await putW("carol", { ...base, lastDaily: Date.now() - 3 * DAY, streak: 5 });
+await t("can't keep a streak after missing a day", assertFails(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + DAILY, lastDaily: Date.now(), streak: 6 })));
+await putW("carol", { ...base, lastDaily: Date.now() - DAY, streak: 6 });
+await t("7th day in a row pays the +150 bonus", assertSucceeds(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + DAILY + 150, lastDaily: Date.now(), streak: 7 })));
+await putW("carol", { ...base, lastDaily: Date.now() - DAY, streak: 2 });
+await t("no bonus on other days", assertFails(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + DAILY + 150, lastDaily: Date.now(), streak: 3 })));
+await t("claiming a daily game quest pays 75", assertSucceeds(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + 75, quests: [dqGame], lastQuest: dqGame })));
 
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);

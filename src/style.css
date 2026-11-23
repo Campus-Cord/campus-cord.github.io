@@ -1651,3 +1651,17 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .ban-spirit::after{content:"";position:absolute;left:-10%;right:-10%;top:38%;height:26%;background:linear-gradient(180deg,transparent,#7dd3fc 30%,#fff 50%,#7dd3fc 70%,transparent);filter:blur(2px) drop-shadow(0 0 10px #38bdf8);animation:beam 1.4s ease-in-out infinite}
 @keyframes spiritshake{25%{transform:translate(1px,-1px)}50%{transform:translate(-1px,1px)}75%{transform:translate(1px,1px)}}
 @keyframes beam{0%{transform:scaleX(0);transform-origin:left}50%,100%{transform:scaleX(1);transform-origin:left;opacity:1}100%{opacity:.6}}
+
+/* Daily reward + streak */
+.dailycard{display:flex;align-items:center;gap:16px;background:linear-gradient(135deg,#2a1608,#1e1f22 60%);border:1px solid #f9731633;border-radius:14px;padding:16px 18px;margin-bottom:18px}
+.dailycard.ready{border-color:#f97316aa;box-shadow:0 0 24px #f9731633}
+.dcfire{font-size:38px;filter:drop-shadow(0 0 10px #f97316aa)}
+.dailycard.ready .dcfire{animation:crownbob 1.6s ease-in-out infinite}
+.dcmain{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.dcmain b{font-size:18px}
+.dstreak{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.dsd{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:#ffffff12;color:#ffffff88}
+.dsd.on{background:linear-gradient(135deg,#fb923c,#ef4444);color:#fff;box-shadow:0 0 8px #f9731688}
+.dsd.big{width:auto;padding:0 9px;border-radius:14px;background:#facc1522;color:#facc15}
+.dsd.big.on{background:linear-gradient(135deg,#fde047,#f59e0b);color:#422006}
+.dailycard>.btn{width:auto!important;flex:none;padding:10px 18px;white-space:nowrap}

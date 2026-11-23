@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 5;
+const CAT_V = 6;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -89,19 +89,20 @@ const COSM_BY = {}; COSM.forEach(c => COSM_BY[c.id] = c);
  {id:"p_yinyang", type:"plate", name:"Yin-Yang", price:0, own:true, desc:"Black fading into white. Owner only."}].forEach(c => COSM_BY[c.id] = c);
 BUNDLES.forEach(b => { const full = b.items.reduce((n, i) => n + COSM_BY[i].price, 0); b.full = full; b.price = Math.round(full * 0.85 / 10) * 10; COSM_BY[b.id] = b; });
 const SLOT_NAME = {deco:"Avatar decoration", pfx:"Profile effect", plate:"Nameplate", pban:"Profile banner", bundle:"Bundle"};
-const DAILY_SPARKS = 0, DAILY_MS = 20 * 3600 * 1000;
+const DAILY_SPARKS = 50, DAILY_MS = 20 * 3600 * 1000, STREAK_MS = 48 * 3600 * 1000, STREAK_BONUS = 150;
 const QUESTS = [
-  {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:0},
-  {id:"q_avatar", icon:"smile", name:"Glow up", desc:"Customize your avatar in Settings → My Account.", goal:1, check:() => profile(S.uid).avatar ? 1 : 0, reward:0},
-  {id:"q_bio", icon:"user", name:"About me", desc:"Write a bio in Settings → Profile.", goal:1, check:() => profile(S.uid).bio ? 1 : 0, reward:0},
-  {id:"q_dm", icon:"message", name:"Slide in", desc:"Start a direct message with someone.", goal:1, check:() => S.dms.length ? 1 : 0, reward:0},
-  {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:0},
-  {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:0},
-  {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:0},
-  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:0},
-  {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:0},
-  {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:0},
-  {id:"q_buy", icon:"bag", name:"First purchase", desc:"Buy something with Sparks in the Shop.", goal:1, check:() => (wal(S.uid).items || []).some(i => COSM_BY[i] && COSM_BY[i].price > 0) ? 1 : 0, reward:0},
+  {id:"q_first", icon:"message", name:"Say hello", desc:"Send your first message.", goal:1, stat:"msgs", reward:25},
+  {id:"q_avatar", icon:"smile", name:"Glow up", desc:"Customize your avatar in Settings → My Account.", goal:1, check:() => profile(S.uid).avatar ? 1 : 0, reward:50},
+  {id:"q_bio", icon:"user", name:"About me", desc:"Write a bio in Settings → Profile.", goal:1, check:() => profile(S.uid).bio ? 1 : 0, reward:50},
+  {id:"q_dm", icon:"message", name:"Slide in", desc:"Start a direct message with someone.", goal:1, check:() => S.dms.length ? 1 : 0, reward:50},
+  {id:"q_react", icon:"smileplus", name:"Reactor", desc:"React to 5 messages.", goal:5, stat:"reacts", reward:50},
+  {id:"q_poll", icon:"grid", name:"Pollster", desc:"Start a poll with /poll.", goal:1, stat:"polls", reward:50},
+  {id:"q_vote", icon:"check", name:"Have your say", desc:"Vote in a poll.", goal:1, stat:"votes", reward:25},
+  {id:"q_equip", icon:"sparkles", name:"Drip check", desc:"Equip something from the Shop.", goal:1, check:() => { const p = profile(S.uid); return p.deco || p.pfx || p.plate || p.pban ? 1 : 0; }, reward:50},
+  {id:"q_voice", icon:"volume", name:"Hop in voice", desc:"Join a voice channel.", goal:1, stat:"voice", reward:75},
+  {id:"q_chatty", icon:"zap", name:"Chatterbox", desc:"Send 25 messages.", goal:25, stat:"msgs", reward:100},
+  {id:"q_games", icon:"grid", name:"Big Brain", desc:"Win 5 daily games (Games on the left).", goal:5, stat:"gameWins", reward:150},
+  {id:"q_buy", icon:"bag", name:"First purchase", desc:"Buy something with Sparks in the Shop.", goal:1, check:() => (wal(S.uid).items || []).some(i => COSM_BY[i] && COSM_BY[i].price > 0) ? 1 : 0, reward:50},
 ];
 const DAILY_QUEST_POOL = [
   {id:"dq_chat5", name:"Chatterbox", desc:"Send 5 messages today", icon:"chat", stat:"msgs", goal:5, reward:60},
@@ -112,7 +113,8 @@ const DAILY_QUEST_POOL = [
   {id:"dq_dm2", name:"Slide In", desc:"Send 2 direct messages today", icon:"at", stat:"dms", goal:2, reward:60},
   {id:"dq_gif1", name:"GIF Master", desc:"Send a GIF today", icon:"gif", stat:"gifs", goal:1, reward:50},
   {id:"dq_poll1", name:"Voice Heard", desc:"Vote in a poll today", icon:"poll", stat:"votes", goal:1, reward:50},
-  {id:"dq_vouch1", name:"Good Vibes", desc:"Post a vouch today", icon:"star", stat:"vouches", goal:1, reward:90}
+  {id:"dq_vouch1", name:"Good Vibes", desc:"Post a vouch today", icon:"star", stat:"vouches", goal:1, reward:90},
+  {id:"dq_game1", name:"Puzzle Solver", desc:"Win a daily game today", icon:"grid", stat:"gameWins", goal:1, reward:75}
 ];
 
 function dailyQuests(day = etDay()){
@@ -164,10 +166,34 @@ async function buyCosmetic(id){
   catch(e){ toast("Couldn't buy: " + econError(e)); }
 }
 async function equip(slot, id, quiet){ try{ await setMyProfile({[slot]: id || ""}); if (!quiet) toast(id ? COSM_BY[id].name + " equipped" : "Removed"); }catch(e){} }
+// Daily reward + login streak (must match the wallet rules in firestore.rules).
+function streakNow(w){ return w.lastDaily && Date.now() - w.lastDaily <= STREAK_MS ? (w.streak || 0) : 0; }
+async function claimDaily(btn){
+  await ensureWallet(); const w = wal(S.uid), now = Date.now();
+  if (w.lastDaily && now - w.lastDaily < DAILY_MS) return;
+  const streak = w.lastDaily && now - w.lastDaily <= STREAK_MS ? (w.streak || 0) + 1 : 1;
+  const bonus = streak % 7 === 0 ? STREAK_BONUS : 0, total = DAILY_SPARKS + bonus;
+  if (btn) btn.disabled = true;
+  try{ await updateDoc(doc(db, "wallet", S.uid), {earned:(w.earned || 0) + total, lastDaily:now, streak});
+    toast(bonus ? "🔥 " + streak + "-day streak! +" + total + " Sparks" : "+" + total + " Sparks · 🔥 " + streak + "-day streak"); }
+  catch(e){ if (btn) btn.disabled = false; toast("Couldn't claim: " + econError(e)); }
+}
+function dailyCardEl(){
+  const w = wal(S.uid), now = Date.now(), ready = !w.lastDaily || now - w.lastDaily >= DAILY_MS;
+  const cur = streakNow(w), next = cur + 1, inWeek = ready ? (next - 1) % 7 : (cur - 1) % 7 + 1;
+  const wait = w.lastDaily ? Math.max(0, w.lastDaily + DAILY_MS - now) : 0;
+  const left = Math.ceil(wait / 6e4), hrs = Math.floor(left / 60), mins = left % 60;
+  const dots = h("div",{class:"dstreak"}, [1,2,3,4,5,6,7].map(d => h("span",{class:"dsd" + (d <= inWeek ? " on" : "") + (d === 7 ? " big" : ""), text: d === 7 ? "+150" : String(d)})));
+  return h("div",{class:"dailycard" + (ready ? " ready" : "")},
+    h("div",{class:"dcfire",text:"🔥"}),
+    h("div",{class:"dcmain"}, h("b",{text: cur ? cur + "-day streak" : "Start a streak"}),
+      h("span",{class:"note",style:{margin:0},text: ready ? "Claim your daily Sparks. Every 7th day in a row pays +" + STREAK_BONUS + " extra!" : "Come back in " + (hrs ? hrs + "h " : "") + mins + "m to keep your streak going."}), dots),
+    ready ? h("button",{class:"btn", onclick:e => claimDaily(e.currentTarget)}, "Claim +" + (DAILY_SPARKS + (next % 7 === 0 ? STREAK_BONUS : 0))) : h("span",{class:"owned"}, ic("check","sm"), " Claimed today"));
+}
 async function claimQuest(q){
   const w = wal(S.uid); if ((w.quests || []).includes(q.id) || questProgress(q) < q.goal) return;
   await ensureWallet(); const w2 = wal(S.uid);
-  const keepQuests = (w2.quests || []).filter(id => !id.startsWith("dq_") || id.startsWith("dq_" + etDay() + "_"));
+  const keepQuests = w2.quests || [];  // keep every claimed quest (the rules don't allow removing any)
   const rw = q.reward || 0;
   try{
     await updateDoc(doc(db, "wallet", S.uid), {earned:(w2.earned || 0) + rw, quests:[...keepQuests, q.id], lastQuest:q.id});
@@ -460,6 +486,7 @@ function renderQuestsPage(box){
     h("span",{class:"sp"}), h("button",{class:"sbal", title:"Spend Sparks in the Shop", onclick:() => openChat("shop", "featured")}, sparkPill(sparks(S.uid))));
   wrap.appendChild(bar);
   const body = h("div",{class:"sbody"}); wrap.appendChild(body);
+  if (tab === "all") body.appendChild(dailyCardEl());
   if (tab === "all"){
     const qb = BADGES.find(x => x.id === "quest"), st = qb.state(S.uid), n = done.length;
     const nextAt = st && st.tier === "gold" ? null : n < 1 ? 1 : n < 5 ? 5 : n < QUESTS.length ? QUESTS.length : null;

@@ -1020,7 +1020,7 @@ function mgCompletePuzzle(game, won){
   if (won !== undefined) p.won = !!won;
   if (game === "flappy") st.plays[game] = (st.plays[game] || 0) + 1;
   else st.plays[game] = Math.min(MG_DAILY_LIMIT, (st.plays[game] || 0) + 1);
-  if (won) st.wins[game] = (st.wins[game] || 0) + 1;
+  if (won){ st.wins[game] = (st.wins[game] || 0) + 1; bumpStat("gameWins"); }
   mgSave(st);
 }
 
