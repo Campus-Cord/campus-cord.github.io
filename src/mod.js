@@ -91,7 +91,7 @@ function modLabel(uid){
 // What the person sees
 function strikeDots(n){ return h("div",{class:"mdots"}, [...Array(MAX_STRIKES)].map((_, i) => h("span",{class:"mdot" + (i < n ? " on" : "")}))); }
 function enforceMod(){
-  if (!S.uid || isOwner()){ ["modsus","modnote"].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); }); return; }
+  if (!S.uid || isOwner()){ ["modsus","modnote","modto"].forEach(id => { const e = document.getElementById(id); if (e) e.remove(); }); return; }
   // Suspension: can't be closed, ends by itself
   const sus = suspendedUntil(S.uid), susEl = document.getElementById("modsus");
   if (sus){
@@ -108,6 +108,21 @@ function enforceMod(){
         h("p",{class:"note",text:"Your strikes reset when it's over."}))));
     }
   } else if (susEl) susEl.remove();
+  // Timeout: covers the whole screen until it runs out (can't be closed)
+  const tu = sus ? 0 : timeoutUntil(S.uid), toEl = document.getElementById("modto");
+  if (tu && !(toEl && Number(toEl.dataset.until) === tu)){
+    if (toEl){ clearInterval(toEl._t); toEl.remove(); }
+    const left = h("b");
+    const el = h("div",{id:"modto",class:"modlayer","data-until":String(tu)}, h("div",{class:"nlbox"},
+      h("div",{class:"nlic",text:"⏳"}), h("h2",{text:"You're timed out"}),
+      h("p",{text:"You can't use CampusCord until your timeout ends."}),
+      h("div",{class:"nlstrike"}, "Ends in ", left, " · ", fmtTime(tu)),
+      h("p",{class:"note",text:"This screen goes away by itself when it's over."})));
+    const tick = () => { const ms = tu - Date.now(); if (ms <= 0){ clearInterval(el._t); el.remove(); enforceMod(); need("msgs", "me"); return; }
+      const hr = Math.floor(ms / 36e5), mi = Math.floor(ms % 36e5 / 6e4), sec = Math.floor(ms % 6e4 / 1000);
+      left.textContent = (hr ? hr + "h " : "") + (hr || mi ? mi + "m " : "") + sec + "s"; };
+    el._t = setInterval(tick, 1000); tick(); document.body.appendChild(el);
+  } else if (!tu && toEl){ clearInterval(toEl._t); toEl.remove(); }
   // Warnings and strikes: full screen until accepted
   const n = S.myNotices[0], noteEl = document.getElementById("modnote");
   if (!n || sus){ if (noteEl) noteEl.remove(); return; }
