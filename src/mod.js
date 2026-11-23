@@ -149,7 +149,8 @@ function enforceMod(){
 // signatures/{uid} (only the owner and the signer can read them); members/{uid}.rulesOk records that they signed.
 const RULES_V = 3;
 const RULES_DATE = "November 23, 2026";
-const agreePhrase = uid => "I, " + nickOf(uid) + ", am responsible for myself and I will not use CampusCord in class.";
+// The statement uses the real full name they type (not their CampusCord nickname).
+const agreePhrase = name => "I, " + (String(name || "").trim().replace(/\s+/g, " ") || "[your full name]") + ", am responsible for myself and I will not use CampusCord in class.";
 const AGREEMENT = [
   ["About CampusCord", "CampusCord is a private, independent online chat service operated by students. It is not owned, operated, sponsored, endorsed or supervised by any school, school district or teacher."],
   ["Personal Responsibility", "I accept full responsibility for my own use of CampusCord, including when, where and how I use it, and for all messages, images and other content I post, send or share."],
@@ -218,16 +219,16 @@ function enforceRules(){
   if (el){ if (el.dataset.redo === String(redo)) return; el.remove(); }
   const part = redo ? (S.mySig.redoPart || "all") : "all";
   if (redo && part !== "all" && S.mySig.sigId){ document.body.appendChild(redoPartEl(part)); return; }
-  const PH = agreePhrase(S.uid);
   const typed = h("input",{class:"inp atype", maxlength:"200", placeholder:"Type the statement above", autocomplete:"off", spellcheck:"false"});
   const full = h("input",{class:"inp", maxlength:"60", placeholder:"First and last name", autocomplete:"name"});
+  const phraseBox = h("div",{class:"aphrase",text:agreePhrase("")});
   const fullOk = () => /^[A-Za-z][A-Za-z'.-]+(\s+[A-Za-z'.-]+)+$/.test(full.value.trim());
   const pad = sigPad();
   const go = h("button",{class:"btn big", disabled:true}, "Sign and agree");
   const hint = h("div",{class:"ahint"});
-  const check = () => { const okT = normPhrase(typed.value) === normPhrase(PH), okN = fullOk(), okS = pad.ink() > 150;
+  const check = () => { phraseBox.textContent = agreePhrase(full.value); const okN = fullOk(), okT = okN && normPhrase(typed.value) === normPhrase(agreePhrase(full.value)), okS = pad.ink() > 150;
     typed.classList.toggle("ok", okT); full.classList.toggle("ok", okN); go.disabled = !(okT && okN && okS);
-    hint.textContent = !okT ? "" : !okS ? "Now sign in the box with your mouse or finger." : !okN ? "Type your first and last name." : "✅ Ready to sign"; };
+    hint.textContent = !okN ? "Start by typing your real first and last name." : !okT ? "" : !okS ? "Now sign in the box with your mouse or finger." : "✅ Ready to sign"; };
   typed.oninput = check; full.oninput = check; pad.onchange = check;
   typed.onpaste = typed.ondrop = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
   full.onpaste = full.ondrop = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
@@ -258,11 +259,11 @@ function enforceRules(){
     docEl,
     h("div",{class:"ascroll"}, "⬇️ Scroll to the end of the agreement to sign it"),
     h("div",{class:"asign locked"},
-      h("label",{class:"alabel",text:"1. Type this statement exactly:"}),
-      h("div",{class:"aphrase",text:PH}), typed,
-      h("label",{class:"alabel",style:{marginTop:"14px"}}, "2. Sign below ", h("button",{class:"linkbtn", onclick:() => pad.clear()}, "Clear")),
+      h("label",{class:"alabel",text:"1. Your real full name (first and last):"}), full,
+      h("label",{class:"alabel",style:{marginTop:"14px"},text:"2. Type this statement exactly:"}),
+      phraseBox, typed,
+      h("label",{class:"alabel",style:{marginTop:"14px"}}, "3. Sign below ", h("button",{class:"linkbtn", onclick:() => pad.clear()}, "Clear")),
       h("div",{class:"sigwrap"}, pad.el, h("div",{class:"sigline"}, h("span",{text:"✕"}))),
-      h("label",{class:"alabel",style:{marginTop:"14px"},text:"3. Printed full name (first and last):"}), full,
       h("div",{class:"sigmeta"}, h("div",null, h("span",{text:"CampusCord name"}), h("b",{text:nickOf(S.uid)})), h("div",null, h("span",{text:"Date"}), h("b",{text:today}))),
       hint),
     go)));
@@ -304,7 +305,7 @@ async function adminAgreements(p){
 
 // Only the part the owner asked to fix (signature, name or statement). Everything else they signed stays the same.
 function redoPartEl(part){
-  const g = S.mySig, PH = agreePhrase(S.uid), hint = h("div",{class:"ahint"});
+  const g = S.mySig, PH = agreePhrase(g.fullName || nickOf(S.uid)), hint = h("div",{class:"ahint"});
   const go = h("button",{class:"btn big", disabled:true}, "Save");
   const noPaste = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
   let body, value, ok;
@@ -315,8 +316,14 @@ function redoPartEl(part){
   else if (part === "name"){ const full = h("input",{class:"inp", maxlength:"60", placeholder:"First and last name", autocomplete:"name"});
     full.onpaste = full.ondrop = noPaste;
     full.oninput = () => { ok = /^[A-Za-z][A-Za-z'.-]+(\s+[A-Za-z'.-]+)+$/.test(full.value.trim()); full.classList.toggle("ok", ok); go.disabled = !ok; };
-    body = h("div",null, h("label",{class:"alabel",text:"Type your real first and last name:"}), full);
-    value = () => ({fullName:full.value.trim().replace(/\s+/g, " ").slice(0, 60)}); }
+    const typed2 = h("input",{class:"inp atype", maxlength:"200", placeholder:"Type the statement above", autocomplete:"off", spellcheck:"false"});
+    const ph2 = h("div",{class:"aphrase",text:agreePhrase("")}); typed2.onpaste = typed2.ondrop = noPaste;
+    full.oninput = typed2.oninput = () => { ph2.textContent = agreePhrase(full.value);
+      const okN = /^[A-Za-z][A-Za-z'.-]+(\s+[A-Za-z'.-]+)+$/.test(full.value.trim()), okT = okN && normPhrase(typed2.value) === normPhrase(agreePhrase(full.value));
+      full.classList.toggle("ok", okN); typed2.classList.toggle("ok", okT); go.disabled = !(okN && okT); };
+    body = h("div",null, h("label",{class:"alabel",text:"Type your real first and last name:"}), full,
+      h("label",{class:"alabel",style:{marginTop:"14px"},text:"Then type this statement with your real name:"}), ph2, typed2);
+    value = () => ({fullName:full.value.trim().replace(/\s+/g, " ").slice(0, 60), typed:typed2.value.trim().slice(0, 200)}); }
   else { const typed = h("input",{class:"inp atype", maxlength:"200", placeholder:"Type the statement above", autocomplete:"off", spellcheck:"false"});
     typed.onpaste = typed.ondrop = noPaste;
     typed.oninput = () => { ok = normPhrase(typed.value) === normPhrase(PH); typed.classList.toggle("ok", ok); go.disabled = !ok; };
