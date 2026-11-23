@@ -352,7 +352,9 @@ service cloud.firestore {
         allow update: if inRoom() && ownsOld()
           && changed().hasOnly(['text', 'edited', 'editedAt', 'mentions'])
           && request.resource.data.text.size() <= 4000;
-        allow update: if roomAdmin() && changed().hasOnly(['pinned', 'pinnedBy', 'approved', 'approvedBy', 'rejected']);
+        allow update: if roomAdmin() && changed().hasOnly(['pinned', 'pinnedBy']);
+        // Only the owner and head developers approve or reject vouches.
+        allow update: if (isOwner() || isHeadDev()) && inRoom() && changed().hasOnly(['pinned', 'pinnedBy', 'approved', 'approvedBy', 'rejected']);
         allow delete: if roomAdmin() || (inRoom() && ownsOld());
       }
       match /reacts/{reactId} {

@@ -1,3 +1,5 @@
+// Only the owner and head developers approve or reject vouches.
+const canReviewVouch = () => isOwner() || isHeadDev(S.uid);
 // ---------------------------------------------------------------- #vouches channel (Discord vouch-bot style)
 // A text room with type "vouches". People run /vouch (or the Write a vouch button): pick who it's for — a person or
 // CampusCord itself — give 1–5 stars, write a review and optionally attach proof. It posts as a numbered vouch card.
@@ -172,9 +174,9 @@ function vouchEl(m){
           m.approved ? [ic("check","sm"), " Approved" + (m.approvedBy ? " by " + nickOf(m.approvedBy) : "")]
           : m.rejected ? [ic("x","sm"), " Not approved — no Sparks"]
           : [ic("hourglass","sm"), m.uid === S.uid ? " Waiting for the owner to review" : " Needs review"],
-          isAdmin() && m.uid !== S.uid ? h("span",{class:"sp"}) : null,
-          isAdmin() && m.uid !== S.uid && !m.approved ? h("button",{class:"btn small", onclick:() => reviewVouch(m, true)}, "Approve") : null,
-          isAdmin() && m.uid !== S.uid && !m.rejected ? h("button",{class:"btn small ghost", onclick:() => reviewVouch(m, false)}, m.approved ? "Undo" : "Reject") : null) : null)));
+          canReviewVouch() && m.uid !== S.uid ? h("span",{class:"sp"}) : null,
+          canReviewVouch() && m.uid !== S.uid && !m.approved ? h("button",{class:"btn small", onclick:() => reviewVouch(m, true)}, "Approve") : null,
+          canReviewVouch() && m.uid !== S.uid && !m.rejected ? h("button",{class:"btn small ghost", onclick:() => reviewVouch(m, false)}, m.approved ? "Undo" : "Reject") : null) : null)));
   return row;
 }
 // Profile stats: how many vouches someone has and their average rating (reads the #vouches room once per open).
