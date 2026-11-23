@@ -1474,18 +1474,28 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .hdlist li{background:var(--bg3,#1e1f22);border-radius:10px;padding:9px 12px;font-size:14px}
 .hdpop .btn{min-width:160px}
 
-/* CampusCord Rules */
-#rulesgate{z-index:9998}
-.rbox{max-width:540px;max-height:92vh;overflow:auto;text-align:left}
-.rbox .nlic,.rbox h2,.rbox>.note{text-align:center}
-.rlist{display:grid;gap:8px;margin:12px 0}
-.ritem{display:flex;gap:10px;align-items:flex-start;background:var(--bg3,#1e1f22);border-radius:10px;padding:10px 12px}
-.ric{font-size:20px;line-height:1.2}
-.ritem b{font-size:14px}
-.rdesc{font-size:13px;color:var(--muted,#b5bac1);margin-top:2px}
-.ragree{display:flex;gap:10px;align-items:flex-start;margin:6px 0 12px;font-size:14px;cursor:pointer}
-.ragree input{width:18px;height:18px;margin-top:2px;flex:none}
-.rbox>.btn{width:100%}
+/* User agreement */
+#rulesgate{z-index:9998;background:radial-gradient(circle at 50% 0%,#5865f255,transparent 60%),rgba(8,9,12,.97)}
+.rbox{max-width:600px;width:94vw;max-height:94vh;overflow:auto;text-align:left;padding:26px 26px 22px}
+.newupd{display:inline-block;margin:0 auto;font-weight:900;letter-spacing:.18em;font-size:13px;padding:6px 14px;border-radius:999px;
+  background:linear-gradient(90deg,#ff3d6e,#ff9a3d);color:#fff;box-shadow:0 0 24px #ff3d6e66;animation:nupulse 1.6s ease-in-out infinite}
+@keyframes nupulse{50%{transform:scale(1.06)}}
+.rbox .newupd{display:table}
+.ahead{font-size:34px;line-height:1.1;margin:12px 0 6px;text-align:center;font-weight:900}
+.rbox>.note{text-align:center}
+.adoc{background:#f7f3e8;color:#222;border-radius:6px;padding:18px 20px;margin:14px 0;box-shadow:0 8px 30px #0008;font-family:Georgia,"Times New Roman",serif;max-height:38vh;overflow:auto}
+.adochead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #2223;padding-bottom:6px;margin-bottom:10px}
+.adochead b{font-size:17px}.adochead span{font-size:12px;color:#666}
+.adoc p{font-size:15px;line-height:1.55;margin:0 0 12px;color:#222!important;text-align:left}
+.adocrules{display:grid;gap:6px}
+.adoc .ritem{display:flex;gap:8px;background:#0000000a;border-radius:6px;padding:7px 10px}
+.adoc .ric{font-size:16px}.adoc .ritem b{font-size:14px}.adoc .rdesc{font-size:13px;color:#444}
+.alabel{display:block;margin:4px 0 6px;font-size:14px}
+.atype{font-size:16px;padding:12px}
+.atype.ok{border-color:#3ba55d;box-shadow:0 0 0 2px #3ba55d44}
+.ahint{min-height:18px;font-size:13px;margin:4px 0;color:#3ba55d}
+.asmall{font-size:12px;color:var(--muted,#949ba4);margin-bottom:12px}
+.rbox .btn.big{width:100%;padding:13px;font-size:16px}
 </style>
 </head>
 <body>
@@ -1609,7 +1619,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-23.1405";
+const APP_VERSION = "2026-11-23.1409";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2467,7 +2477,7 @@ function openHelp(initial){
     m.append(h("h3",null, "Help"), h("p",{class:"note",style:{marginTop:0},text:"Ask anything about using CampusCord."}), chat,
       h("div",{class:"row",style:{marginTop:"10px"}}, inp, h("button",{class:"btn small", onclick:() => { ask(inp.value); inp.value = ""; }}, "Ask")),
       h("div",{class:"hsug"}, HELP.slice(0, 6).map(x => h("button",{onclick:() => ask(x.q)}, x.q))),
-      h("button",{class:"btn small ghost",style:{marginTop:"10px"},onclick:rulesModal}, "📜 Read the CampusCord Rules"));
+      h("button",{class:"btn small ghost",style:{marginTop:"10px"},onclick:rulesModal}, "📜 Read the User Agreement"));
     bot("Hi! I can explain any CampusCord feature. Pick a question below or type your own.");
     if (initial) ask(initial);
     setTimeout(() => inp.focus(), 0);
@@ -2880,7 +2890,7 @@ function serverMenu(ev){
     isOwner() ? {label:"Add section", icon:"plus", run:() => newCategory()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
-    {label:"CampusCord Rules", icon:"info", run:() => rulesModal()},
+    {label:"User Agreement", icon:"info", run:() => rulesModal()},
     {label:"Feedback & bugs", icon:"message", run:() => openChat("feedback", "all")},
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
@@ -3813,7 +3823,7 @@ function adminMembers(p){
         h("div",{class:"amsub"}, h("span",{class:"ambd", title:bl.map(x => badgeTitle(x.b, x.st)).join(", ")}, ...bl.slice(0, 8).map(x => badgeEl(x.b, x.st, "sm")), bl.length > 8 ? h("small",{text:"+" + (bl.length - 8)}) : null),
           isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
           !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null,
-          h("span",{class:"s",title: S.members[u].rulesAt ? "Agreed " + fmtDay(S.members[u].rulesAt) : "", text: (S.members[u].rulesOk || 0) >= RULES_V ? "📜 agreed to rules" : "📜 hasn't agreed yet"}),
+          h("span",{class:"s",title: S.members[u].rulesAt ? "Signed " + fmtDay(S.members[u].rulesAt) + (S.members[u].rulesSig ? ": \u201c" + S.members[u].rulesSig + "\u201d" : "") : "", text: (S.members[u].rulesOk || 0) >= RULES_V ? "📜 signed " + fmtDay(S.members[u].rulesAt) : "📜 hasn't signed yet"}),
           nameFlagLabel(u) ? h("span",{class:"s",style:{color: nameLocked(u) ? "#f0565c" : ""},text:nameFlagLabel(u)}) : null)),
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => devModal(u)}, isDev(u) ? (devUntil(u) ? "⏱ DEV" : "✓ DEV") : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
@@ -5280,39 +5290,48 @@ function enforceMod(){
     ok)));
 }
 
-// ---------------------------------------------------------------- CampusCord Rules (everyone agrees before using the app)
-// Bump RULES_V when the rules change and everyone has to agree again.
-const RULES_V = 1;
+// ---------------------------------------------------------------- User agreement (everyone signs before using the app)
+// Bump RULES_V when the agreement changes and everyone has to sign again.
+const RULES_V = 2;
+const AGREE_PHRASE = "I am responsible for myself";
+const AGREEMENT = "I understand that CampusCord is a private chat app made by students. It is not run by, connected to, or approved by any school. I am responsible for myself: for when and where I use CampusCord, and for everything I post, send or share here. I will follow my school's rules, and I will not use CampusCord in class or anywhere my school doesn't allow it. I understand that the people who run CampusCord are not responsible for my choices, and that if I break the rules I can be warned, timed out or removed.";
 const RULES = [
-  ["🏫", "CampusCord is not a school app", "It's a private chat run by students. No school made it, runs it, or is responsible for it."],
-  ["📚", "I follow my school's rules", "I won't use CampusCord in class or when a teacher says not to. If my school doesn't allow it on school devices or Wi-Fi, I won't use it there."],
-  ["🙋", "I'm responsible for what I do", "Everyone is responsible for their own messages, pictures and actions. Nobody else is responsible for what I post."],
-  ["💬", "I'm kind", "No bullying, threats, hate, or anything inappropriate. No posting other people's pictures or private stuff without asking."],
-  ["🔒", "I keep personal info private", "I don't share my address, phone number, passwords, or anyone else's."],
-  ["🧑‍🤝‍🧑", "I talk to an adult if something's wrong", "If something here makes me uncomfortable or unsafe, I tell a parent or trusted adult."],
-  ["⚖️", "Breaking the rules has consequences", "I can be warned, timed out, or removed."],
+  ["📚", "Follow your school's rules", "No CampusCord in class, or on school devices or Wi-Fi if your school doesn't allow it."],
+  ["💬", "Be kind", "No bullying, threats, hate, or anything inappropriate."],
+  ["🔒", "Keep personal info private", "No addresses, phone numbers or passwords, yours or anyone else's."],
+  ["🧑‍🤝‍🧑", "Talk to an adult if something's wrong", "If anything here makes you uncomfortable or unsafe, tell a parent or trusted adult."],
 ];
-function rulesListEl(){ return h("div",{class:"rlist"}, RULES.map(([ic, t, d], i) =>
-  h("div",{class:"ritem"}, h("div",{class:"ric",text:ic}), h("div",null, h("b",{text:(i + 1) + ". " + t}), h("div",{class:"rdesc",text:d}))))); }
+const normPhrase = t => String(t || "").toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
+function agreementDocEl(){ return h("div",{class:"adoc"},
+  h("div",{class:"adochead"}, h("b",{text:"CampusCord User Agreement"}), h("span",{text:"Version " + RULES_V})),
+  h("p",{text:AGREEMENT}),
+  h("div",{class:"adocrules"}, RULES.map(([ic, t, d]) => h("div",{class:"ritem"}, h("span",{class:"ric",text:ic}), h("div",null, h("b",{text:t}), h("div",{class:"rdesc",text:d})))))); }
 function enforceRules(){
   const me = member(S.uid), el = document.getElementById("rulesgate");
   const need = me && (me.rulesOk || 0) < RULES_V && S.routed === "app";
   if (!need){ if (el) el.remove(); return; }
   if (el) return;
-  const box = h("input",{type:"checkbox", id:"rules-ok"});
-  const go = h("button",{class:"btn", disabled:true}, "I agree");
-  box.onchange = () => { go.disabled = !box.checked; };
+  const typed = h("input",{class:"inp atype", maxlength:"100", placeholder:"Type: " + AGREE_PHRASE, autocomplete:"off", spellcheck:"false"});
+  const go = h("button",{class:"btn big", disabled:true}, "I agree");
+  const hint = h("div",{class:"ahint"});
+  typed.oninput = () => { const ok = normPhrase(typed.value) === normPhrase(AGREE_PHRASE); go.disabled = !ok;
+    hint.textContent = ok ? "✅ Looks good" : ""; typed.classList.toggle("ok", ok); };
+  typed.onpaste = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
   go.onclick = async () => { go.disabled = true; go.textContent = "Saving…";
-    try{ await updateDoc(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:Date.now()}); }
+    try{ await updateDoc(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:Date.now(), rulesSig:typed.value.trim().slice(0, 200)}); }
     catch(e){ go.disabled = false; go.textContent = "I agree"; toast("Couldn't save: " + errMsg(e)); } };
   document.body.appendChild(h("div",{id:"rulesgate",class:"modlayer"}, h("div",{class:"nlbox rbox"},
-    h("div",{class:"nlic",text:"📜"}), h("h2",{text:"CampusCord Rules"}),
-    h("p",{class:"note",text:"Read these and agree before using CampusCord."}),
-    rulesListEl(),
-    h("label",{class:"ragree",for:"rules-ok"}, box, h("span",{text:"I've read the rules. I agree to follow them, and I understand I'm responsible for what I do on CampusCord."})),
+    h("div",{class:"newupd",text:"NEW UPDATE"}),
+    h("h1",{class:"ahead",text:"You are responsible for yourself"}),
+    h("p",{class:"note",text:"Read the agreement below. To use CampusCord, you have to sign it."}),
+    agreementDocEl(),
+    h("label",{class:"alabel"}, "To sign, type ", h("b",{text:"\u201c" + AGREE_PHRASE + "\u201d"}), " below:"),
+    typed, hint,
+    h("div",{class:"asmall",text:"Signing as " + nickOf(S.uid) + ". What you type and the date are saved."}),
     go)));
+  setTimeout(() => typed.focus(), 100);
 }
-function rulesModal(){ modal((m, close) => m.append(h("h3",{text:"📜 CampusCord Rules"}), rulesListEl(),
+function rulesModal(){ modal((m, close) => m.append(h("h3",{text:"📜 CampusCord User Agreement"}), agreementDocEl(),
   h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"10px"}}, h("button",{class:"btn",onclick:close},"Close")))); }
 
 // ---------------------------------------------------------------- #daily-poll
