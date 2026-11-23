@@ -1556,6 +1556,116 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 #rulesgate .rpart>*{max-width:640px;width:100%;margin-left:auto;margin-right:auto}
 .rchip.on{background:#5865f2;color:#fff;border-color:#5865f2}
 #rulesgate .rpart>.newupd{width:auto;max-width:none}
+
+/* ===== Winter 2026 drop ===== */
+/* Black Hole: dark core ring + bright spinning accretion disk */
+.deco-void{background:conic-gradient(from var(--a,0deg),#000,#4c1d95,#c084fc,#fde68a,#f97316,#7c3aed,#000 70%,#000);-webkit-mask:radial-gradient(closest-side,transparent 74%,#000 78%,#000 95%,transparent 100%);mask:radial-gradient(closest-side,transparent 74%,#000 78%,#000 95%,transparent 100%);animation:ring 2.2s linear infinite;filter:drop-shadow(0 0 6px #a855f7) drop-shadow(0 0 14px #7c3aed88)}
+.deco-void::after{content:"";position:absolute;inset:-6%;border-radius:50%;background:conic-gradient(from var(--a,0deg),transparent,#c084fc55,transparent 30%,#f9731644,transparent 60%);animation:ring 5s linear infinite reverse;filter:blur(3px)}
+/* Royal Crown: gold crown floating above the avatar */
+.deco-crown{background:radial-gradient(closest-side,transparent 82%,#f5b30199 86%,transparent 92%)}
+.deco-crown::before{content:"";position:absolute;left:24%;right:24%;top:-14%;height:34%;background:linear-gradient(180deg,#fff3b0,#f5b301 45%,#b7791f);
+  clip-path:polygon(0 100%,0 30%,18% 62%,33% 8%,50% 55%,67% 8%,82% 62%,100% 30%,100% 100%);filter:drop-shadow(0 2px 3px #0008);animation:crownbob 2.4s ease-in-out infinite}
+.deco-crown::after{content:"";position:absolute;left:30%;right:30%;top:7%;height:7%;background:radial-gradient(circle,#ef4444 0 35%,transparent 40%) 0 0/33.3% 100% repeat-x;animation:crownbob 2.4s ease-in-out infinite,gemsparkle 1.6s ease-in-out infinite}
+@keyframes crownbob{50%{transform:translateY(-6%) rotate(-3deg)}}
+@keyframes gemsparkle{50%{filter:brightness(1.8) drop-shadow(0 0 3px #fff)}}
+/* Thunderstorm: dark ring, lightning flash */
+.deco-storm{background:conic-gradient(from var(--a,0deg),#1e293b,#475569,#0f172a,#64748b,#1e293b);-webkit-mask:radial-gradient(closest-side,transparent 76%,#000 80%,#000 94%,transparent 98%);mask:radial-gradient(closest-side,transparent 76%,#000 80%,#000 94%,transparent 98%);animation:ring 6s linear infinite,stormflash 3.5s steps(1) infinite}
+.deco-storm::after{content:"";position:absolute;right:2%;top:8%;width:22%;height:42%;background:linear-gradient(180deg,#fff,#facc15);clip-path:polygon(55% 0,10% 55%,45% 55%,25% 100%,90% 38%,55% 38%,80% 0);opacity:0;animation:boltstrike 3.5s steps(1) infinite;filter:drop-shadow(0 0 4px #fde047)}
+@keyframes stormflash{0%,88%,94%,100%{filter:none}90%,96%{filter:brightness(3) drop-shadow(0 0 8px #e0f2fe)}}
+@keyframes boltstrike{0%,88%{opacity:0}89%,97%{opacity:1}98%{opacity:0}}
+/* Orbit: two planets circling on faint paths */
+.deco-orbit{border:1.5px solid #7dd3fc44;box-shadow:0 0 8px #38bdf833 inset}
+.deco-orbit::before,.deco-orbit::after{content:"";position:absolute;inset:0;border-radius:50%;animation:orbitspin 4s linear infinite}
+.deco-orbit::before{background:radial-gradient(circle at 50% 3%,#fbbf24 0 6%,transparent 7%);filter:drop-shadow(0 0 4px #fbbf24)}
+.deco-orbit::after{inset:10%;background:radial-gradient(circle at 50% 2%,#60a5fa 0 7%,transparent 8%);border:1px dashed #a78bfa55;animation-duration:2.6s;animation-direction:reverse;filter:drop-shadow(0 0 4px #60a5fa)}
+@keyframes orbitspin{to{transform:rotate(360deg)}}
+/* Neon Sign: double flickering ring */
+.deco-neon{border-radius:50%;box-shadow:0 0 0 2px #ff3d9a,0 0 10px 2px #ff3d9a,inset 0 0 8px #ff3d9a;animation:neonflick 3s linear infinite}
+.deco-neon::after{content:"";position:absolute;inset:9%;border-radius:50%;box-shadow:0 0 0 2px #22d3ee,0 0 10px 2px #22d3ee;animation:neonflick 2.3s linear infinite .7s}
+@keyframes neonflick{0%,18%,22%,25%,53%,57%,100%{opacity:1}20%,24%,55%{opacity:.25}}
+/* Prism: rainbow ring with color shift */
+.deco-prism{background:conic-gradient(from var(--a,0deg),#ff3d3d,#ffb02e,#ffe14d,#3ecf7a,#3fb8ff,#7c5cff,#ff3dcb,#ff3d3d);-webkit-mask:radial-gradient(closest-side,transparent 80%,#000 83%,#000 93%,transparent 96%);mask:radial-gradient(closest-side,transparent 80%,#000 83%,#000 93%,transparent 96%);animation:ring 3s linear infinite;filter:drop-shadow(0 0 4px #fff8) saturate(1.3)}
+
+/* Fireflies */
+.pfx-fireflies::before{background-image:radial-gradient(3px 3px at 12% 20%,#fde047,transparent),radial-gradient(2px 2px at 35% 65%,#facc15,transparent),radial-gradient(3px 3px at 62% 35%,#fef08a,transparent),radial-gradient(2px 2px at 85% 75%,#fde047,transparent),radial-gradient(3px 3px at 50% 90%,#facc15,transparent);background-size:140px 120px;animation:ffdrift 9s ease-in-out infinite alternate,fftwinkle 1.8s ease-in-out infinite;filter:drop-shadow(0 0 3px #fde047)}
+.pfx-fireflies::after{background-image:radial-gradient(2px 2px at 25% 45%,#fef08a,transparent),radial-gradient(3px 3px at 75% 15%,#fde047,transparent),radial-gradient(2px 2px at 45% 80%,#facc15,transparent);background-size:110px 100px;animation:ffdrift 12s ease-in-out infinite alternate-reverse,fftwinkle 2.4s ease-in-out infinite .9s;filter:drop-shadow(0 0 3px #fde047)}
+@keyframes ffdrift{to{transform:translate(18px,12%)}}
+@keyframes fftwinkle{50%{opacity:.25}}
+/* Lightning Strike */
+.pfx-lightning::before{top:0;height:100%;background:linear-gradient(180deg,#e0f2fe00,#e0f2fe55);opacity:0;animation:pfxflash 4s steps(1) infinite}
+.pfx-lightning::after{top:0;left:55%;right:auto;width:60px;height:70%;background:linear-gradient(180deg,#fff,#93c5fd);clip-path:polygon(50% 0,20% 45%,45% 45%,25% 100%,80% 35%,55% 35%,75% 0);opacity:0;animation:pfxbolt 4s steps(1) infinite;filter:drop-shadow(0 0 6px #bfdbfe)}
+@keyframes pfxflash{0%,85%,92%,100%{opacity:0}86%,93%{opacity:1}}
+@keyframes pfxbolt{0%,85%{opacity:0}86%,95%{opacity:1}96%{opacity:0}}
+/* Bubble Up */
+.pfx-bubbles::before{top:0;height:200%;background-image:radial-gradient(circle at 30% 30%,#ffffffcc 0 2px,#7dd3fc55 3px,transparent 9px),radial-gradient(circle at 30% 30%,#ffffffcc 0 1.5px,#a5f3fc44 2.5px,transparent 6px),radial-gradient(circle at 30% 30%,#ffffffcc 0 2px,#bae6fd55 3px,transparent 11px);background-size:90px 110px,60px 80px,130px 150px;background-position:10px 0,40px 20px,70px 50px;animation:bubbleup 7s linear infinite}
+@keyframes bubbleup{to{transform:translateY(-50%)}}
+
+/* Nameplates */
+.plate-neon{--plate:linear-gradient(90deg,transparent,rgba(255,61,154,.55) 40%,rgba(34,211,238,.55) 70%,transparent 110%)}
+.plate-neon::after{animation:plateShift 6s linear infinite,neonflick 3s linear infinite}
+.plate-prism{--plate:linear-gradient(90deg,rgba(255,61,61,.45),rgba(255,176,46,.45),rgba(255,225,77,.45),rgba(62,207,122,.45),rgba(63,184,255,.45),rgba(124,92,255,.45),rgba(255,61,203,.45),rgba(255,61,61,.45))}
+.plate-molten{--plate:radial-gradient(circle at 20% 60%,rgba(255,200,60,.7),transparent 30%),radial-gradient(circle at 70% 40%,rgba(255,90,30,.7),transparent 35%),linear-gradient(90deg,transparent,rgba(185,28,28,.55) 40%,rgba(234,88,12,.65) 70%,rgba(185,28,28,.4))}
+
+/* Banners */
+.ban-storm{background:radial-gradient(ellipse at 20% 20%,#64748b,transparent 50%),radial-gradient(ellipse at 75% 30%,#475569,transparent 55%),linear-gradient(180deg,#0f172a,#1e293b)!important;animation:banflow 14s ease-in-out infinite,stormflash 5s steps(1) infinite!important}
+.ban-storm::after{content:"";position:absolute;left:62%;top:0;width:38px;height:85%;background:linear-gradient(180deg,#fff,#93c5fd);clip-path:polygon(50% 0,20% 45%,45% 45%,25% 100%,80% 35%,55% 35%,75% 0);opacity:0;animation:pfxbolt 5s steps(1) infinite;filter:drop-shadow(0 0 8px #bfdbfe)}
+.ban-cyber{background:linear-gradient(180deg,#0b0420 0%,#2e1065 55%,#7c3aed 100%)!important;background-size:100% 100%!important;animation:none!important}
+.ban-cyber::before{content:"";position:absolute;left:0;right:0;bottom:0;height:62%;background:
+  linear-gradient(#0b0420,#0b0420) 4% 100%/9% 70% no-repeat,linear-gradient(#120830,#120830) 14% 100%/7% 45% no-repeat,linear-gradient(#0b0420,#0b0420) 22% 100%/11% 90% no-repeat,
+  linear-gradient(#120830,#120830) 35% 100%/8% 55% no-repeat,linear-gradient(#0b0420,#0b0420) 45% 100%/12% 78% no-repeat,linear-gradient(#120830,#120830) 58% 100%/7% 40% no-repeat,
+  linear-gradient(#0b0420,#0b0420) 67% 100%/10% 95% no-repeat,linear-gradient(#120830,#120830) 79% 100%/8% 60% no-repeat,linear-gradient(#0b0420,#0b0420) 92% 100%/12% 74% no-repeat;
+  -webkit-mask:linear-gradient(#000,#000),radial-gradient(1.2px 1.2px,#000 98%,transparent) 0 0/8px 9px;mask:linear-gradient(#000,#000)}
+.ban-cyber::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,#22d3ee55,transparent) 0 0/30% 100% no-repeat,radial-gradient(1px 1px,#fde68acc 98%,transparent) 0 40%/11px 10px;animation:cyberscan 4s linear infinite;mix-blend-mode:screen;opacity:.9}
+@keyframes cyberscan{from{background-position:-40% 0,0 40%}to{background-position:140% 0,0 40%}}
+.ban-rgb{background:linear-gradient(90deg,#ff004c,#ff8a00,#ffe600,#00ff6a,#00c3ff,#7a00ff,#ff00c8,#ff004c)!important;background-size:300% 100%!important;animation:rgbroll 4s linear infinite!important}
+.ban-rgb::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,#0006 0 2px,transparent 2px 6px),linear-gradient(180deg,#0000,#000a)}
+@keyframes rgbroll{to{background-position:300% 0}}
+.hero-storm{background:radial-gradient(600px 300px at 80% 40%,rgba(148,163,184,.45),transparent 70%),linear-gradient(135deg,#0f172a,#1e293b 60%,#334155);animation:stormflash 5s steps(1) infinite}
+.hero-neon{background:radial-gradient(500px 260px at 85% 50%,rgba(255,61,154,.45),transparent 70%),radial-gradient(420px 240px at 10% 90%,rgba(34,211,238,.35),transparent 70%),linear-gradient(135deg,#0b0420,#2e1065)}
+/* ===== Effects for helper-added items that had none ===== */
+/* Plasma Blade: a glowing energy blade arcing around the avatar */
+.deco-plasma{background:conic-gradient(from var(--a,0deg),transparent 0 55%,#38bdf8 70%,#e0f2fe 78%,#38bdf8 86%,transparent 92%);-webkit-mask:radial-gradient(closest-side,transparent 80%,#000 84%,#000 92%,transparent 96%);mask:radial-gradient(closest-side,transparent 80%,#000 84%,#000 92%,transparent 96%);animation:ring 1.6s linear infinite;filter:drop-shadow(0 0 6px #38bdf8) drop-shadow(0 0 12px #0ea5e9)}
+/* Web Slinger: a web of thin lines behind a red ring */
+.deco-spider{background:repeating-conic-gradient(from 0deg,#fff6 0 1.5deg,transparent 1.5deg 30deg),repeating-radial-gradient(circle,transparent 0 9%,#fff5 9.5% 10.5%,transparent 11% 20%);-webkit-mask:radial-gradient(closest-side,transparent 74%,#000 78%,#000 98%,transparent 100%);mask:radial-gradient(closest-side,transparent 74%,#000 78%,#000 98%,transparent 100%);box-shadow:0 0 0 2px #dc2626 inset;animation:webpulse 3s ease-in-out infinite}
+@keyframes webpulse{50%{transform:scale(1.04);filter:drop-shadow(0 0 4px #fff8)}}
+/* Mystic Cloak: a red cloak swirling around the avatar */
+.deco-sorcerer{background:conic-gradient(from var(--a,0deg),#7f1d1d,#dc2626,#fbbf24 12%,#dc2626 20%,#7f1d1d 45%,#b91c1c 70%,#7f1d1d);-webkit-mask:radial-gradient(closest-side,transparent 72%,#000 80%,#000 88%,transparent 100%);mask:radial-gradient(closest-side,transparent 72%,#000 80%,#000 88%,transparent 100%);animation:ring 5s linear infinite;filter:blur(.6px) drop-shadow(0 0 5px #dc2626aa)}
+/* Golden Aura: spiky golden energy */
+.deco-supersaiyan{background:repeating-conic-gradient(from var(--a,0deg),#fde047 0 6deg,#f59e0b 6deg 10deg,transparent 10deg 18deg);-webkit-mask:radial-gradient(closest-side,transparent 70%,#000 76%,#000 86%,transparent 100%);mask:radial-gradient(closest-side,transparent 70%,#000 76%,#000 86%,transparent 100%);animation:ring 1.2s linear infinite,aurapulse .5s ease-in-out infinite alternate;filter:drop-shadow(0 0 8px #facc15)}
+@keyframes aurapulse{to{transform:scale(1.06)}}
+
+/* Telekinetic Aura: floating rocks and a blue glow */
+.pfx-force::before{top:0;height:100%;background:radial-gradient(ellipse at 50% 100%,#3b82f655,transparent 70%);animation:forceglow 3s ease-in-out infinite}
+.pfx-force::after{top:0;height:100%;background-image:radial-gradient(4px 3px at 20% 70%,#94a3b8,transparent),radial-gradient(5px 4px at 75% 60%,#64748b,transparent),radial-gradient(3px 3px at 45% 80%,#cbd5e1,transparent),radial-gradient(4px 4px at 88% 85%,#94a3b8,transparent);animation:forcefloat 4s ease-in-out infinite;filter:drop-shadow(0 0 3px #60a5fa)}
+@keyframes forceglow{50%{opacity:.5}}
+@keyframes forcefloat{50%{transform:translateY(-14px)}}
+/* Reality Glitch: color-split glitch flicker */
+.pfx-multiverse::before{top:0;height:100%;background:linear-gradient(90deg,#ff00c855,transparent 30%,transparent 70%,#00e5ff55);mix-blend-mode:screen;animation:glitchx 2.2s steps(1) infinite}
+.pfx-multiverse::after{top:0;height:100%;background:repeating-linear-gradient(0deg,#fff1 0 2px,transparent 2px 5px);animation:glitchy 2.2s steps(1) infinite}
+@keyframes glitchx{0%,70%,100%{transform:none;opacity:.6}72%{transform:translateX(-8px);opacity:1}76%{transform:translateX(6px)}80%{transform:none}}
+@keyframes glitchy{0%,70%,100%{opacity:.3}73%,78%{opacity:1;transform:translateY(4px)}}
+/* Time Loop: green runes circling */
+.pfx-time::before{top:10%;left:15%;right:15%;height:auto;aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(#4ade80 0 3deg,transparent 3deg 15deg);-webkit-mask:radial-gradient(closest-side,transparent 80%,#000 84%,#000 90%,transparent 94%);mask:radial-gradient(closest-side,transparent 80%,#000 84%,#000 90%,transparent 94%);animation:orbitspin 8s linear infinite;filter:drop-shadow(0 0 5px #22c55e);opacity:.8}
+.pfx-time::after{top:22%;left:27%;right:27%;height:auto;aspect-ratio:1;border-radius:50%;border:1.5px dashed #86efac;animation:orbitspin 5s linear infinite reverse;opacity:.7}
+
+/* Nameplates */
+.plate-empire{--plate:linear-gradient(100deg,rgba(15,23,42,.2),rgba(148,163,184,.45) 35%,rgba(226,232,240,.6) 45%,rgba(71,85,105,.45) 60%,rgba(15,23,42,.2))}
+.plate-stark{--plate:radial-gradient(circle at 12% 50%,rgba(125,211,252,.8) 0 6%,transparent 14%),linear-gradient(90deg,rgba(14,165,233,.25),rgba(56,189,248,.5) 50%,rgba(14,165,233,.25)),repeating-linear-gradient(90deg,rgba(186,230,253,.25) 0 1px,transparent 1px 10px)}
+.plate-shinobi{--plate:linear-gradient(90deg,rgba(120,113,108,.35),rgba(168,162,158,.5) 40%,rgba(87,83,78,.45) 70%),repeating-linear-gradient(45deg,rgba(0,0,0,.15) 0 3px,transparent 3px 9px)}
+
+/* Banners */
+.ban-hyper{background:radial-gradient(circle at 50% 50%,#1e3a8a,#020617 70%)!important;background-size:100% 100%!important;animation:none!important}
+.ban-hyper::after{content:"";position:absolute;inset:-50%;background:repeating-conic-gradient(from 0deg at 50% 50%,#fff 0 .6deg,transparent .6deg 9deg);-webkit-mask:radial-gradient(circle,transparent 8%,#000 40%);mask:radial-gradient(circle,transparent 8%,#000 40%);animation:hyperzoom 1.2s linear infinite;opacity:.7}
+@keyframes hyperzoom{from{transform:scale(.6);opacity:.2}to{transform:scale(1.6);opacity:.9}}
+.ban-cityswing{background:linear-gradient(180deg,#020617 0%,#1e1b4b 60%,#be185d 100%)!important;background-size:100% 100%!important;animation:none!important}
+.ban-cityswing::before{content:"";position:absolute;left:-10%;right:-10%;bottom:0;height:55%;background:linear-gradient(#0b0b1e,#0b0b1e) 5% 100%/10% 80% no-repeat,linear-gradient(#11112b,#11112b) 18% 100%/8% 55% no-repeat,linear-gradient(#0b0b1e,#0b0b1e) 30% 100%/12% 95% no-repeat,linear-gradient(#11112b,#11112b) 46% 100%/9% 60% no-repeat,linear-gradient(#0b0b1e,#0b0b1e) 60% 100%/11% 85% no-repeat,linear-gradient(#11112b,#11112b) 75% 100%/8% 50% no-repeat,linear-gradient(#0b0b1e,#0b0b1e) 90% 100%/12% 75% no-repeat;animation:cityswing 6s ease-in-out infinite}
+@keyframes cityswing{50%{transform:translateX(-6%) translateY(-4%) rotate(-2deg)}}
+.ban-mirror{background:conic-gradient(from var(--a,0deg) at 50% 50%,#312e81,#7c3aed,#0ea5e9,#312e81,#a855f7,#312e81)!important;background-size:100% 100%!important;animation:ring 10s linear infinite!important}
+.ban-mirror::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(60deg,#fff2 0 2px,transparent 2px 26px),repeating-linear-gradient(-60deg,#0003 0 2px,transparent 2px 22px);animation:banflow 8s ease-in-out infinite}
+.ban-spirit{background:linear-gradient(180deg,#0c1445,#1e3a8a)!important;background-size:100% 100%!important;animation:spiritshake .25s linear infinite!important}
+.ban-spirit::after{content:"";position:absolute;left:-10%;right:-10%;top:38%;height:26%;background:linear-gradient(180deg,transparent,#7dd3fc 30%,#fff 50%,#7dd3fc 70%,transparent);filter:blur(2px) drop-shadow(0 0 10px #38bdf8);animation:beam 1.4s ease-in-out infinite}
+@keyframes spiritshake{25%{transform:translate(1px,-1px)}50%{transform:translate(-1px,1px)}75%{transform:translate(1px,1px)}}
+@keyframes beam{0%{transform:scaleX(0);transform-origin:left}50%,100%{transform:scaleX(1);transform-origin:left;opacity:1}100%{opacity:.6}}
 </style>
 </head>
 <body>
@@ -1679,7 +1789,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-23.1619";
+const APP_VERSION = "2026-11-23.1625";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -4097,7 +4207,7 @@ function installApp(){
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 4;
+const CAT_V = 5;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -4152,11 +4262,29 @@ const COSM = [
   // --- ANIME & ACTION THEME ---
   {id:"d_supersaiyan", type:"deco", name:"Golden Aura", price:1000, tag:"exclusive", desc:"Spiky glowing hair and crackling energy for your avatar."},
   {id:"p_shinobi", type:"plate", name:"Hidden Village", price:400, desc:"A carved stone nameplate with a slashed headband motif."},
-  {id:"n_spirit", type:"pban", name:"Energy Blast", price:1150, desc:"A massive, screen-shaking energy beam tearing through the banner."}
+  {id:"n_spirit", type:"pban", name:"Energy Blast", price:1150, desc:"A massive, screen-shaking energy beam tearing through the banner."},
+  // ---- Winter 2026 drop ----
+  {id:"d_void", type:"deco", name:"Black Hole", price:2000, tag:"exclusive", desc:"A swirling accretion disk that bends the light around your avatar."},
+  {id:"d_crown", type:"deco", name:"Royal Crown", price:1500, tag:"exclusive", desc:"A floating gold crown with sparkling jewels. Bow down."},
+  {id:"d_storm", type:"deco", name:"Thunderstorm", price:900, tag:"new", desc:"A dark storm ring with lightning that strikes every few seconds."},
+  {id:"d_orbit", type:"deco", name:"Orbit", price:800, tag:"new", desc:"Two tiny planets orbiting your avatar on glowing paths."},
+  {id:"d_neon", type:"deco", name:"Neon Sign", price:700, tag:"new", desc:"A buzzing pink and cyan neon ring that flickers like a real sign."},
+  {id:"d_prism", type:"deco", name:"Prism", price:600, tag:"new", desc:"A rainbow ring that shifts through every color."},
+  {id:"e_fireflies", type:"pfx", name:"Fireflies", price:700, tag:"new", desc:"Glowing fireflies drift and blink across your profile."},
+  {id:"e_lightning", type:"pfx", name:"Lightning Strike", price:900, tag:"new", desc:"Lightning flashes across your profile card."},
+  {id:"e_bubbles", type:"pfx", name:"Bubble Up", price:500, tag:"new", desc:"Shiny bubbles float up your card."},
+  {id:"p_neon", type:"plate", name:"Neon Pulse", price:600, tag:"new", desc:"A flickering pink and cyan neon nameplate."},
+  {id:"p_prism", type:"plate", name:"Prism", price:500, tag:"new", desc:"A rainbow that sweeps across your name."},
+  {id:"p_molten", type:"plate", name:"Molten", price:700, tag:"new", desc:"Glowing lava flowing behind your name."},
+  {id:"n_storm", type:"pban", name:"Thunder Clouds", price:1000, tag:"new", desc:"Dark rolling clouds lit up by lightning."},
+  {id:"n_cyber", type:"pban", name:"Cyber City", price:1200, tag:"new", desc:"A neon city skyline at night with a scanning light."},
+  {id:"n_rgb", type:"pban", name:"RGB Setup", price:800, tag:"new", desc:"Gamer RGB lighting rolling across your banner."}
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
   {id:"b_aurora", type:"bundle", name:"Aurora Bundle", items:["d_aurora","e_aurora","p_matcha"], tag:"new", desc:"Aurora Mist, Northern Lights and the Matcha nameplate."},
+  {id:"b_storm", type:"bundle", name:"Storm Bundle", items:["d_storm","e_lightning","n_storm"], desc:"Thunderstorm, Lightning Strike and Thunder Clouds."},
+  {id:"b_neon", type:"bundle", name:"Neon Nights Bundle", items:["d_neon","p_neon","n_cyber"], desc:"Neon Sign, Neon Pulse and Cyber City."},
   {id:"b_winter", type:"bundle", name:"Winter Bundle", items:["d_frost","e_snow","p_ocean"], desc:"Frostbite, Snow Day and the Deep Ocean nameplate."},
   {id:"b_love", type:"bundle", name:"Sweetheart Bundle", items:["d_sakura","e_hearts","p_candy"], desc:"Sakura Bloom, Floating Hearts and Cotton Candy."},
   {id:"b_galaxy", type:"bundle", name:"Deep Space Bundle", items:["d_cosmic","e_starfall","p_midnight","n_galaxy"], tag:"exclusive", desc:"The full space look: Cosmic Swirl, Starfall, Midnight nameplate and the animated Galaxy banner."},
@@ -4307,6 +4435,8 @@ function spotlightItems(){ const d = etDay(), hash = str => { let x = d * 265443
   return COSM.filter(c => c.price > 0 && !c.own).sort((a, b) => hash(a.id) - hash(b.id)).slice(0, 4); }
 function untilNextDay(){ const ms = (etDay() + 1) * 864e5 + 5 * 36e5 - Date.now(); const hh = Math.floor(ms / 36e5), mm = Math.floor(ms % 36e5 / 6e4); return hh + "h " + mm + "m"; }
 const HERO = [
+  {b:"b_storm", chip:"NEW DROP", title:"Thunderstorm", text:"Lightning that actually strikes: a storm ring, flashes across your profile and rolling thunder clouds.", bg:"storm"},
+  {b:"b_neon", chip:"NEW DROP", title:"Neon Nights", text:"A buzzing neon ring, a flickering nameplate and a glowing city skyline.", bg:"neon"},
   {b:"b_galaxy", chip:"NEW COLLECTION", title:"Deep Space", text:"Go full galaxy: a cosmic ring, falling stars, a midnight nameplate and an animated banner.", bg:"space"},
   {b:"b_aurora", chip:"JUST DROPPED", title:"Northern Lights", text:"Glowing green and blue light that flows around your avatar and profile.", bg:"aurora"},
   {b:"b_winter", chip:"SEASONAL", title:"Winter Wonderland", text:"Frosty rings, a snow-day profile and a deep ocean nameplate.", bg:"winter"},
@@ -5421,7 +5551,7 @@ function watchMySig(){ if (mySigSub || !S.uid || isOwner()) return;
 function enforceRules(){
   const me = member(S.uid), el = document.getElementById("rulesgate");
   const redo = !!(S.mySig && S.mySig.redo);
-  const need = me && !isOwner() && ((me.rulesOk || 0) < RULES_V || redo) && S.routed === "app";
+  const need = me && !isOwner() && !window.__ccNoRules && ((me.rulesOk || 0) < RULES_V || redo) && S.routed === "app";
   if (!need){ if (el) el.remove(); return; }
   if (el){ if (el.dataset.redo === String(redo)) return; el.remove(); }
   const part = redo ? (S.mySig.redoPart || "all") : "all";
