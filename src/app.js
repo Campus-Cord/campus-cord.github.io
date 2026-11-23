@@ -2190,12 +2190,15 @@ async function moveRoom(i, d){ const a = S.rooms[i], b = S.rooms[i + d]; if (!a 
     for (let k = 0; k < S.rooms.length; k++){ const r = S.rooms[k]; if (r !== a && r !== b && r.order !== k) await updateDoc(doc(db, "rooms", r.id), {order:k}); } }
   catch(e){ toast("Couldn't reorder: " + errMsg(e)); } }
 async function clearRoom(roomId){
-  try{ const snap = await getDocs(query(collection(db, "rooms", roomId, "msgs"), orderBy("ts","desc"), limit(300)));
-    for (const d of snap.docs) await deleteDoc(d.ref);
-    const rs = await getDocs(query(collection(db, "rooms", roomId, "reacts"), limit(1000)));
-    for (const d of rs.docs) await deleteDoc(d.ref);
-    toast("Room cleared");
-  }catch(e){ toast("Couldn't clear: " + errMsg(e)); }
+  // Delete everything in big batches (up to 400 at a time) until the room is empty.
+  const wipe = async sub => { let n = 0;
+    for (;;){ const snap = await getDocs(query(collection(db, "rooms", roomId, sub), limit(400)));
+      if (snap.empty) return n;
+      const b = writeBatch(db); snap.docs.forEach(d => b.delete(d.ref)); await b.commit(); n += snap.size;
+      if (sub === "msgs") toast("Clearing… " + n + " messages deleted"); } };
+  try{ toast("Clearing…"); const n = await wipe("msgs"); await wipe("reacts");
+    toast("Room cleared (" + n + " messages deleted)"); }
+  catch(e){ toast("Couldn't clear: " + errMsg(e)); }
 }
 function adminMembers(p){
   const list = h("div",{class:"list"});
