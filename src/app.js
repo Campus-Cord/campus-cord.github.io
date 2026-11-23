@@ -2065,6 +2065,7 @@ function openAdmin(start){
     {id:"overview", label:"Overview", icon:"grid", render:adminOverview, hidden:!isOwner()},
     {id:"rooms", label:"Rooms", icon:"hash", render:adminRooms},
     {id:"members", label:"Members & roles", icon:"users", render:adminMembers, hidden:!isOwner()},
+    {id:"agreements", label:"Agreements", icon:"info", render:adminAgreements, hidden:!isOwner()},
     {header:"Monetization", hidden:!isOwner()},
     {id:"shop", label:"Shop & Stripe", icon:"bag", render:adminShop, hidden:!isOwner()},
     {id:"appeals", icon:"alert", label:"Ban appeals" + (openAppeals().length ? " (" + openAppeals().length + ")" : ""), render:adminAppeals, hidden:!isOwner()},

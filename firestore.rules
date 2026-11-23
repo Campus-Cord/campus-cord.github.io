@@ -180,6 +180,21 @@ service cloud.firestore {
       allow update: if isOwner();
       allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isOwner());
     }
+    // Signed member agreements (with a drawn signature). Only the owner and the signer can read them.
+    match /signatures/{uid} {
+      allow read: if isOwner() || (signedIn() && uid == request.auth.uid);
+      allow create, update: if signedIn() && uid == request.auth.uid && isMember()
+        && request.resource.data.keys().hasOnly(['v', 'at', 'nick', 'typed', 'img', 'fullName', 'sigId'])
+        && request.resource.data.fullName is string && request.resource.data.fullName.size() <= 60
+        && request.resource.data.sigId is string && request.resource.data.sigId.size() <= 24
+        && request.resource.data.v is int && request.resource.data.at is int
+        && request.resource.data.typed is string && request.resource.data.typed.size() <= 200
+        && request.resource.data.nick is string && request.resource.data.nick.size() <= 24
+        && request.resource.data.img is string && request.resource.data.img.size() <= 80000
+        && request.resource.data.img.matches('data:image/(jpeg|png);base64,.*');
+      allow update: if isOwner() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved']);
+      allow delete: if isOwner();
+    }
     match /members/{uid} {
       allow read: if signedIn();
       // The owner can always create or fix their own member profile.

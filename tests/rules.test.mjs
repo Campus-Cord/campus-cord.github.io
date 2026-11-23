@@ -296,6 +296,21 @@ await t("member signs with typed text", assertSucceeds(updateDoc(doc(as("alice")
 await t("signature can't be huge", assertFails(updateDoc(doc(as("alice"), "members/alice"), { rulesOk: 2, rulesAt: Date.now(), rulesSig: "x".repeat(300) })));
 await t("can't agree for someone else", assertFails(updateDoc(doc(as("alice"), "members/bob"), { rulesOk: 1, rulesAt: Date.now() })));
 
+console.log("Signed agreements");
+const sig = (who, extra) => Object.assign({ v: 3, at: Date.now(), nick: who, typed: "I, " + who + ", am responsible for myself and I will not use CampusCord in class.", img: "data:image/jpeg;base64,AAAA", fullName: "Test Person", sigId: "CC-2026-ABCDE" }, extra || {});
+await t("member signs the agreement", assertSucceeds(setDoc(doc(as("alice"), "signatures/alice"), sig("alice"))));
+await t("member reads their own signature", assertSucceeds(getDoc(doc(as("alice"), "signatures/alice"))));
+await t("other members can't see signatures", assertFails(getDoc(doc(as("bob"), "signatures/alice"))));
+await t("owner sees signatures", assertSucceeds(getDoc(doc(as("owner"), "signatures/alice"))));
+await t("owner lists all signatures", assertSucceeds(getDocs(collection(as("owner"), "signatures"))));
+await t("members can't list signatures", assertFails(getDocs(collection(as("bob"), "signatures"))));
+await t("can't sign for someone else", assertFails(setDoc(doc(as("bob"), "signatures/alice"), sig("bob"))));
+await t("signature must be a picture", assertFails(setDoc(doc(as("bob"), "signatures/bob"), sig("bob", { img: "javascript:alert(1)" }))));
+await t("signature can't have extra fields", assertFails(setDoc(doc(as("bob"), "signatures/bob"), sig("bob", { approved: 3 }))));
+await t("member can't approve themselves", assertFails(updateDoc(doc(as("alice"), "signatures/alice"), { approved: 3 })));
+await t("owner approves a signature", assertSucceeds(updateDoc(doc(as("owner"), "signatures/alice"), { approved: 3 })));
+await t("owner can't change what someone signed", assertFails(updateDoc(doc(as("owner"), "signatures/alice"), { typed: "changed" })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

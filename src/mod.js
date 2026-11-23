@@ -144,46 +144,150 @@ function enforceMod(){
     ok)));
 }
 
-// ---------------------------------------------------------------- User agreement (everyone signs before using the app)
-// Bump RULES_V when the agreement changes and everyone has to sign again.
-const RULES_V = 2;
-const AGREE_PHRASE = "I am responsible for myself";
-const AGREEMENT = "I understand that CampusCord is a private chat app made by students. It is not run by, connected to, or approved by any school. I am responsible for myself: for when and where I use CampusCord, and for everything I post, send or share here. I will follow my school's rules, and I will not use CampusCord in class or anywhere my school doesn't allow it. I understand that the people who run CampusCord are not responsible for my choices, and that if I break the rules I can be warned, timed out or removed.";
-const RULES = [
-  ["📚", "Follow your school's rules", "No CampusCord in class, or on school devices or Wi-Fi if your school doesn't allow it."],
-  ["💬", "Be kind", "No bullying, threats, hate, or anything inappropriate."],
-  ["🔒", "Keep personal info private", "No addresses, phone numbers or passwords, yours or anyone else's."],
-  ["🧑‍🤝‍🧑", "Talk to an adult if something's wrong", "If anything here makes you uncomfortable or unsafe, tell a parent or trusted adult."],
+// ---------------------------------------------------------------- Member agreement (everyone signs before using the app)
+// Bump RULES_V when the agreement changes and everyone has to sign again. Signatures are saved in
+// signatures/{uid} (only the owner and the signer can read them); members/{uid}.rulesOk records that they signed.
+const RULES_V = 3;
+const RULES_DATE = "November 23, 2026";
+const agreePhrase = uid => "I, " + nickOf(uid) + ", am responsible for myself and I will not use CampusCord in class.";
+const AGREEMENT = [
+  ["About CampusCord", "CampusCord is a private, independent online chat service operated by students. It is not owned, operated, sponsored, endorsed or supervised by any school, school district or teacher."],
+  ["Personal Responsibility", "I accept full responsibility for my own use of CampusCord, including when, where and how I use it, and for all messages, images and other content I post, send or share."],
+  ["School Rules", "I will follow all rules of my school. I will not use CampusCord during class, or on any school device or network where it is not permitted."],
+  ["Conduct", "I will not bully, harass, threaten or impersonate anyone, and I will not post hateful, violent, sexual or otherwise inappropriate content."],
+  ["Privacy and Safety", "I will not share personal information about myself or others, such as addresses, phone numbers or passwords. If anything on CampusCord makes me feel unsafe or uncomfortable, I will tell a parent, guardian or another trusted adult."],
+  ["Enforcement", "CampusCord moderators may warn me, time me out, suspend me or remove my account if I break this agreement."],
+  ["Acknowledgment", "I understand that the operators of CampusCord are not responsible for my choices or actions. By signing below, I confirm that I have read and understood this agreement and agree to follow it."],
 ];
 const normPhrase = t => String(t || "").toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
 function agreementDocEl(){ return h("div",{class:"adoc"},
-  h("div",{class:"adochead"}, h("b",{text:"CampusCord User Agreement"}), h("span",{text:"Version " + RULES_V})),
-  h("p",{text:AGREEMENT}),
-  h("div",{class:"adocrules"}, RULES.map(([ic, t, d]) => h("div",{class:"ritem"}, h("span",{class:"ric",text:ic}), h("div",null, h("b",{text:t}), h("div",{class:"rdesc",text:d})))))); }
+  h("div",{class:"adoctitle"}, h("div",{text:"CAMPUSCORD"}), h("b",{text:"Member Agreement and Acknowledgment of Responsibility"})),
+  h("div",{class:"adocmeta",text:"Effective " + RULES_DATE + " · Version " + RULES_V}),
+  AGREEMENT.map(([t, d], i) => h("p",null, h("b",{text:(i + 1) + ". " + t + ". "}), d))); }
+// A signature pad: draw with a mouse, finger or pen.
+function sigPad(){
+  const c = h("canvas",{class:"sigpad", width:"1000", height:"260"}), ctx = c.getContext("2d");
+  let drawing = false, last = null, ink = 0; const pad = {el:c, ink:() => ink, onchange:null};
+  const pos = e => { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) * c.width / r.width, (e.clientY - r.top) * c.height / r.height]; };
+  const style = () => { ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#13235b"; };
+  c.onpointerdown = e => { e.preventDefault(); c.setPointerCapture(e.pointerId); drawing = true; last = pos(e); style(); ctx.beginPath(); ctx.arc(last[0], last[1], 2, 0, 7); ctx.fillStyle = "#13235b"; ctx.fill(); };
+  c.onpointermove = e => { if (!drawing) return; const p = pos(e); style(); ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]); ctx.stroke();
+    ink += Math.hypot(p[0] - last[0], p[1] - last[1]); last = p; if (pad.onchange) pad.onchange(); };
+  c.onpointerup = c.onpointercancel = () => { drawing = false; };
+  pad.clear = () => { ctx.clearRect(0, 0, c.width, c.height); ink = 0; if (pad.onchange) pad.onchange(); };
+  // Small JPEG on white so it stays a few KB.
+  pad.image = () => { const o = document.createElement("canvas"); o.width = 500; o.height = 130; const x = o.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, 500, 130); x.drawImage(c, 0, 0, 500, 130); return o.toDataURL("image/jpeg", 0.7); };
+  return pad;
+}
+// Agreement ID like CC-2026-7KQ2M (from the signer and the time, so it never changes).
+function makeSigId(uid, at){ let x = 0; for (const ch of uid + at) x = (x * 31 + ch.charCodeAt(0)) >>> 0;
+  return "CC-" + new Date(at).getFullYear() + "-" + x.toString(36).toUpperCase().padStart(5, "0").slice(-5); }
+const escH = t => String(t || "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+// A printable copy of a signed agreement. Opens the print window, where "Save as PDF" makes the PDF.
+function printAgreement(g){
+  const when = new Date(g.at).toLocaleString(undefined, {year:"numeric", month:"long", day:"numeric", hour:"numeric", minute:"2-digit"});
+  const html = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>CampusCord Agreement ' + escH(g.sigId) + '</title><style>' +
+    'body{font-family:Georgia,serif;color:#111;max-width:720px;margin:40px auto;padding:0 30px;line-height:1.55}' +
+    '.top{text-align:center;border-top:6px solid #13235b;padding-top:18px}.top div{letter-spacing:.3em;font-size:12px;color:#13235b;font-weight:bold}' +
+    'h1{font-size:22px;margin:6px 0}.meta{text-align:center;font-style:italic;color:#555;font-size:13px;margin-bottom:20px}' +
+    'p{text-align:justify;font-size:14.5px}.stmt{border:1px solid #13235b55;background:#f4f5fb;padding:10px 14px;font-weight:bold}' +
+    '.sig{display:flex;gap:30px;margin-top:26px}.sig>div{flex:1}.sig img{height:70px;display:block}.line{border-top:1px solid #111;padding-top:4px;font-size:12px;color:#444}' +
+    '.id{margin-top:30px;font-size:12px;color:#555;text-align:center;border-top:1px solid #ccc;padding-top:10px}</style></head><body>' +
+    '<div class="top"><div>CAMPUSCORD</div><h1>Member Agreement and Acknowledgment of Responsibility</h1></div>' +
+    '<div class="meta">Effective ' + RULES_DATE + ' · Version ' + escH(g.v) + '</div>' +
+    AGREEMENT.map(([t, d], i) => '<p><b>' + (i + 1) + '. ' + escH(t) + '.</b> ' + escH(d) + '</p>').join("") +
+    '<p class="stmt">“' + escH(g.typed) + '”</p>' +
+    '<div class="sig"><div>' + (g.img ? '<img src="' + g.img + '">' : '') + '<div class="line">Signature</div></div>' +
+    '<div><div style="height:70px;display:flex;align-items:flex-end;font-size:18px">' + escH(g.fullName) + '</div><div class="line">Printed name (CampusCord name: ' + escH(g.nick) + ')</div></div></div>' +
+    '<div class="sig"><div><div style="font-size:16px">' + escH(when) + '</div><div class="line">Date signed</div></div><div><div style="font-size:16px">' + escH(g.sigId) + '</div><div class="line">Agreement ID</div></div></div>' +
+    '<div class="id">Signed electronically on CampusCord. Agreement ID ' + escH(g.sigId) + '.</div></body></html>';
+  const f = document.createElement("iframe"); f.style.cssText = "position:fixed;width:0;height:0;border:0;right:0;bottom:0";
+  document.body.appendChild(f); f.srcdoc = html;
+  f.onload = () => { setTimeout(() => { try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){ toast("Couldn't open the copy"); } setTimeout(() => f.remove(), 60000); }, 200); };
+}
 function enforceRules(){
   const me = member(S.uid), el = document.getElementById("rulesgate");
-  const need = me && (me.rulesOk || 0) < RULES_V && S.routed === "app";
+  const need = me && !isOwner() && (me.rulesOk || 0) < RULES_V && S.routed === "app";
   if (!need){ if (el) el.remove(); return; }
   if (el) return;
-  const typed = h("input",{class:"inp atype", maxlength:"100", placeholder:"Type: " + AGREE_PHRASE, autocomplete:"off", spellcheck:"false"});
-  const go = h("button",{class:"btn big", disabled:true}, "I agree");
+  const PH = agreePhrase(S.uid);
+  const typed = h("input",{class:"inp atype", maxlength:"200", placeholder:"Type the statement above", autocomplete:"off", spellcheck:"false"});
+  const full = h("input",{class:"inp", maxlength:"60", placeholder:"First and last name", autocomplete:"name"});
+  const fullOk = () => /^[A-Za-z][A-Za-z'.-]+(\s+[A-Za-z'.-]+)+$/.test(full.value.trim());
+  const pad = sigPad();
+  const go = h("button",{class:"btn big", disabled:true}, "Sign and agree");
   const hint = h("div",{class:"ahint"});
-  typed.oninput = () => { const ok = normPhrase(typed.value) === normPhrase(AGREE_PHRASE); go.disabled = !ok;
-    hint.textContent = ok ? "✅ Looks good" : ""; typed.classList.toggle("ok", ok); };
+  const check = () => { const okT = normPhrase(typed.value) === normPhrase(PH), okN = fullOk(), okS = pad.ink() > 150;
+    typed.classList.toggle("ok", okT); full.classList.toggle("ok", okN); go.disabled = !(okT && okN && okS);
+    hint.textContent = !okT ? "" : !okS ? "Now sign in the box with your mouse or finger." : !okN ? "Type your first and last name." : "✅ Ready to sign"; };
+  typed.oninput = check; full.oninput = check; pad.onchange = check;
   typed.onpaste = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
   go.onclick = async () => { go.disabled = true; go.textContent = "Saving…";
-    try{ await updateDoc(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:Date.now(), rulesSig:typed.value.trim().slice(0, 200)}); }
-    catch(e){ go.disabled = false; go.textContent = "I agree"; toast("Couldn't save: " + errMsg(e)); } };
+    try{ const at = Date.now(), b = writeBatch(db);
+      const g = {v:RULES_V, at, nick:nickOf(S.uid), typed:typed.value.trim().slice(0, 200), img:pad.image(), fullName:full.value.trim().replace(/\s+/g, " ").slice(0, 60), sigId:makeSigId(S.uid, at)};
+      b.set(doc(db, "signatures", S.uid), g);
+      b.update(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:at});
+      await b.commit();
+      modal((m, close) => m.append(h("div",{class:"hdpop"}, h("div",{class:"hdcrown",text:"✍️"}), h("h2",{text:"Agreement signed"}),
+        h("p",{class:"note",text:"Your Agreement ID:"}), h("div",{class:"sigidbig",text:g.sigId}),
+        h("p",{class:"note",text:"Keep a copy for yourself. In the print window, pick \"Save as PDF\"."}),
+        h("div",{class:"row",style:{justifyContent:"center",gap:"8px"}}, h("button",{class:"btn ghost",onclick:() => printAgreement(g)},"Download a copy (PDF)"), h("button",{class:"btn",onclick:close},"Done"))))); }
+    catch(e){ go.disabled = false; go.textContent = "Sign and agree"; toast("Couldn't save: " + errMsg(e)); } };
+  const today = new Date().toLocaleDateString(undefined, {year:"numeric", month:"long", day:"numeric"});
+  const docEl = agreementDocEl();
+  // The signing part unlocks once they've scrolled to the end of the agreement.
+  const unlock = () => { const page = document.querySelector("#rulesgate .rbox"); if (!page) return;
+    if (docEl.getBoundingClientRect().bottom <= page.getBoundingClientRect().bottom + 12){ const a = document.querySelector("#rulesgate .asign"); if (a) a.classList.remove("locked");
+    const sc = document.querySelector("#rulesgate .ascroll"); if (sc) sc.remove(); page.removeEventListener("scroll", unlock); } };
+  setTimeout(() => { const page = document.querySelector("#rulesgate .rbox"); if (page){ page.addEventListener("scroll", unlock); unlock(); } }, 300);
   document.body.appendChild(h("div",{id:"rulesgate",class:"modlayer"}, h("div",{class:"nlbox rbox"},
     h("div",{class:"newupd",text:"NEW UPDATE"}),
-    h("h1",{class:"ahead",text:"You are responsible for yourself"}),
-    h("p",{class:"note",text:"Read the agreement below. To use CampusCord, you have to sign it."}),
-    agreementDocEl(),
-    h("label",{class:"alabel"}, "To sign, type ", h("b",{text:"\u201c" + AGREE_PHRASE + "\u201d"}), " below:"),
-    typed, hint,
-    h("div",{class:"asmall",text:"Signing as " + nickOf(S.uid) + ". What you type and the date are saved."}),
+    h("h1",{class:"ahead",text:"THIS IS ON YOU!"}),
+    h("div",{class:"asub",text:"You are responsible for yourself."}),
+    h("p",{class:"note",text:"Read the agreement. To keep using CampusCord, you must sign it."}),
+    docEl,
+    h("div",{class:"ascroll"}, "⬇️ Scroll to the end of the agreement to sign it"),
+    h("div",{class:"asign locked"},
+      h("label",{class:"alabel",text:"1. Type this statement exactly:"}),
+      h("div",{class:"aphrase",text:PH}), typed,
+      h("label",{class:"alabel",style:{marginTop:"14px"}}, "2. Sign below ", h("button",{class:"linkbtn", onclick:() => pad.clear()}, "Clear")),
+      h("div",{class:"sigwrap"}, pad.el, h("div",{class:"sigline"}, h("span",{text:"✕"}))),
+      h("label",{class:"alabel",style:{marginTop:"14px"},text:"3. Printed full name (first and last):"}), full,
+      h("div",{class:"sigmeta"}, h("div",null, h("span",{text:"CampusCord name"}), h("b",{text:nickOf(S.uid)})), h("div",null, h("span",{text:"Date"}), h("b",{text:today}))),
+      hint),
     go)));
-  setTimeout(() => typed.focus(), 100);
 }
-function rulesModal(){ modal((m, close) => m.append(h("h3",{text:"📜 CampusCord User Agreement"}), agreementDocEl(),
+function rulesModal(){ modal((m, close) => m.append(agreementDocEl(),
   h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"10px"}}, h("button",{class:"btn",onclick:close},"Close")))); }
+// Owner's box: everyone's signature, with an Approve button. Loads once when opened (no live listener).
+async function adminAgreements(p){
+  p.append(h("div",{class:"note",text:"Loading signatures…"}));
+  let sigs = {};
+  try{ (await getDocs(collection(db, "signatures"))).docs.forEach(d => { sigs[d.id] = d.data(); }); }
+  catch(e){ p.innerHTML = ""; p.append(h("div",{class:"err",text:"Couldn't load: " + errMsg(e)})); return; }
+  p.innerHTML = "";
+  const ms = Object.keys(S.members).filter(u => !isBanned(u) && !isOwnerUid(u));
+  const signed = u => sigs[u] && sigs[u].v >= RULES_V, ok = u => signed(u) && sigs[u].approved === RULES_V;
+  ms.sort((a, b) => (signed(b) && !ok(b)) - (signed(a) && !ok(a)) || signed(b) - signed(a) || nickOf(a).localeCompare(nickOf(b)));
+  const nS = ms.filter(signed).length, nA = ms.filter(ok).length;
+  p.append(h("div",{class:"agstats"},
+    h("div",null, h("b",{text:String(nS)}), h("span",{text:"signed"})),
+    h("div",null, h("b",{text:String(ms.length - nS)}), h("span",{text:"not yet"})),
+    h("div",null, h("b",{text:String(nA)}), h("span",{text:"approved"}))),
+    h("button",{class:"btn small ghost",style:{marginBottom:"12px"},onclick:rulesModal}, "📜 Read the agreement"));
+  ms.forEach(u => { const g = sigs[u];
+    const btn = signed(u) && !ok(u) ? h("button",{class:"btn small", onclick:async e => { e.target.disabled = true;
+      try{ await updateDoc(doc(db, "signatures", u), {approved:RULES_V}); e.target.replaceWith(h("span",{class:"agok",text:"✅ Approved"})); }
+      catch(err){ e.target.disabled = false; toast("Couldn't save: " + errMsg(err)); } }}, "Approve") : null;
+    p.append(h("div",{class:"agcard" + (signed(u) ? "" : " no")},
+      h("div",{class:"agtop"}, avatar(u, "sm", true), h("b",{text:nickOf(u)}),
+        h("span",{class:"agstat",text: signed(u) ? "Signed " + fmtDay(g.at) : "Hasn't signed yet"}),
+        ok(u) ? h("span",{class:"agok",text:"✅ Approved"}) : btn),
+      signed(u) ? h("div",{class:"agmeta"}, g.fullName ? h("span",null, "Name: ", h("b",{text:g.fullName})) : null,
+        g.sigId ? h("span",null, "ID: ", h("b",{text:g.sigId})) : null,
+        h("button",{class:"linkbtn",style:{float:"none"},onclick:() => printAgreement(g)}, "Copy (PDF)")) : null,
+      signed(u) ? h("div",{class:"agdoc"},
+        h("div",{class:"agsig",text:"“" + (g.typed || "") + "”"}),
+        g.img ? h("img",{class:"agimg", src:g.img, alt:"Signature of " + nickOf(u)}) : null) : null)); });
+}

@@ -1468,10 +1468,15 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .rbox .newupd{display:table}
 .ahead{font-size:34px;line-height:1.1;margin:12px 0 6px;text-align:center;font-weight:900}
 .rbox>.note{text-align:center}
-.adoc{background:#f7f3e8;color:#222;border-radius:6px;padding:18px 20px;margin:14px 0;box-shadow:0 8px 30px #0008;font-family:Georgia,"Times New Roman",serif;max-height:38vh;overflow:auto}
-.adochead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #2223;padding-bottom:6px;margin-bottom:10px}
-.adochead b{font-size:17px}.adochead span{font-size:12px;color:#666}
-.adoc p{font-size:15px;line-height:1.55;margin:0 0 12px;color:#222!important;text-align:left}
+.adoc{flex:none;background:#fbf9f3;color:#1d1d1d;border-radius:4px;padding:22px 26px;margin:14px 0;box-shadow:0 8px 30px #0008;font-family:Georgia,"Times New Roman",serif;height:min(42vh,360px);overflow:auto;border-top:6px solid #13235b}
+.modal .adoc{height:auto;max-height:65vh}
+.rbox>*{flex-shrink:0}
+.adoctitle{text-align:center;border-bottom:1px solid #0003;padding-bottom:10px;margin-bottom:6px}
+.adoctitle div{font-size:12px;letter-spacing:.3em;color:#13235b;font-weight:700}
+.adoctitle b{display:block;font-size:18px;margin-top:4px;color:#111}
+.adocmeta{text-align:center;font-size:12px;color:#555;margin-bottom:12px;font-style:italic}
+.adoc p{font-size:14.5px;line-height:1.6;margin:0 0 10px;color:#1d1d1d!important;text-align:justify}
+.adoc p b{color:#111}
 .adocrules{display:grid;gap:6px}
 .adoc .ritem{display:flex;gap:8px;background:#0000000a;border-radius:6px;padding:7px 10px}
 .adoc .ric{font-size:16px}.adoc .ritem b{font-size:14px}.adoc .rdesc{font-size:13px;color:#444}
@@ -1481,3 +1486,49 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .ahint{min-height:18px;font-size:13px;margin:4px 0;color:#3ba55d}
 .asmall{font-size:12px;color:var(--muted,#949ba4);margin-bottom:12px}
 .rbox .btn.big{width:100%;padding:13px;font-size:16px}
+
+.rbox .ahead{font-size:44px;color:#ff4d6d;text-shadow:0 0 30px #ff4d6d55;letter-spacing:.01em}
+.asub{text-align:center;font-size:17px;font-weight:700;margin-bottom:4px}
+.aphrase{background:#5865f222;border:1px dashed #5865f2;border-radius:8px;padding:10px 12px;font-weight:700;font-size:15px;margin-bottom:8px}
+.agstats{display:flex;gap:10px;margin-bottom:14px}
+.agstats>div{flex:1;background:var(--bg3,#1e1f22);border-radius:10px;padding:10px;text-align:center}
+.agstats b{display:block;font-size:24px}.agstats span{font-size:12px;color:var(--muted,#949ba4)}
+.agcard{background:var(--bg3,#1e1f22);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.agcard.no{opacity:.6}
+.agtop{display:flex;align-items:center;gap:10px}
+.agstat{flex:1;font-size:13px;color:var(--muted,#949ba4)}
+.agok{font-size:13px;color:#3ba55d;font-weight:700}
+.agsig{margin-top:8px;background:#f7f3e8;color:#222;font-family:Georgia,serif;font-style:italic;border-radius:6px;padding:8px 10px;font-size:14px}
+
+.asign{background:var(--bg3,#1e1f22);border-radius:10px;padding:14px;margin-bottom:12px}
+.asign .aphrase{color:inherit}
+.linkbtn{background:none;border:0;color:#8ea1ff;cursor:pointer;font-size:13px;float:right;padding:0}
+.sigwrap{position:relative;background:#fbf9f3;border-radius:6px;height:130px}
+.sigpad{width:100%;height:130px;display:block;touch-action:none;cursor:crosshair;position:relative;z-index:1}
+.sigline{position:absolute;left:18px;right:18px;bottom:28px;border-bottom:1.5px solid #13235b88}
+.sigline span{position:absolute;left:-2px;bottom:2px;color:#13235b88;font-size:16px}
+.sigmeta{display:flex;gap:10px;margin-top:8px}
+.sigmeta>div{flex:1;border-top:1px solid #fff2;padding-top:6px}
+.sigmeta span{display:block;font-size:11px;color:var(--muted,#949ba4);text-transform:uppercase;letter-spacing:.08em}
+.sigmeta b{font-size:14px}
+.agdoc{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.agdoc .agsig{flex:1;min-width:220px;margin:0}
+.agimg{height:60px;background:#fff;border-radius:6px;padding:2px}
+
+.ascroll{text-align:center;font-size:13px;font-weight:700;color:#ffb35c;margin:-4px 0 10px;animation:nupulse 1.6s ease-in-out infinite}
+.asign.locked{opacity:.35;pointer-events:none;filter:grayscale(1)}
+.inp.ok{border-color:#3ba55d;box-shadow:0 0 0 2px #3ba55d44}
+.sigidbig{font-family:ui-monospace,Menlo,monospace;font-size:24px;font-weight:800;letter-spacing:.06em;background:var(--bg3,#1e1f22);border-radius:10px;padding:10px;margin:4px auto 10px;display:inline-block}
+.agmeta{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:6px;color:var(--muted,#b5bac1);align-items:center}
+/* Agreement fills the whole page */
+#rulesgate{padding:0;align-items:stretch;justify-content:stretch}
+#rulesgate .rbox{max-width:none;width:100vw;height:100vh;max-height:none;border-radius:0;margin:0;padding:34px max(24px, calc((100vw - 820px) / 2)) 40px;
+  background:linear-gradient(180deg,#14162a 0%,#111214 55%);box-shadow:none;display:flex;flex-direction:column;overflow:auto}
+#rulesgate .ahead{font-size:clamp(40px,7vw,72px)}
+#rulesgate .asub{font-size:20px}
+#rulesgate .adoc{height:auto;max-height:none;min-height:0;padding:34px 44px}
+#rulesgate .adoc p{font-size:16px}
+#rulesgate .adoctitle b{font-size:24px}
+#rulesgate .sigwrap,#rulesgate .sigpad{height:170px}
+#rulesgate .btn.big{padding:16px;font-size:18px}
+@media (max-width:600px){ #rulesgate .adoc{padding:20px 18px} }
