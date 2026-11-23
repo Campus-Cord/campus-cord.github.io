@@ -1458,3 +1458,16 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .hdlist{list-style:none;padding:0;margin:12px auto 16px;text-align:left;display:grid;gap:8px;max-width:360px}
 .hdlist li{background:var(--bg3,#1e1f22);border-radius:10px;padding:9px 12px;font-size:14px}
 .hdpop .btn{min-width:160px}
+
+/* CampusCord Rules */
+#rulesgate{z-index:9998}
+.rbox{max-width:540px;max-height:92vh;overflow:auto;text-align:left}
+.rbox .nlic,.rbox h2,.rbox>.note{text-align:center}
+.rlist{display:grid;gap:8px;margin:12px 0}
+.ritem{display:flex;gap:10px;align-items:flex-start;background:var(--bg3,#1e1f22);border-radius:10px;padding:10px 12px}
+.ric{font-size:20px;line-height:1.2}
+.ritem b{font-size:14px}
+.rdesc{font-size:13px;color:var(--muted,#b5bac1);margin-top:2px}
+.ragree{display:flex;gap:10px;align-items:flex-start;margin:6px 0 12px;font-size:14px;cursor:pointer}
+.ragree input{width:18px;height:18px;margin-top:2px;flex:none}
+.rbox>.btn{width:100%}

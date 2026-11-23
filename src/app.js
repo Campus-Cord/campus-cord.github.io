@@ -807,7 +807,7 @@ function renderDMList(box){
   });
 }
 function renderMe(){
-  enforceNameLock(); enforceMod();
+  enforceNameLock(); enforceMod(); enforceRules();
   const w = $("meWho"); w.innerHTML = ""; if (!member(S.uid)) return;
   const mb = $("mbar"); if (mb){ mb.innerHTML = ""; const mbar = musicBarEl(); if (mbar) mb.appendChild(mbar); }
   const vb = $("vbar"); vb.innerHTML = ""; const bar = voiceBarEl(); if (bar) vb.appendChild(bar);
@@ -865,7 +865,8 @@ function openHelp(initial){
     const inp = h("input",{class:"inp", placeholder:"Ask a question, e.g. how do I make a poll?", onkeydown:e => { if (e.key === "Enter"){ ask(inp.value); inp.value = ""; } }});
     m.append(h("h3",null, "Help"), h("p",{class:"note",style:{marginTop:0},text:"Ask anything about using CampusCord."}), chat,
       h("div",{class:"row",style:{marginTop:"10px"}}, inp, h("button",{class:"btn small", onclick:() => { ask(inp.value); inp.value = ""; }}, "Ask")),
-      h("div",{class:"hsug"}, HELP.slice(0, 6).map(x => h("button",{onclick:() => ask(x.q)}, x.q))));
+      h("div",{class:"hsug"}, HELP.slice(0, 6).map(x => h("button",{onclick:() => ask(x.q)}, x.q))),
+      h("button",{class:"btn small ghost",style:{marginTop:"10px"},onclick:rulesModal}, "📜 Read the CampusCord Rules"));
     bot("Hi! I can explain any CampusCord feature. Pick a question below or type your own.");
     if (initial) ask(initial);
     setTimeout(() => inp.focus(), 0);
@@ -1278,6 +1279,7 @@ function serverMenu(ev){
     isOwner() ? {label:"Add section", icon:"plus", run:() => newCategory()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
+    {label:"CampusCord Rules", icon:"info", run:() => rulesModal()},
     {label:"Feedback & bugs", icon:"message", run:() => openChat("feedback", "all")},
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
@@ -2210,6 +2212,7 @@ function adminMembers(p){
         h("div",{class:"amsub"}, h("span",{class:"ambd", title:bl.map(x => badgeTitle(x.b, x.st)).join(", ")}, ...bl.slice(0, 8).map(x => badgeEl(x.b, x.st, "sm")), bl.length > 8 ? h("small",{text:"+" + (bl.length - 8)}) : null),
           isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
           !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null,
+          h("span",{class:"s",title: S.members[u].rulesAt ? "Agreed " + fmtDay(S.members[u].rulesAt) : "", text: (S.members[u].rulesOk || 0) >= RULES_V ? "📜 agreed to rules" : "📜 hasn't agreed yet"}),
           nameFlagLabel(u) ? h("span",{class:"s",style:{color: nameLocked(u) ? "#f0565c" : ""},text:nameFlagLabel(u)}) : null)),
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => devModal(u)}, isDev(u) ? (devUntil(u) ? "⏱ DEV" : "✓ DEV") : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,

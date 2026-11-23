@@ -143,3 +143,38 @@ function enforceMod(){
     h("p",{class:"note",text:"From the owner · " + fmtDay(n.at)}),
     ok)));
 }
+
+// ---------------------------------------------------------------- CampusCord Rules (everyone agrees before using the app)
+// Bump RULES_V when the rules change and everyone has to agree again.
+const RULES_V = 1;
+const RULES = [
+  ["🏫", "CampusCord is not a school app", "It's a private chat run by students. No school made it, runs it, or is responsible for it."],
+  ["📚", "I follow my school's rules", "I won't use CampusCord in class or when a teacher says not to. If my school doesn't allow it on school devices or Wi-Fi, I won't use it there."],
+  ["🙋", "I'm responsible for what I do", "Everyone is responsible for their own messages, pictures and actions. Nobody else is responsible for what I post."],
+  ["💬", "I'm kind", "No bullying, threats, hate, or anything inappropriate. No posting other people's pictures or private stuff without asking."],
+  ["🔒", "I keep personal info private", "I don't share my address, phone number, passwords, or anyone else's."],
+  ["🧑‍🤝‍🧑", "I talk to an adult if something's wrong", "If something here makes me uncomfortable or unsafe, I tell a parent or trusted adult."],
+  ["⚖️", "Breaking the rules has consequences", "I can be warned, timed out, or removed."],
+];
+function rulesListEl(){ return h("div",{class:"rlist"}, RULES.map(([ic, t, d], i) =>
+  h("div",{class:"ritem"}, h("div",{class:"ric",text:ic}), h("div",null, h("b",{text:(i + 1) + ". " + t}), h("div",{class:"rdesc",text:d}))))); }
+function enforceRules(){
+  const me = member(S.uid), el = document.getElementById("rulesgate");
+  const need = me && (me.rulesOk || 0) < RULES_V && S.routed === "app";
+  if (!need){ if (el) el.remove(); return; }
+  if (el) return;
+  const box = h("input",{type:"checkbox", id:"rules-ok"});
+  const go = h("button",{class:"btn", disabled:true}, "I agree");
+  box.onchange = () => { go.disabled = !box.checked; };
+  go.onclick = async () => { go.disabled = true; go.textContent = "Saving…";
+    try{ await updateDoc(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:Date.now()}); }
+    catch(e){ go.disabled = false; go.textContent = "I agree"; toast("Couldn't save: " + errMsg(e)); } };
+  document.body.appendChild(h("div",{id:"rulesgate",class:"modlayer"}, h("div",{class:"nlbox rbox"},
+    h("div",{class:"nlic",text:"📜"}), h("h2",{text:"CampusCord Rules"}),
+    h("p",{class:"note",text:"Read these and agree before using CampusCord."}),
+    rulesListEl(),
+    h("label",{class:"ragree",for:"rules-ok"}, box, h("span",{text:"I've read the rules. I agree to follow them, and I understand I'm responsible for what I do on CampusCord."})),
+    go)));
+}
+function rulesModal(){ modal((m, close) => m.append(h("h3",{text:"📜 CampusCord Rules"}), rulesListEl(),
+  h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"10px"}}, h("button",{class:"btn",onclick:close},"Close")))); }
