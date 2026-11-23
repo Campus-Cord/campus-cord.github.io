@@ -1459,15 +1459,25 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .hdlist li{background:var(--bg3,#1e1f22);border-radius:10px;padding:9px 12px;font-size:14px}
 .hdpop .btn{min-width:160px}
 
-/* CampusCord Rules */
-#rulesgate{z-index:9998}
-.rbox{max-width:540px;max-height:92vh;overflow:auto;text-align:left}
-.rbox .nlic,.rbox h2,.rbox>.note{text-align:center}
-.rlist{display:grid;gap:8px;margin:12px 0}
-.ritem{display:flex;gap:10px;align-items:flex-start;background:var(--bg3,#1e1f22);border-radius:10px;padding:10px 12px}
-.ric{font-size:20px;line-height:1.2}
-.ritem b{font-size:14px}
-.rdesc{font-size:13px;color:var(--muted,#b5bac1);margin-top:2px}
-.ragree{display:flex;gap:10px;align-items:flex-start;margin:6px 0 12px;font-size:14px;cursor:pointer}
-.ragree input{width:18px;height:18px;margin-top:2px;flex:none}
-.rbox>.btn{width:100%}
+/* User agreement */
+#rulesgate{z-index:9998;background:radial-gradient(circle at 50% 0%,#5865f255,transparent 60%),rgba(8,9,12,.97)}
+.rbox{max-width:600px;width:94vw;max-height:94vh;overflow:auto;text-align:left;padding:26px 26px 22px}
+.newupd{display:inline-block;margin:0 auto;font-weight:900;letter-spacing:.18em;font-size:13px;padding:6px 14px;border-radius:999px;
+  background:linear-gradient(90deg,#ff3d6e,#ff9a3d);color:#fff;box-shadow:0 0 24px #ff3d6e66;animation:nupulse 1.6s ease-in-out infinite}
+@keyframes nupulse{50%{transform:scale(1.06)}}
+.rbox .newupd{display:table}
+.ahead{font-size:34px;line-height:1.1;margin:12px 0 6px;text-align:center;font-weight:900}
+.rbox>.note{text-align:center}
+.adoc{background:#f7f3e8;color:#222;border-radius:6px;padding:18px 20px;margin:14px 0;box-shadow:0 8px 30px #0008;font-family:Georgia,"Times New Roman",serif;max-height:38vh;overflow:auto}
+.adochead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #2223;padding-bottom:6px;margin-bottom:10px}
+.adochead b{font-size:17px}.adochead span{font-size:12px;color:#666}
+.adoc p{font-size:15px;line-height:1.55;margin:0 0 12px;color:#222!important;text-align:left}
+.adocrules{display:grid;gap:6px}
+.adoc .ritem{display:flex;gap:8px;background:#0000000a;border-radius:6px;padding:7px 10px}
+.adoc .ric{font-size:16px}.adoc .ritem b{font-size:14px}.adoc .rdesc{font-size:13px;color:#444}
+.alabel{display:block;margin:4px 0 6px;font-size:14px}
+.atype{font-size:16px;padding:12px}
+.atype.ok{border-color:#3ba55d;box-shadow:0 0 0 2px #3ba55d44}
+.ahint{min-height:18px;font-size:13px;margin:4px 0;color:#3ba55d}
+.asmall{font-size:12px;color:var(--muted,#949ba4);margin-bottom:12px}
+.rbox .btn.big{width:100%;padding:13px;font-size:16px}

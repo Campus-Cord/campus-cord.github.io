@@ -190,9 +190,10 @@ service cloud.firestore {
         && nameMine(request.resource.data.nick)
         && !(request.resource.data.get('dev', '') in cfg().get('bannedDevices', []));
       allow update: if signedIn() && uid == request.auth.uid && notBanned()
-        && changed().hasOnly(['nick', 'color', 'lastSeen', 'away', 'nickAt', 'rulesOk', 'rulesAt'])
+        && changed().hasOnly(['nick', 'color', 'lastSeen', 'away', 'nickAt', 'rulesOk', 'rulesAt', 'rulesSig'])
         && request.resource.data.nick.size() <= 24
-        && (!changed().hasAny(['rulesOk', 'rulesAt']) || (request.resource.data.rulesOk is int && request.resource.data.rulesAt is int))
+        && (!changed().hasAny(['rulesOk', 'rulesAt', 'rulesSig']) || (request.resource.data.rulesOk is int && request.resource.data.rulesAt is int
+            && request.resource.data.get('rulesSig', '') is string && request.resource.data.get('rulesSig', '').size() <= 200))
         && (!changed().hasAny(['nick']) || nameMine(request.resource.data.nick))
         && (!changed().hasAny(['nickAt']) || changed().hasAny(['nick']));
       allow delete: if isOwner()

@@ -292,6 +292,8 @@ await t("owner removes a head dev", assertSucceeds(updateDoc(doc(as("owner"), "c
 console.log("Rules agreement");
 await t("member agrees to the rules", assertSucceeds(updateDoc(doc(as("alice"), "members/alice"), { rulesOk: 1, rulesAt: Date.now() })));
 await t("rules agreement must be numbers", assertFails(updateDoc(doc(as("alice"), "members/alice"), { rulesOk: "yes", rulesAt: Date.now() })));
+await t("member signs with typed text", assertSucceeds(updateDoc(doc(as("alice"), "members/alice"), { rulesOk: 2, rulesAt: Date.now(), rulesSig: "I am responsible for myself" })));
+await t("signature can't be huge", assertFails(updateDoc(doc(as("alice"), "members/alice"), { rulesOk: 2, rulesAt: Date.now(), rulesSig: "x".repeat(300) })));
 await t("can't agree for someone else", assertFails(updateDoc(doc(as("alice"), "members/bob"), { rulesOk: 1, rulesAt: Date.now() })));
 
 await env.cleanup();
