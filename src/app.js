@@ -866,7 +866,7 @@ function openHelp(initial){
     m.append(h("h3",null, "Help"), h("p",{class:"note",style:{marginTop:0},text:"Ask anything about using CampusCord."}), chat,
       h("div",{class:"row",style:{marginTop:"10px"}}, inp, h("button",{class:"btn small", onclick:() => { ask(inp.value); inp.value = ""; }}, "Ask")),
       h("div",{class:"hsug"}, HELP.slice(0, 6).map(x => h("button",{onclick:() => ask(x.q)}, x.q))),
-      h("button",{class:"btn small ghost",style:{marginTop:"10px"},onclick:rulesModal}, "📜 Read the CampusCord Rules"));
+      h("button",{class:"btn small ghost",style:{marginTop:"10px"},onclick:rulesModal}, "📜 Read the User Agreement"));
     bot("Hi! I can explain any CampusCord feature. Pick a question below or type your own.");
     if (initial) ask(initial);
     setTimeout(() => inp.focus(), 0);
@@ -1279,7 +1279,7 @@ function serverMenu(ev){
     isOwner() ? {label:"Add section", icon:"plus", run:() => newCategory()} : null,
     {label:"Campus+ Shop", icon:"bag", run:() => openShop()},
     {label:"Help", icon:"info", run:() => openHelp()},
-    {label:"CampusCord Rules", icon:"info", run:() => rulesModal()},
+    {label:"User Agreement", icon:"info", run:() => rulesModal()},
     {label:"Feedback & bugs", icon:"message", run:() => openChat("feedback", "all")},
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
@@ -2212,7 +2212,7 @@ function adminMembers(p){
         h("div",{class:"amsub"}, h("span",{class:"ambd", title:bl.map(x => badgeTitle(x.b, x.st)).join(", ")}, ...bl.slice(0, 8).map(x => badgeEl(x.b, x.st, "sm")), bl.length > 8 ? h("small",{text:"+" + (bl.length - 8)}) : null),
           isOwnerUid(u) ? null : sparkPill(sparks(u)), perks.length ? h("span",{class:"s",text:"✦ " + perks.join(", ")}) : null,
           !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null,
-          h("span",{class:"s",title: S.members[u].rulesAt ? "Agreed " + fmtDay(S.members[u].rulesAt) : "", text: (S.members[u].rulesOk || 0) >= RULES_V ? "📜 agreed to rules" : "📜 hasn't agreed yet"}),
+          h("span",{class:"s",title: S.members[u].rulesAt ? "Signed " + fmtDay(S.members[u].rulesAt) + (S.members[u].rulesSig ? ": \u201c" + S.members[u].rulesSig + "\u201d" : "") : "", text: (S.members[u].rulesOk || 0) >= RULES_V ? "📜 signed " + fmtDay(S.members[u].rulesAt) : "📜 hasn't signed yet"}),
           nameFlagLabel(u) ? h("span",{class:"s",style:{color: nameLocked(u) ? "#f0565c" : ""},text:nameFlagLabel(u)}) : null)),
       isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => devModal(u)}, isDev(u) ? (devUntil(u) ? "⏱ DEV" : "✓ DEV") : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,

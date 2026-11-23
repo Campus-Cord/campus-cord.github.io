@@ -144,37 +144,46 @@ function enforceMod(){
     ok)));
 }
 
-// ---------------------------------------------------------------- CampusCord Rules (everyone agrees before using the app)
-// Bump RULES_V when the rules change and everyone has to agree again.
-const RULES_V = 1;
+// ---------------------------------------------------------------- User agreement (everyone signs before using the app)
+// Bump RULES_V when the agreement changes and everyone has to sign again.
+const RULES_V = 2;
+const AGREE_PHRASE = "I am responsible for myself";
+const AGREEMENT = "I understand that CampusCord is a private chat app made by students. It is not run by, connected to, or approved by any school. I am responsible for myself: for when and where I use CampusCord, and for everything I post, send or share here. I will follow my school's rules, and I will not use CampusCord in class or anywhere my school doesn't allow it. I understand that the people who run CampusCord are not responsible for my choices, and that if I break the rules I can be warned, timed out or removed.";
 const RULES = [
-  ["🏫", "CampusCord is not a school app", "It's a private chat run by students. No school made it, runs it, or is responsible for it."],
-  ["📚", "I follow my school's rules", "I won't use CampusCord in class or when a teacher says not to. If my school doesn't allow it on school devices or Wi-Fi, I won't use it there."],
-  ["🙋", "I'm responsible for what I do", "Everyone is responsible for their own messages, pictures and actions. Nobody else is responsible for what I post."],
-  ["💬", "I'm kind", "No bullying, threats, hate, or anything inappropriate. No posting other people's pictures or private stuff without asking."],
-  ["🔒", "I keep personal info private", "I don't share my address, phone number, passwords, or anyone else's."],
-  ["🧑‍🤝‍🧑", "I talk to an adult if something's wrong", "If something here makes me uncomfortable or unsafe, I tell a parent or trusted adult."],
-  ["⚖️", "Breaking the rules has consequences", "I can be warned, timed out, or removed."],
+  ["📚", "Follow your school's rules", "No CampusCord in class, or on school devices or Wi-Fi if your school doesn't allow it."],
+  ["💬", "Be kind", "No bullying, threats, hate, or anything inappropriate."],
+  ["🔒", "Keep personal info private", "No addresses, phone numbers or passwords, yours or anyone else's."],
+  ["🧑‍🤝‍🧑", "Talk to an adult if something's wrong", "If anything here makes you uncomfortable or unsafe, tell a parent or trusted adult."],
 ];
-function rulesListEl(){ return h("div",{class:"rlist"}, RULES.map(([ic, t, d], i) =>
-  h("div",{class:"ritem"}, h("div",{class:"ric",text:ic}), h("div",null, h("b",{text:(i + 1) + ". " + t}), h("div",{class:"rdesc",text:d}))))); }
+const normPhrase = t => String(t || "").toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
+function agreementDocEl(){ return h("div",{class:"adoc"},
+  h("div",{class:"adochead"}, h("b",{text:"CampusCord User Agreement"}), h("span",{text:"Version " + RULES_V})),
+  h("p",{text:AGREEMENT}),
+  h("div",{class:"adocrules"}, RULES.map(([ic, t, d]) => h("div",{class:"ritem"}, h("span",{class:"ric",text:ic}), h("div",null, h("b",{text:t}), h("div",{class:"rdesc",text:d})))))); }
 function enforceRules(){
   const me = member(S.uid), el = document.getElementById("rulesgate");
   const need = me && (me.rulesOk || 0) < RULES_V && S.routed === "app";
   if (!need){ if (el) el.remove(); return; }
   if (el) return;
-  const box = h("input",{type:"checkbox", id:"rules-ok"});
-  const go = h("button",{class:"btn", disabled:true}, "I agree");
-  box.onchange = () => { go.disabled = !box.checked; };
+  const typed = h("input",{class:"inp atype", maxlength:"100", placeholder:"Type: " + AGREE_PHRASE, autocomplete:"off", spellcheck:"false"});
+  const go = h("button",{class:"btn big", disabled:true}, "I agree");
+  const hint = h("div",{class:"ahint"});
+  typed.oninput = () => { const ok = normPhrase(typed.value) === normPhrase(AGREE_PHRASE); go.disabled = !ok;
+    hint.textContent = ok ? "✅ Looks good" : ""; typed.classList.toggle("ok", ok); };
+  typed.onpaste = e => { e.preventDefault(); hint.textContent = "Type it yourself, no pasting."; };
   go.onclick = async () => { go.disabled = true; go.textContent = "Saving…";
-    try{ await updateDoc(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:Date.now()}); }
+    try{ await updateDoc(doc(db, "members", S.uid), {rulesOk:RULES_V, rulesAt:Date.now(), rulesSig:typed.value.trim().slice(0, 200)}); }
     catch(e){ go.disabled = false; go.textContent = "I agree"; toast("Couldn't save: " + errMsg(e)); } };
   document.body.appendChild(h("div",{id:"rulesgate",class:"modlayer"}, h("div",{class:"nlbox rbox"},
-    h("div",{class:"nlic",text:"📜"}), h("h2",{text:"CampusCord Rules"}),
-    h("p",{class:"note",text:"Read these and agree before using CampusCord."}),
-    rulesListEl(),
-    h("label",{class:"ragree",for:"rules-ok"}, box, h("span",{text:"I've read the rules. I agree to follow them, and I understand I'm responsible for what I do on CampusCord."})),
+    h("div",{class:"newupd",text:"NEW UPDATE"}),
+    h("h1",{class:"ahead",text:"You are responsible for yourself"}),
+    h("p",{class:"note",text:"Read the agreement below. To use CampusCord, you have to sign it."}),
+    agreementDocEl(),
+    h("label",{class:"alabel"}, "To sign, type ", h("b",{text:"\u201c" + AGREE_PHRASE + "\u201d"}), " below:"),
+    typed, hint,
+    h("div",{class:"asmall",text:"Signing as " + nickOf(S.uid) + ". What you type and the date are saved."}),
     go)));
+  setTimeout(() => typed.focus(), 100);
 }
-function rulesModal(){ modal((m, close) => m.append(h("h3",{text:"📜 CampusCord Rules"}), rulesListEl(),
+function rulesModal(){ modal((m, close) => m.append(h("h3",{text:"📜 CampusCord User Agreement"}), agreementDocEl(),
   h("div",{class:"row",style:{justifyContent:"flex-end",marginTop:"10px"}}, h("button",{class:"btn",onclick:close},"Close")))); }
