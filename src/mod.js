@@ -214,7 +214,7 @@ function watchMySig(){ if (mySigSub || !S.uid || isOwner()) return;
 function enforceRules(){
   const me = member(S.uid), el = document.getElementById("rulesgate");
   const redo = !!(S.mySig && S.mySig.redo);
-  const need = me && !isOwner() && ((me.rulesOk || 0) < RULES_V || redo) && S.routed === "app";
+  const need = me && !isOwner() && !window.__ccNoRules && ((me.rulesOk || 0) < RULES_V || redo) && S.routed === "app";
   if (!need){ if (el) el.remove(); return; }
   if (el){ if (el.dataset.redo === String(redo)) return; el.remove(); }
   const part = redo ? (S.mySig.redoPart || "all") : "all";

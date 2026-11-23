@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 4;
+const CAT_V = 5;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -56,11 +56,29 @@ const COSM = [
   // --- ANIME & ACTION THEME ---
   {id:"d_supersaiyan", type:"deco", name:"Golden Aura", price:1000, tag:"exclusive", desc:"Spiky glowing hair and crackling energy for your avatar."},
   {id:"p_shinobi", type:"plate", name:"Hidden Village", price:400, desc:"A carved stone nameplate with a slashed headband motif."},
-  {id:"n_spirit", type:"pban", name:"Energy Blast", price:1150, desc:"A massive, screen-shaking energy beam tearing through the banner."}
+  {id:"n_spirit", type:"pban", name:"Energy Blast", price:1150, desc:"A massive, screen-shaking energy beam tearing through the banner."},
+  // ---- Winter 2026 drop ----
+  {id:"d_void", type:"deco", name:"Black Hole", price:2000, tag:"exclusive", desc:"A swirling accretion disk that bends the light around your avatar."},
+  {id:"d_crown", type:"deco", name:"Royal Crown", price:1500, tag:"exclusive", desc:"A floating gold crown with sparkling jewels. Bow down."},
+  {id:"d_storm", type:"deco", name:"Thunderstorm", price:900, tag:"new", desc:"A dark storm ring with lightning that strikes every few seconds."},
+  {id:"d_orbit", type:"deco", name:"Orbit", price:800, tag:"new", desc:"Two tiny planets orbiting your avatar on glowing paths."},
+  {id:"d_neon", type:"deco", name:"Neon Sign", price:700, tag:"new", desc:"A buzzing pink and cyan neon ring that flickers like a real sign."},
+  {id:"d_prism", type:"deco", name:"Prism", price:600, tag:"new", desc:"A rainbow ring that shifts through every color."},
+  {id:"e_fireflies", type:"pfx", name:"Fireflies", price:700, tag:"new", desc:"Glowing fireflies drift and blink across your profile."},
+  {id:"e_lightning", type:"pfx", name:"Lightning Strike", price:900, tag:"new", desc:"Lightning flashes across your profile card."},
+  {id:"e_bubbles", type:"pfx", name:"Bubble Up", price:500, tag:"new", desc:"Shiny bubbles float up your card."},
+  {id:"p_neon", type:"plate", name:"Neon Pulse", price:600, tag:"new", desc:"A flickering pink and cyan neon nameplate."},
+  {id:"p_prism", type:"plate", name:"Prism", price:500, tag:"new", desc:"A rainbow that sweeps across your name."},
+  {id:"p_molten", type:"plate", name:"Molten", price:700, tag:"new", desc:"Glowing lava flowing behind your name."},
+  {id:"n_storm", type:"pban", name:"Thunder Clouds", price:1000, tag:"new", desc:"Dark rolling clouds lit up by lightning."},
+  {id:"n_cyber", type:"pban", name:"Cyber City", price:1200, tag:"new", desc:"A neon city skyline at night with a scanning light."},
+  {id:"n_rgb", type:"pban", name:"RGB Setup", price:800, tag:"new", desc:"Gamer RGB lighting rolling across your banner."}
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
   {id:"b_aurora", type:"bundle", name:"Aurora Bundle", items:["d_aurora","e_aurora","p_matcha"], tag:"new", desc:"Aurora Mist, Northern Lights and the Matcha nameplate."},
+  {id:"b_storm", type:"bundle", name:"Storm Bundle", items:["d_storm","e_lightning","n_storm"], desc:"Thunderstorm, Lightning Strike and Thunder Clouds."},
+  {id:"b_neon", type:"bundle", name:"Neon Nights Bundle", items:["d_neon","p_neon","n_cyber"], desc:"Neon Sign, Neon Pulse and Cyber City."},
   {id:"b_winter", type:"bundle", name:"Winter Bundle", items:["d_frost","e_snow","p_ocean"], desc:"Frostbite, Snow Day and the Deep Ocean nameplate."},
   {id:"b_love", type:"bundle", name:"Sweetheart Bundle", items:["d_sakura","e_hearts","p_candy"], desc:"Sakura Bloom, Floating Hearts and Cotton Candy."},
   {id:"b_galaxy", type:"bundle", name:"Deep Space Bundle", items:["d_cosmic","e_starfall","p_midnight","n_galaxy"], tag:"exclusive", desc:"The full space look: Cosmic Swirl, Starfall, Midnight nameplate and the animated Galaxy banner."},
@@ -211,6 +229,8 @@ function spotlightItems(){ const d = etDay(), hash = str => { let x = d * 265443
   return COSM.filter(c => c.price > 0 && !c.own).sort((a, b) => hash(a.id) - hash(b.id)).slice(0, 4); }
 function untilNextDay(){ const ms = (etDay() + 1) * 864e5 + 5 * 36e5 - Date.now(); const hh = Math.floor(ms / 36e5), mm = Math.floor(ms % 36e5 / 6e4); return hh + "h " + mm + "m"; }
 const HERO = [
+  {b:"b_storm", chip:"NEW DROP", title:"Thunderstorm", text:"Lightning that actually strikes: a storm ring, flashes across your profile and rolling thunder clouds.", bg:"storm"},
+  {b:"b_neon", chip:"NEW DROP", title:"Neon Nights", text:"A buzzing neon ring, a flickering nameplate and a glowing city skyline.", bg:"neon"},
   {b:"b_galaxy", chip:"NEW COLLECTION", title:"Deep Space", text:"Go full galaxy: a cosmic ring, falling stars, a midnight nameplate and an animated banner.", bg:"space"},
   {b:"b_aurora", chip:"JUST DROPPED", title:"Northern Lights", text:"Glowing green and blue light that flows around your avatar and profile.", bg:"aurora"},
   {b:"b_winter", chip:"SEASONAL", title:"Winter Wonderland", text:"Frosty rings, a snow-day profile and a deep ocean nameplate.", bg:"winter"},
