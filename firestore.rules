@@ -57,10 +57,10 @@ service cloud.firestore {
         && !request.resource.data.get('banned', []).hasAny(resource.data.get('admins', []))
         && !(resource.data.ownerUid in request.resource.data.get('timeouts', {}))
         && !request.resource.data.get('timeouts', {}).keys().hasAny(resource.data.get('admins', []));
-    // Head developers can also make/remove developers and moderate developers, but never the owner or a head developer,
-    // and they can't change who is a head developer.
+    // Head developers can also moderate developers, but never the owner or a head developer.
+    // Only the owner and co-owners make or remove developers.
     allow update: if isHeadDev() && !isOwner()
-        && changed().hasOnly(['banned', 'bannedNames', 'timeouts', 'bannedDevices', 'bannedDevNames', 'banReasons', 'admins', 'devUntil'])
+        && changed().hasOnly(['banned', 'bannedNames', 'timeouts', 'bannedDevices', 'bannedDevNames', 'banReasons'])
         && !(resource.data.ownerUid in request.resource.data.get('banned', []))
         && !request.resource.data.get('banned', []).hasAny(resource.data.get('headDevs', []))
         && !(resource.data.ownerUid in request.resource.data.get('timeouts', {}))

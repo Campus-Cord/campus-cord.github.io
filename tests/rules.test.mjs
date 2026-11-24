@@ -289,8 +289,9 @@ await t("regular developer can't see others' changes", assertFails(getDoc(doc(as
 await t("head dev approves a change", assertSucceeds(updateDoc(doc(as("head"), "devSubs/h1"), { status: "approved", decidedAt: Date.now() })));
 await t("head dev can't approve a change that touches Sparks", assertFails(updateDoc(doc(as("head"), "devSubs/h2"), { status: "approved", decidedAt: Date.now() })));
 await t("regular developer can't approve", assertFails(updateDoc(doc(as("dev"), "devSubs/h2"), { status: "rejecting", decidedAt: Date.now() })));
-await t("head dev makes someone a developer", assertSucceeds(updateDoc(doc(as("head"), "config/main"), { admins: ["dev", "head", "bob"], "devUntil.bob": Date.now() + 3600000 })));
-await t("head dev removes a developer", assertSucceeds(updateDoc(doc(as("head"), "config/main"), { admins: ["dev", "head"], "devUntil.bob": deleteField() })));
+await t("head dev can't make someone a developer", assertFails(updateDoc(doc(as("head"), "config/main"), { admins: ["dev", "head", "bob"], "devUntil.bob": Date.now() + 3600000 })));
+await t("head dev can't remove a developer", assertFails(updateDoc(doc(as("head"), "config/main"), { admins: ["head"] })));
+await t("head dev can't make a temporary developer", assertFails(updateDoc(doc(as("head"), "config/main"), { "devUntil.alice": Date.now() + 3600000, admins: ["dev", "head", "alice"] })));
 await t("head dev times out a developer", assertSucceeds(updateDoc(doc(as("head"), "config/main"), { timeouts: { dev: Date.now() + 60000 } })));
 await t("head dev can't time out the owner", assertFails(updateDoc(doc(as("head"), "config/main"), { timeouts: { owner: Date.now() + 60000 } })));
 await t("head dev can't remove themselves as head dev", assertFails(updateDoc(doc(as("head"), "config/main"), { headDevs: [] })));
@@ -372,6 +373,8 @@ await t("co-owner can't time out the owner", assertFails(updateDoc(doc(as("co"),
 await t("co-owner can't make more co-owners", assertFails(updateDoc(doc(as("co"), "config/main"), { coOwners: ["co", "bob"] })));
 await t("co-owner can't remove themselves either", assertFails(updateDoc(doc(as("co"), "config/main"), { coOwners: [] })));
 await t("co-owner can't take ownership", assertFails(updateDoc(doc(as("co"), "config/main"), { ownerUid: "co" })));
+await t("co-owner makes someone a temporary developer", assertSucceeds(updateDoc(doc(as("co"), "config/main"), { admins: ["dev", "head", "bob"], "devUntil.bob": Date.now() + 3600000 })));
+await t("co-owner removes a developer", assertSucceeds(updateDoc(doc(as("co"), "config/main"), { admins: ["dev", "head"], "devUntil.bob": deleteField() })));
 await t("co-owner makes someone head dev", assertSucceeds(updateDoc(doc(as("co"), "config/main"), { headDevs: ["head"] })));
 await t("co-owner can't edit Stripe/shop settings", assertFails(setDoc(doc(as("co"), "config/shop"), { items: {} })));
 await t("co-owner can't edit the Sparks catalog", assertFails(setDoc(doc(as("co"), "config/catalog"), { v: 99, daily: 99999 })));
