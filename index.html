@@ -1843,6 +1843,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .mrow .nm{display:flex;align-items:center;gap:4px;min-width:0}
 .mrow .nm>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .nm>.tag{flex:none}
+.tag.tempdev{background:linear-gradient(90deg,#0ea5e9,#22d3ee);color:#03222b}
 </style>
 </head>
 <body>
@@ -1966,7 +1967,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-24.1327";
+const APP_VERSION = "2026-11-24.1332";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2231,6 +2232,7 @@ function roleTags(uid, compact){
   if (isOwnerUid(uid)) out.push(chip("admin",null,"OWNER","Owner of CampusCord"));
   else if (isCoOwnerUid(uid)) out.push(chip("admin coowner",null,"CO-OWNER","Co-owner of CampusCord"));
   else if (isHeadDev(uid)) out.push(chip("dev headdev","code","HEAD DEV","Head Developer"));
+  else if (isDev(uid) && devUntil(uid)) out.push(chip("dev tempdev","code","TEMP DEV","Temporary developer until " + new Date(devUntil(uid)).toLocaleString(undefined, {month:"short", day:"numeric", hour:"numeric", minute:"2-digit"})));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   if (isDesigner(uid) && !isOwnerUid(uid)) out.push(chip("design","pen","DESIGN","Designer — made CampusCord's look"));
   // Owner and co-owners just show their role, not a Campus+ rank.
@@ -4185,7 +4187,7 @@ function adminMembers(p){
           !isOwnerUid(u) ? h("span",{class:"s",text: welcomed ? "🎁 welcomed" : "🎁 gift pending"}) : null,
           h("span",{class:"s",title: S.members[u].rulesAt ? "Signed " + fmtDay(S.members[u].rulesAt) + (S.members[u].rulesSig ? ": \u201c" + S.members[u].rulesSig + "\u201d" : "") : "", text: (S.members[u].rulesOk || 0) >= RULES_V ? "📜 signed " + fmtDay(S.members[u].rulesAt) : "📜 hasn't signed yet"}),
           nameFlagLabel(u) ? h("span",{class:"s",style:{color: nameLocked(u) ? "#f0565c" : ""},text:nameFlagLabel(u)}) : null)),
-      isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => devModal(u)}, isDev(u) ? (devUntil(u) ? "⏱ DEV" : "✓ DEV") : "+ DEV") : null,
+      isOwner() && u !== S.uid ? h("button",{class:"rolepill dev" + (isDev(u) ? " on" : ""), onclick:() => devModal(u)}, isDev(u) ? (devUntil(u) ? "⏱ TEMP DEV" : "✓ DEV") : "+ DEV") : null,
       isOwner() && u !== S.uid ? h("button",{class:"rolepill design" + (isDesigner(u) ? " on" : ""), onclick:() => setDesigner(u, !isDesigner(u))}, isDesigner(u) ? "✓ DESIGN" : "+ DESIGN") : null,
       isOwner() && u !== S.uid ? h("button",{class:"btn small ghost", onclick:() => grantModal(u)}, "Perks") : null,
       u !== S.uid && !isOwnerUid(u) && (isOwner() || !isDev(u)) ? h("button",{class:"btn small danger", onclick:() => kickWithReason(u)}, "Kick") : null));
