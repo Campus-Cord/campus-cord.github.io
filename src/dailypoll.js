@@ -1959,7 +1959,23 @@ function renderFlappy(wrap, p){
 
   const ctx = canvas.getContext("2d");
   const W = 380, H = 500, GROUND = 64, BIRD_X = 92, BIRD_R = 14;
-  const GRAVITY = 0.42, FLAP = -7.35, PIPE_W = 58, GAP = 132, SPEED = 2.65;
+  const GRAVITY = 0.42, FLAP = -7.35, PIPE_W = 58, GAP = 132, SPEED = 2.65, PIPE_SPACING = 215;
+
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H - GROUND);
+  skyGrad.addColorStop(0, "#0369a1");
+  skyGrad.addColorStop(0.55, "#38bdf8");
+  skyGrad.addColorStop(1, "#bae6fd");
+
+  const sunX = 305, sunY = 76;
+  const sunGlow = ctx.createRadialGradient(sunX, sunY, 6, sunX, sunY, 72);
+  sunGlow.addColorStop(0, "rgba(254, 249, 195, 0.95)");
+  sunGlow.addColorStop(0.35, "rgba(253, 224, 71, 0.35)");
+  sunGlow.addColorStop(1, "rgba(253, 224, 71, 0)");
+
+  const dirtGrad = ctx.createLinearGradient(0, H - GROUND + 16, 0, H);
+  dirtGrad.addColorStop(0, "#d97706");
+  dirtGrad.addColorStop(0.35, "#b45309");
+  dirtGrad.addColorStop(1, "#78350f");
 
   const buildings = [
     {w: 34, h: 92}, {w: 28, h: 125}, {w: 40, h: 78}, {w: 32, h: 142},
@@ -1967,20 +1983,9 @@ function renderFlappy(wrap, p){
   ];
 
   function drawBackdrop(scroll){
-    // Rich atmospheric sky gradient
-    const sky = ctx.createLinearGradient(0, 0, 0, H - GROUND);
-    sky.addColorStop(0, "#0369a1");
-    sky.addColorStop(0.55, "#38bdf8");
-    sky.addColorStop(1, "#bae6fd");
-    ctx.fillStyle = sky;
+    ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, W, H - GROUND);
 
-    // Warm sun & radial glow
-    const sunX = 305, sunY = 76;
-    const sunGlow = ctx.createRadialGradient(sunX, sunY, 6, sunX, sunY, 72);
-    sunGlow.addColorStop(0, "rgba(254, 249, 195, 0.95)");
-    sunGlow.addColorStop(0.35, "rgba(253, 224, 71, 0.35)");
-    sunGlow.addColorStop(1, "rgba(253, 224, 71, 0)");
     ctx.fillStyle = sunGlow;
     ctx.beginPath();
     ctx.arc(sunX, sunY, 72, 0, Math.PI * 2);
@@ -2023,7 +2028,7 @@ function renderFlappy(wrap, p){
         ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
         for (let wy = by + 10; wy < H - GROUND - 16; wy += 16){
           for (let wx = bx + 5; wx < bx + b.w - 9; wx += 9){
-            if (((wx + wy + i) % 3) !== 0) ctx.fillRect(wx, wy, 4, 7);
+            if (((Math.floor(wx) + wy + i) % 3) !== 0) ctx.fillRect(wx, wy, 4, 7);
           }
         }
         bx += b.w;
@@ -2051,12 +2056,7 @@ function renderFlappy(wrap, p){
 
   function drawGround(scroll){
     const gy = H - GROUND;
-    // Layered earth gradient
-    const dirt = ctx.createLinearGradient(0, gy + 16, 0, H);
-    dirt.addColorStop(0, "#d97706");
-    dirt.addColorStop(0.35, "#b45309");
-    dirt.addColorStop(1, "#78350f");
-    ctx.fillStyle = dirt;
+    ctx.fillStyle = dirtGrad;
     ctx.fillRect(0, gy + 16, W, GROUND - 16);
 
     // Subtle soil pebbles
@@ -2100,17 +2100,15 @@ function renderFlappy(wrap, p){
 
   function drawPipe(x, y, w, h, isTop){
     if (h <= 0) return;
-    // Cylindrical 3D metallic green shading
-    const grad = ctx.createLinearGradient(x, 0, x + w, 0);
-    grad.addColorStop(0, "#15803d");
-    grad.addColorStop(0.22, "#4ade80");
-    grad.addColorStop(0.42, "#86efac");
-    grad.addColorStop(0.75, "#16a34a");
-    grad.addColorStop(1, "#052e16");
-    ctx.fillStyle = grad;
+    ctx.fillStyle = "#16a34a";
     ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = "#4ade80";
+    ctx.fillRect(x + 6, y, 12, h);
+    ctx.fillStyle = "#86efac";
+    ctx.fillRect(x + 11, y, 4, h);
+    ctx.fillStyle = "#15803d";
+    ctx.fillRect(x + w - 10, y, 10, h);
 
-    // Rim shadow right under/above the lip
     ctx.fillStyle = "rgba(5, 46, 22, 0.45)";
     ctx.fillRect(x, isTop ? y + h - 24 : y + 18, w, 6);
 
@@ -2118,19 +2116,19 @@ function renderFlappy(wrap, p){
     ctx.lineWidth = 2.2;
     ctx.strokeRect(x, isTop ? y - 2 : y, w, h + 2);
 
-    // Pipe lip collar
     const lipH = 20;
     const lipY = isTop ? y + h - lipH : y;
     const lipX = x - 4;
     const lipW = w + 8;
-    const lipGrad = ctx.createLinearGradient(lipX, 0, lipX + lipW, 0);
-    lipGrad.addColorStop(0, "#166534");
-    lipGrad.addColorStop(0.22, "#4ade80");
-    lipGrad.addColorStop(0.4, "#bbf7d0");
-    lipGrad.addColorStop(0.78, "#15803d");
-    lipGrad.addColorStop(1, "#052e16");
-    ctx.fillStyle = lipGrad;
+
+    ctx.fillStyle = "#16a34a";
     ctx.fillRect(lipX, lipY, lipW, lipH);
+    ctx.fillStyle = "#4ade80";
+    ctx.fillRect(lipX + 7, lipY, 14, lipH);
+    ctx.fillStyle = "#bbf7d0";
+    ctx.fillRect(lipX + 12, lipY, 5, lipH);
+    ctx.fillStyle = "#14532d";
+    ctx.fillRect(lipX + lipW - 11, lipY, 11, lipH);
 
     // Top specular highlight on lip
     ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
@@ -2173,12 +2171,7 @@ function renderFlappy(wrap, p){
     ctx.fill();
     ctx.stroke();
 
-    // Shaded round body
-    const bodyGrad = ctx.createRadialGradient(-3, -5, 3, 0, 0, BIRD_R + 4);
-    bodyGrad.addColorStop(0, "#fef08a");
-    bodyGrad.addColorStop(0.55, "#facc15");
-    bodyGrad.addColorStop(1, "#ca8a04");
-    ctx.fillStyle = bodyGrad;
+    ctx.fillStyle = "#facc15";
     ctx.beginPath();
     ctx.ellipse(0, 0, BIRD_R + 3, BIRD_R, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -2302,8 +2295,11 @@ function renderFlappy(wrap, p){
   let wingPhase = 0;
   let shake = 0;
   let flash = 0;
+  let deadAt = 0;
   let lastTs = 0;
+  let acc = 0;
   let active = true;
+  const FIXED_STEP = 1000 / 60;
 
   function addParticles(x, y, count, colors, speed){
     for (let i = 0; i < count; i++){
@@ -2328,12 +2324,12 @@ function renderFlappy(wrap, p){
   }
 
   function flap(){
-    if (!active || !document.body.contains(canvas)) return;
+    if (!document.body.contains(canvas)) return;
     if (state === "ready"){
       state = "playing";
       pipes = [];
       spawnPipe(W + 40);
-      spawnPipe(W + 255);
+      spawnPipe(W + 40 + PIPE_SPACING);
       velY = FLAP;
       wingPhase = 1.4;
       sfx("flap");
@@ -2344,7 +2340,9 @@ function renderFlappy(wrap, p){
       sfx("flap");
       addParticles(BIRD_X - 10, birdY + 4, 6, ["#fff", "#fef08a", "#bae6fd"], 2.4);
     } else if (state === "dead"){
-      mgStartNextPuzzle("flappy");
+      if (performance.now() - deadAt > 450){
+        mgStartNextPuzzle("flappy");
+      }
     }
   }
 
@@ -2357,6 +2355,7 @@ function renderFlappy(wrap, p){
   function finishRun(){
     if (state === "dead") return;
     state = "dead";
+    deadAt = performance.now();
     active = false;
     shake = 10;
     flash = 0.75;
@@ -2462,49 +2461,37 @@ function renderFlappy(wrap, p){
     ctx.restore();
   }
 
-  function loop(ts){
-    if (!active || !document.body.contains(canvas)){
-      if (window._flappyFlap === flap) window._flappyFlap = null;
-      return;
-    }
-    if (!lastTs) lastTs = ts;
-    const rawDt = (ts - lastTs) / 16.667;
-    lastTs = ts;
-    if (rawDt > 5){
-      window._flappyRaf = requestAnimationFrame(loop);
-      return;
-    }
-    const dt = Math.min(1.5, Math.max(0.25, rawDt));
-    frame += dt;
-    wingPhase += (state === "playing" && velY < 0 ? 0.55 : 0.24) * dt;
-    if (shake > 0) shake *= Math.pow(0.82, dt);
-    if (flash > 0) flash = Math.max(0, flash - 0.08 * dt);
+  function stepPhysics(){
+    frame += 1;
+    wingPhase += (state === "playing" && velY < 0 ? 0.55 : 0.24);
+    if (shake > 0) shake *= 0.82;
+    if (flash > 0) flash = Math.max(0, flash - 0.08);
 
     for (let i = particles.length - 1; i >= 0; i--){
       const pt = particles[i];
-      pt.x += pt.vx * dt;
-      pt.y += pt.vy * dt;
-      pt.vy += 0.16 * dt;
-      pt.life -= 0.035 * dt;
+      pt.x += pt.vx;
+      pt.y += pt.vy;
+      pt.vy += 0.16;
+      pt.life -= 0.035;
       if (pt.life <= 0) particles.splice(i, 1);
     }
     for (let i = popups.length - 1; i >= 0; i--){
       const pop = popups[i];
-      pop.y -= 0.9 * dt;
-      pop.life -= 0.028 * dt;
+      pop.y -= 0.9;
+      pop.life -= 0.028;
       if (pop.life <= 0) popups.splice(i, 1);
     }
 
     if (state === "ready"){
-      scroll += 0.75 * dt;
+      scroll += 0.75;
       birdY = (H - GROUND) / 2 + Math.sin(frame * 0.08) * 6;
     } else if (state === "playing"){
-      scroll += dt;
-      velY += GRAVITY * dt;
-      birdY += velY * dt;
+      scroll += 1;
+      velY += GRAVITY;
+      birdY += velY;
 
       for (const pp of pipes){
-        pp.x -= SPEED * dt;
+        pp.x -= SPEED;
         if (!pp.passed && pp.x + PIPE_W < BIRD_X){
           pp.passed = true;
           score++;
@@ -2518,16 +2505,19 @@ function renderFlappy(wrap, p){
             bestEl.textContent = "Best: " + best;
           }
         }
-        const hitX = BIRD_X + BIRD_R - 3 > pp.x && BIRD_X - BIRD_R + 3 < pp.x + PIPE_W;
-        const hitY = birdY - BIRD_R + 3 < pp.topH || birdY + BIRD_R - 3 > pp.topH + GAP;
+        const hitX = BIRD_X + BIRD_R - 4 > pp.x && BIRD_X - BIRD_R + 4 < pp.x + PIPE_W;
+        const hitY = birdY - BIRD_R + 4 < pp.topH || birdY + BIRD_R - 4 > pp.topH + GAP;
         if (hitX && hitY){
           finishRun();
           return;
         }
       }
 
-      if (pipes.length && pipes[pipes.length - 1].x < W - 215){
-        spawnPipe(W + 10);
+      if (pipes.length){
+        const lastPipe = pipes[pipes.length - 1];
+        if (lastPipe.x < W - PIPE_SPACING + 40){
+          spawnPipe(lastPipe.x + PIPE_SPACING);
+        }
       }
       if (pipes.length && pipes[0].x + PIPE_W < -25){
         pipes.shift();
@@ -2543,9 +2533,26 @@ function renderFlappy(wrap, p){
         velY = 0;
       }
     }
+  }
 
-    draw();
-    window._flappyRaf = requestAnimationFrame(loop);
+  function loop(ts){
+    if (!active || !document.body.contains(canvas)){
+      if (window._flappyFlap === flap) window._flappyFlap = null;
+      return;
+    }
+    if (!lastTs) lastTs = ts;
+    acc += Math.min(100, ts - lastTs);
+    lastTs = ts;
+
+    while (acc >= FIXED_STEP && active){
+      stepPhysics();
+      acc -= FIXED_STEP;
+    }
+
+    if (active){
+      draw();
+      window._flappyRaf = requestAnimationFrame(loop);
+    }
   }
 
   window._flappyRaf = requestAnimationFrame(loop);
