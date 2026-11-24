@@ -1116,6 +1116,80 @@ canvas.camvid{transform:none;width:100%;height:100%;object-fit:cover;display:blo
 .tag.none{color:var(--muted)!important;border-color:var(--line)!important}
 .shophero .myrank .tag,.tier .th .tag{font-size:11px!important;padding:3px 8px!important}
 .av .deco-designring{inset:-7%;filter:drop-shadow(0 0 3px rgba(255,122,198,.5))}
+
+/* --- New Animated Avatar Decorations --- */
+.av .deco .d-l,.av .deco .d-r{position:absolute;pointer-events:none}
+.av .deco .d-l::before,.av .deco .d-l::after,.av .deco .d-r::before,.av .deco .d-r::after{content:"";position:absolute}
+
+/* Kitty Ears */
+.av .deco-kittyears .d-l{left:4%;top:-11%;width:35%;height:39%;background:linear-gradient(155deg,#2b2638,#14111c);clip-path:polygon(14% 100%,26% 6%,96% 74%);transform-origin:55% 92%;animation:ccEarTwitchL 4.6s ease-in-out infinite;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.av .deco-kittyears .d-l::after{inset:28% 22% 10% 24%;background:linear-gradient(180deg,#ff94cb,#f43f5e);clip-path:polygon(16% 100%,28% 12%,94% 76%)}
+.av .deco-kittyears .d-r{right:4%;top:-11%;width:35%;height:39%;background:linear-gradient(205deg,#2b2638,#14111c);clip-path:polygon(86% 100%,74% 6%,4% 74%);transform-origin:45% 92%;animation:ccEarTwitchR 4.6s ease-in-out infinite 2.1s;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.av .deco-kittyears .d-r::after{inset:28% 24% 10% 22%;background:linear-gradient(180deg,#ff94cb,#f43f5e);clip-path:polygon(84% 100%,72% 12%,6% 76%)}
+.av .deco-kittyears::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 8% 58%,#ff85c0 0 2px,transparent 3px),radial-gradient(circle at 92% 58%,#ff85c0 0 2px,transparent 3px),radial-gradient(circle at 12% 68%,#ffd1e8 0 1.5px,transparent 2.5px),radial-gradient(circle at 88% 68%,#ffd1e8 0 1.5px,transparent 2.5px);animation:ccSparkPulse 2.4s ease-in-out infinite}
+
+/* Cyber Kitty Ears */
+.av .deco-catearsneon{box-shadow:inset 0 0 0 2px rgba(34,211,238,.75),0 0 10px rgba(244,63,94,.45)}
+.av .deco-catearsneon .d-l{left:3%;top:-12%;width:36%;height:40%;background:linear-gradient(155deg,#0f172a,#1e1b4b);clip-path:polygon(12% 100%,24% 4%,96% 74%);transform-origin:55% 92%;animation:ccEarTwitchL 3.8s ease-in-out infinite,ccNeonHue 4s linear infinite;filter:drop-shadow(0 0 5px #22d3ee)}
+.av .deco-catearsneon .d-l::after{inset:24% 20% 10% 22%;background:linear-gradient(180deg,#22d3ee,#ff3d9a);clip-path:polygon(16% 100%,28% 10%,94% 76%)}
+.av .deco-catearsneon .d-r{right:3%;top:-12%;width:36%;height:40%;background:linear-gradient(205deg,#0f172a,#1e1b4b);clip-path:polygon(88% 100%,76% 4%,4% 74%);transform-origin:45% 92%;animation:ccEarTwitchR 3.8s ease-in-out infinite 1.7s,ccNeonHue 4s linear infinite;filter:drop-shadow(0 0 5px #ff3d9a)}
+.av .deco-catearsneon .d-r::after{inset:24% 22% 10% 20%;background:linear-gradient(180deg,#ff3d9a,#22d3ee);clip-path:polygon(84% 100%,72% 10%,6% 76%)}
+
+/* Bunny Ears */
+.av .deco-bunnyears .d-l{left:17%;top:-26%;width:22%;height:46%;border-radius:50% 50% 35% 35%;background:linear-gradient(180deg,#ffffff,#e2e8f0);transform-origin:50% 95%;transform:rotate(-10deg);animation:ccBunnyFlopL 3.2s ease-in-out infinite;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.av .deco-bunnyears .d-l::after{inset:18% 26% 14% 26%;border-radius:50%;background:linear-gradient(180deg,#fda4af,#fb7185)}
+.av .deco-bunnyears .d-r{right:17%;top:-26%;width:22%;height:46%;border-radius:50% 50% 35% 35%;background:linear-gradient(180deg,#ffffff,#e2e8f0);transform-origin:50% 95%;transform:rotate(10deg);animation:ccBunnyFlopR 3.2s ease-in-out infinite .4s;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.av .deco-bunnyears .d-r::after{inset:18% 26% 14% 26%;border-radius:50%;background:linear-gradient(180deg,#fda4af,#fb7185)}
+
+/* Kitsune Fox Ears */
+.av .deco-foxears{box-shadow:inset 0 0 0 2px rgba(251,146,60,.65),0 0 10px rgba(249,115,22,.4)}
+.av .deco-foxears .d-l{left:2%;top:-13%;width:38%;height:42%;background:linear-gradient(155deg,#fb923c,#c2410c);clip-path:polygon(10% 100%,22% 4%,98% 76%);transform-origin:55% 92%;animation:ccEarTwitchL 4.2s ease-in-out infinite;filter:drop-shadow(0 2px 4px rgba(194,65,12,.5))}
+.av .deco-foxears .d-l::after{inset:28% 22% 10% 24%;background:linear-gradient(180deg,#fffbeb,#fde68a);clip-path:polygon(16% 100%,26% 12%,94% 78%)}
+.av .deco-foxears .d-r{right:2%;top:-13%;width:38%;height:42%;background:linear-gradient(205deg,#fb923c,#c2410c);clip-path:polygon(90% 100%,78% 4%,2% 76%);transform-origin:45% 92%;animation:ccEarTwitchR 4.2s ease-in-out infinite 1.9s;filter:drop-shadow(0 2px 4px rgba(194,65,12,.5))}
+.av .deco-foxears .d-r::after{inset:28% 24% 10% 22%;background:linear-gradient(180deg,#fffbeb,#fde68a);clip-path:polygon(84% 100%,74% 12%,6% 78%)}
+.av .deco-foxears::after{content:"";position:absolute;inset:-4%;border-radius:50%;background:radial-gradient(circle at 12% 72%,#7dd3fc 0 2.5px,#38bdf8 3.5px,transparent 6px),radial-gradient(circle at 88% 72%,#7dd3fc 0 2.5px,#38bdf8 3.5px,transparent 6px);animation:ccFloatY 2.4s ease-in-out infinite alternate}
+
+/* Devil Horns */
+.av .deco-devilhorns{box-shadow:inset 0 0 0 2px rgba(239,68,68,.55),0 0 10px rgba(220,38,38,.45)}
+.av .deco-devilhorns .d-l{left:8%;top:-14%;width:30%;height:36%;background:linear-gradient(160deg,#ef4444,#7f1d1d 70%,#18181b);clip-path:polygon(35% 100%,0% 42%,16% 6%,46% 36%,88% 82%);transform-origin:60% 90%;animation:ccHornPulse 2.6s ease-in-out infinite}
+.av .deco-devilhorns .d-r{right:8%;top:-14%;width:30%;height:36%;background:linear-gradient(200deg,#ef4444,#7f1d1d 70%,#18181b);clip-path:polygon(65% 100%,100% 42%,84% 6%,54% 36%,12% 82%);transform-origin:40% 90%;animation:ccHornPulse 2.6s ease-in-out infinite}
+
+/* Seraph Wings */
+.av .deco-angelwings::before{content:"";position:absolute;left:24%;right:24%;top:-12%;height:14%;border-radius:50%;border:2.5px solid #fde047;box-shadow:0 0 8px #facc15;animation:ccFloatY 2.2s ease-in-out infinite alternate}
+.av .deco-angelwings .d-l{left:-22%;top:22%;width:34%;height:54%;background:linear-gradient(135deg,#ffffff,#e0f2fe 65%,#bae6fd);clip-path:polygon(100% 35%,32% 0%,0% 24%,24% 44%,4% 62%,36% 74%,18% 92%,66% 94%,100% 72%);transform-origin:95% 50%;animation:ccWingFlapL 2.2s ease-in-out infinite;filter:drop-shadow(0 0 5px rgba(255,255,255,.75))}
+.av .deco-angelwings .d-r{right:-22%;top:22%;width:34%;height:54%;background:linear-gradient(225deg,#ffffff,#e0f2fe 65%,#bae6fd);clip-path:polygon(0% 35%,68% 0%,100% 24%,76% 44%,96% 62%,64% 74%,82% 92%,34% 94%,0% 72%);transform-origin:5% 50%;animation:ccWingFlapR 2.2s ease-in-out infinite;filter:drop-shadow(0 0 5px rgba(255,255,255,.75))}
+
+/* Bass Headphones */
+.av .deco-headphones::before{content:"";position:absolute;inset:2% 6% 36% 6%;border-radius:50% 50% 0 0;border:4px solid #1e293b;border-bottom:none;box-shadow:0 -2px 6px rgba(56,189,248,.45)}
+.av .deco-headphones .d-l{left:-4%;top:32%;width:18%;height:34%;border-radius:8px;background:linear-gradient(180deg,#334155,#0f172a);border:2px solid #22d3ee;box-shadow:0 0 8px #22d3ee;animation:ccBassBounce .75s ease-in-out infinite alternate}
+.av .deco-headphones .d-r{right:-4%;top:32%;width:18%;height:34%;border-radius:8px;background:linear-gradient(180deg,#334155,#0f172a);border:2px solid #ff3d9a;box-shadow:0 0 8px #ff3d9a;animation:ccBassBounce .75s ease-in-out infinite alternate}
+
+/* Froggy Hood */
+.av .deco-froghat{box-shadow:inset 0 0 0 2.5px #4ade80}
+.av .deco-froghat .d-l{left:14%;top:-10%;width:26%;height:26%;border-radius:50%;background:#4ade80;border:2px solid #16a34a;display:flex;align-items:center;justify-content:center}
+.av .deco-froghat .d-l::after{inset:20%;border-radius:50%;background:radial-gradient(circle at 55% 45%,#0f172a 0 42%,#fff 45%);animation:ccFrogBlink 4.4s infinite}
+.av .deco-froghat .d-r{right:14%;top:-10%;width:26%;height:26%;border-radius:50%;background:#4ade80;border:2px solid #16a34a}
+.av .deco-froghat .d-r::after{inset:20%;border-radius:50%;background:radial-gradient(circle at 45% 45%,#0f172a 0 42%,#fff 45%);animation:ccFrogBlink 4.4s infinite}
+
+/* Cozy Bear Ears */
+.av .deco-bearhat .d-l{left:8%;top:-8%;width:28%;height:28%;border-radius:50%;background:radial-gradient(circle at 50% 55%,#fcd34d 0 38%,#92400e 42%,#78350f 100%);transform-origin:65% 80%;animation:ccEarTwitchL 5s ease-in-out infinite;box-shadow:0 2px 3px rgba(0,0,0,.35)}
+.av .deco-bearhat .d-r{right:8%;top:-8%;width:28%;height:28%;border-radius:50%;background:radial-gradient(circle at 50% 55%,#fcd34d 0 38%,#92400e 42%,#78350f 100%);transform-origin:35% 80%;animation:ccEarTwitchR 5s ease-in-out infinite 2.4s;box-shadow:0 2px 3px rgba(0,0,0,.35)}
+
+/* Dragon Horns */
+.av .deco-dragonhorns{box-shadow:inset 0 0 0 2px rgba(16,185,129,.6),0 0 10px rgba(16,185,129,.4)}
+.av .deco-dragonhorns .d-l{left:2%;top:-16%;width:36%;height:42%;background:linear-gradient(155deg,#34d399,#065f46 55%,#090d16);clip-path:polygon(44% 100%,14% 64%,0% 10%,28% 28%,24% 2%,54% 42%,88% 82%);filter:drop-shadow(0 0 4px rgba(52,211,153,.6))}
+.av .deco-dragonhorns .d-r{right:2%;top:-16%;width:36%;height:42%;background:linear-gradient(205deg,#34d399,#065f46 55%,#090d16);clip-path:polygon(56% 100%,86% 64%,100% 10%,72% 28%,76% 2%,46% 42%,12% 82%);filter:drop-shadow(0 0 4px rgba(52,211,153,.6))}
+.av .deco-dragonhorns::after{content:"";position:absolute;inset:-4%;border-radius:50%;background:radial-gradient(circle at 15% 25%,#6ee7b7 0 2px,transparent 3px),radial-gradient(circle at 85% 75%,#34d399 0 2px,transparent 3px);animation:orbitspin 5s linear infinite}
+
+/* Phoenix Crest */
+.av .deco-phoenix{box-shadow:inset 0 0 0 2px rgba(251,191,36,.75),0 0 12px rgba(249,115,22,.6)}
+.av .deco-phoenix .d-l{left:-6%;top:6%;width:32%;height:68%;background:linear-gradient(180deg,#fef08a,#f97316 55%,#dc2626);clip-path:polygon(85% 100%,25% 76%,0% 34%,32% 46%,18% 6%,58% 36%,92% 78%);animation:ccFlameWave 1.6s ease-in-out infinite alternate;filter:drop-shadow(0 0 5px #f97316)}
+.av .deco-phoenix .d-r{right:-6%;top:6%;width:32%;height:68%;background:linear-gradient(180deg,#fef08a,#f97316 55%,#dc2626);clip-path:polygon(15% 100%,75% 76%,100% 34%,68% 46%,82% 6%,42% 36%,8% 78%);animation:ccFlameWave 1.6s ease-in-out infinite alternate-reverse;filter:drop-shadow(0 0 5px #f97316)}
+
+/* Pixel Hearts */
+.av .deco-arcade{inset:-14%;animation:orbitspin 7s linear infinite}
+.av .deco-arcade .d-l{left:42%;top:-4%;width:16%;height:16%;background:#ff3d7f;clip-path:polygon(50% 92%,6% 48%,6% 24%,24% 8%,42% 8%,50% 22%,58% 8%,76% 8%,94% 24%,94% 48%);filter:drop-shadow(0 0 4px #ff3d7f)}
+.av .deco-arcade .d-r{left:42%;bottom:-4%;width:16%;height:16%;background:#38bdf8;clip-path:polygon(50% 92%,6% 48%,6% 24%,24% 8%,42% 8%,50% 22%,58% 8%,76% 8%,94% 24%,94% 48%);filter:drop-shadow(0 0 4px #38bdf8)}
 .deco-designring::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 200deg,#ffd1ea,#ff7ac6,#c084fc,#ff7ac6,#ffd1ea);-webkit-mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%);mask:radial-gradient(closest-side,transparent 88.5%,#000 90%,#000 96.5%,transparent 98%)}
 .proles{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .proles .pl{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-right:auto}
@@ -1632,11 +1706,28 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 /* Time Loop: green runes circling */
 .pfx-time::before{top:10%;left:15%;right:15%;height:auto;aspect-ratio:1;border-radius:50%;background:repeating-conic-gradient(#4ade80 0 3deg,transparent 3deg 15deg);-webkit-mask:radial-gradient(closest-side,transparent 80%,#000 84%,#000 90%,transparent 94%);mask:radial-gradient(closest-side,transparent 80%,#000 84%,#000 90%,transparent 94%);animation:orbitspin 8s linear infinite;filter:drop-shadow(0 0 5px #22c55e);opacity:.8}
 .pfx-time::after{top:22%;left:27%;right:27%;height:auto;aspect-ratio:1;border-radius:50%;border:1.5px dashed #86efac;animation:orbitspin 5s linear infinite reverse;opacity:.7}
+.pfx-sakura::before{top:-50%;height:200%;background-image:radial-gradient(ellipse 6px 3.5px at 18% 20%,#fbcfe8 96%,transparent),radial-gradient(ellipse 5px 3px at 52% 45%,#f9a8d4 96%,transparent),radial-gradient(ellipse 6px 4px at 82% 28%,#fff1f2 96%,transparent),radial-gradient(ellipse 5px 3px at 34% 78%,#f472b6 96%,transparent);background-size:110px 110px;animation:fall 6.5s linear infinite}
+.pfx-sakura::after{top:-50%;height:200%;background-image:radial-gradient(ellipse 4px 3px at 26% 35%,#ffe4e6 96%,transparent),radial-gradient(ellipse 5px 3px at 72% 65%,#fbcfe8 96%,transparent);background-size:85px 85px;animation:fall 4.8s linear infinite;opacity:.85}
+.pfx-cyberglitch::before{top:0;height:100%;background:linear-gradient(180deg,transparent 0%,rgba(34,211,238,.28) 48%,rgba(244,63,94,.35) 50%,transparent 54%);background-size:100% 200%;animation:ccScanDown 2.8s linear infinite;mix-blend-mode:screen}
+.pfx-cyberglitch::after{top:0;height:100%;background-image:radial-gradient(1.5px 1.5px at 15% 25%,#22d3ee,transparent),radial-gradient(1.5px 1.5px at 82% 65%,#ff3d9a,transparent),radial-gradient(1.5px 1.5px at 48% 82%,#a78bfa,transparent);background-size:90px 90px;animation:twinkle 1.6s ease-in-out infinite alternate}
+.pfx-stardust::before{top:0;height:200%;background-image:radial-gradient(2.5px 2.5px at 20% 25%,#fef08a,transparent),radial-gradient(2px 2px at 55% 60%,#e0e7ff,transparent),radial-gradient(3px 3px at 80% 35%,#fde047,transparent),radial-gradient(2px 2px at 35% 85%,#c4b5fd,transparent);background-size:120px 120px;animation:rise 8s linear infinite;filter:drop-shadow(0 0 4px #fde047)}
+.pfx-stardust::after{content:"✦  ✧  ✦";top:auto;bottom:-15%;height:auto;left:18%;color:#fef08a;font-size:14px;letter-spacing:34px;animation:rise2 4.6s ease-in infinite;text-shadow:0 0 8px #facc15;background:none}
+.pfx-embers::before{top:0;height:200%;background-image:radial-gradient(3px 3px at 16% 30%,#fb923c,transparent),radial-gradient(2px 2px at 46% 65%,#facc15,transparent),radial-gradient(3.5px 3.5px at 78% 45%,#f97316,transparent),radial-gradient(2px 2px at 64% 85%,#ef4444,transparent);background-size:105px 105px;animation:rise 4.4s linear infinite;filter:drop-shadow(0 0 4px #f97316)}
+.pfx-embers::after{top:0;height:100%;background:radial-gradient(ellipse at 50% 100%,rgba(249,115,22,.32),transparent 68%);animation:forceglow 2.4s ease-in-out infinite}
+.pfx-kittypaws::after{content:"🐾  ♡  🐾";top:auto;bottom:-18%;height:auto;left:14%;color:#ff85c0;font-size:15px;letter-spacing:26px;opacity:.85;animation:rise2 5.2s ease-in infinite;text-shadow:0 0 8px rgba(255,133,192,.75);background:none}
+.pfx-kittypaws::before{top:0;height:200%;background-image:radial-gradient(3.5px 3.5px at 22% 40%,#f9a8d4 98%,transparent),radial-gradient(3px 3px at 74% 25%,#fbcfe8 98%,transparent),radial-gradient(4px 4px at 50% 75%,#ff85c0 98%,transparent);background-size:115px 115px;animation:rise 6.8s linear infinite}
+.pfx-lasergrid::before{top:0;height:100%;background:conic-gradient(from var(--a,0deg) at 50% 0%,transparent 0deg,rgba(56,189,248,.32) 18deg,transparent 36deg,rgba(232,121,249,.32) 54deg,transparent 72deg);animation:ring 6s linear infinite;mix-blend-mode:screen}
+.pfx-lasergrid::after{top:0;height:100%;background:linear-gradient(90deg,rgba(34,211,238,.2),transparent 25%,transparent 75%,rgba(244,63,94,.2))}
 
 /* Nameplates */
 .plate-empire{--plate:linear-gradient(100deg,rgba(15,23,42,.2),rgba(148,163,184,.45) 35%,rgba(226,232,240,.6) 45%,rgba(71,85,105,.45) 60%,rgba(15,23,42,.2))}
 .plate-stark{--plate:radial-gradient(circle at 12% 50%,rgba(125,211,252,.8) 0 6%,transparent 14%),linear-gradient(90deg,rgba(14,165,233,.25),rgba(56,189,248,.5) 50%,rgba(14,165,233,.25)),repeating-linear-gradient(90deg,rgba(186,230,253,.25) 0 1px,transparent 1px 10px)}
 .plate-shinobi{--plate:linear-gradient(90deg,rgba(120,113,108,.35),rgba(168,162,158,.5) 40%,rgba(87,83,78,.45) 70%),repeating-linear-gradient(45deg,rgba(0,0,0,.15) 0 3px,transparent 3px 9px)}
+.plate-kitty{--plate:radial-gradient(2px 2px at 78% 35%,#fff,transparent),radial-gradient(2px 2px at 88% 68%,#ffe4ef,transparent),linear-gradient(90deg,transparent 0%,rgba(255,133,192,.45) 42%,rgba(251,207,232,.68) 76%,rgba(244,114,182,.45) 110%,transparent 150%)}
+.plate-cyber{--plate:repeating-linear-gradient(90deg,rgba(34,211,238,.2) 0 1px,transparent 1px 12px),linear-gradient(90deg,transparent,rgba(34,211,238,.48) 45%,rgba(168,85,247,.58) 80%,transparent 120%)}
+.plate-sakura{--plate:radial-gradient(2.5px 1.5px at 74% 30%,#fff1f2,transparent),radial-gradient(2.5px 1.5px at 86% 65%,#fbcfe8,transparent),linear-gradient(90deg,transparent,rgba(251,207,232,.55) 45%,rgba(249,168,212,.6) 80%,transparent 120%)}
+.plate-galaxy{--plate:radial-gradient(1.5px 1.5px at 66% 30%,#fff,transparent),radial-gradient(1px 1px at 80% 70%,#fde047,transparent),radial-gradient(1.5px 1.5px at 92% 40%,#c4b5fd,transparent),linear-gradient(90deg,transparent,rgba(67,56,202,.65) 45%,rgba(139,92,246,.7) 85%,transparent 125%)}
+.plate-toxic{--plate:linear-gradient(90deg,transparent,rgba(74,222,128,.48) 42%,rgba(45,212,191,.58) 78%,rgba(163,230,53,.45) 110%,transparent 150%)}
 
 /* Banners */
 .ban-hyper{background:radial-gradient(circle at 50% 50%,#1e3a8a,#020617 70%)!important;background-size:100% 100%!important;animation:none!important}
@@ -1649,6 +1740,34 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .ban-mirror::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(60deg,#fff2 0 2px,transparent 2px 26px),repeating-linear-gradient(-60deg,#0003 0 2px,transparent 2px 22px);animation:banflow 8s ease-in-out infinite}
 .ban-spirit{background:linear-gradient(180deg,#0c1445,#1e3a8a)!important;background-size:100% 100%!important;animation:spiritshake .25s linear infinite!important}
 .ban-spirit::after{content:"";position:absolute;left:-10%;right:-10%;top:38%;height:26%;background:linear-gradient(180deg,transparent,#7dd3fc 30%,#fff 50%,#7dd3fc 70%,transparent);filter:blur(2px) drop-shadow(0 0 10px #38bdf8);animation:beam 1.4s ease-in-out infinite}
+.ban-kittycafe{background:linear-gradient(125deg,#fbcfe8,#fda4af,#fde68a,#f9a8d4,#fbcfe8)!important;background-size:300% 300%!important;animation:banflow 7s ease-in-out infinite!important}
+.ban-kittycafe::after{content:"🐾   ♥   🐾   ♥";position:absolute;left:12%;right:12%;bottom:-20%;color:rgba(255,255,255,.85);font-size:15px;letter-spacing:22px;animation:rise2 4.5s ease-in infinite;text-shadow:0 0 8px rgba(244,63,94,.45)}
+.ban-meteor{background:radial-gradient(circle at 75% 25%,#312e81,#090d16 70%)!important;background-size:100% 100%!important;animation:none!important}
+.ban-meteor::before{content:"";position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 18% 25%,#fff,transparent),radial-gradient(1px 1px at 45% 65%,#c7d2fe,transparent),radial-gradient(1.5px 1.5px at 78% 35%,#fff,transparent),radial-gradient(1px 1px at 88% 72%,#fde047,transparent);animation:twinkle 2s ease-in-out infinite alternate}
+.ban-meteor::after{content:"";position:absolute;top:-30%;left:-20%;width:110px;height:2.5px;background:linear-gradient(90deg,transparent,#7dd3fc,#fff);border-radius:4px;transform:rotate(24deg);box-shadow:0 0 10px #7dd3fc;animation:shoot 2.6s ease-in infinite}
+.ban-arcade{background:linear-gradient(180deg,#09090b 0%,#1e1b4b 56%,#4c1d95 100%)!important;background-size:100% 100%!important;animation:none!important}
+.ban-arcade::before{content:"★  ♥  ★  ♥  ★";position:absolute;inset:14% 0 auto 0;text-align:center;color:#fde047;font-size:13px;letter-spacing:18px;text-shadow:0 0 8px #f59e0b;animation:twinkle 1.4s ease-in-out infinite alternate}
+.ban-arcade::after{content:"";position:absolute;left:-40%;right:-40%;bottom:0;height:40%;background-image:linear-gradient(rgba(34,211,238,.85) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(232,121,249,.85) 1.5px,transparent 1.5px);background-size:20px 12px;transform:perspective(55px) rotateX(55deg);transform-origin:bottom;animation:gridrun .75s linear infinite}
+.ban-cherrynight{background:linear-gradient(180deg,#0f172a 0%,#311042 62%,#831843 100%)!important;background-size:100% 100%!important;animation:none!important}
+.ban-cherrynight::after{content:"";position:absolute;inset:-50% 0 0;background-image:linear-gradient(180deg,transparent,rgba(56,189,248,.65),transparent),linear-gradient(180deg,transparent,rgba(244,114,182,.65),transparent);background-size:2px 26px,2px 32px;background-position:22% 0,68% 12px;animation:fall 1.3s linear infinite}
+.ban-solarflare{background:radial-gradient(circle at 50% 50%,#09090b 0 22%,#f59e0b 25%,#ea580c 36%,#1c1917 72%)!important;background-size:100% 100%!important;animation:none!important}
+.ban-solarflare::after{content:"";position:absolute;left:50%;top:50%;width:44%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:#050505;box-shadow:0 0 18px 4px #fbbf24,0 0 36px 8px rgba(249,115,22,.75);animation:ccSolarPulse 2.4s ease-in-out infinite alternate}
+
+@keyframes ccEarTwitchL{0%,78%,100%{transform:rotate(0deg)}82%{transform:rotate(-16deg)}86%{transform:rotate(-3deg)}90%{transform:rotate(-14deg)}}
+@keyframes ccEarTwitchR{0%,78%,100%{transform:rotate(0deg)}82%{transform:rotate(16deg)}86%{transform:rotate(3deg)}90%{transform:rotate(14deg)}}
+@keyframes ccBunnyFlopL{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(-22deg)}}
+@keyframes ccBunnyFlopR{0%,100%{transform:rotate(10deg)}50%{transform:rotate(18deg)}}
+@keyframes ccWingFlapL{0%,100%{transform:rotate(0deg) scaleX(1)}50%{transform:rotate(-16deg) scaleX(.88)}}
+@keyframes ccWingFlapR{0%,100%{transform:rotate(0deg) scaleX(1)}50%{transform:rotate(16deg) scaleX(.88)}}
+@keyframes ccBassBounce{0%{transform:scale(1)}100%{transform:scale(1.13)}}
+@keyframes ccFrogBlink{0%,88%,100%{transform:scaleY(1)}92%{transform:scaleY(.12)}}
+@keyframes ccHornPulse{0%,100%{filter:drop-shadow(0 0 3px rgba(239,68,68,.5))}50%{filter:drop-shadow(0 0 8px rgba(248,113,113,.95))}}
+@keyframes ccFlameWave{0%{transform:scaleY(1) skewX(-2deg)}100%{transform:scaleY(1.08) skewX(3deg)}}
+@keyframes ccNeonHue{0%,100%{filter:drop-shadow(0 0 5px #22d3ee)}50%{filter:drop-shadow(0 0 7px #ff3d9a)}}
+@keyframes ccSparkPulse{0%,100%{opacity:.45;transform:scale(.96)}50%{opacity:1;transform:scale(1.03)}}
+@keyframes ccFloatY{0%{transform:translateY(0)}100%{transform:translateY(-4px)}}
+@keyframes ccScanDown{0%{background-position:0 -100%}100%{background-position:0 200%}}
+@keyframes ccSolarPulse{0%{box-shadow:0 0 14px 3px #fbbf24,0 0 28px 6px rgba(249,115,22,.65)}100%{box-shadow:0 0 22px 6px #fef08a,0 0 42px 12px rgba(249,115,22,.9)}}
 @keyframes spiritshake{25%{transform:translate(1px,-1px)}50%{transform:translate(-1px,1px)}75%{transform:translate(1px,1px)}}
 @keyframes beam{0%{transform:scaleX(0);transform-origin:left}50%,100%{transform:scaleX(1);transform-origin:left;opacity:1}100%{opacity:.6}}
 

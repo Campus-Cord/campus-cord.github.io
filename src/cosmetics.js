@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------- Sparks economy: cosmetics, bundles, quests
 // Prices and rewards are mirrored into config/catalog (written by the owner's app) so the
 // Firestore rules can check every purchase and claim. Bump CAT_V whenever they change.
-const CAT_V = 6;
+const CAT_V = 7;
 const COSM = [
   // avatar decorations
   {id:"d_cosmic", type:"deco", name:"Cosmic Swirl", price:700, tag:"exclusive", desc:"A galaxy that never stops turning around your avatar."},
@@ -72,7 +72,40 @@ const COSM = [
   {id:"p_molten", type:"plate", name:"Molten", price:700, tag:"new", desc:"Glowing lava flowing behind your name."},
   {id:"n_storm", type:"pban", name:"Thunder Clouds", price:1000, tag:"new", desc:"Dark rolling clouds lit up by lightning."},
   {id:"n_cyber", type:"pban", name:"Cyber City", price:1200, tag:"new", desc:"A neon city skyline at night with a scanning light."},
-  {id:"n_rgb", type:"pban", name:"RGB Setup", price:800, tag:"new", desc:"Gamer RGB lighting rolling across your banner."}
+  {id:"n_rgb", type:"pban", name:"RGB Setup", price:800, tag:"new", desc:"Gamer RGB lighting rolling across your banner."},
+
+  // ---- Cute, Critter & Neon Drop ----
+  {id:"d_kittyears", type:"deco", name:"Kitty Ears", price:650, tag:"new", desc:"Plush cat ears with pink inner tufts that periodically twitch!"},
+  {id:"d_catearsneon", type:"deco", name:"Cyber Kitty Ears", price:950, tag:"exclusive", desc:"Glowing holographic cyan & pink cat ears with neon pulse."},
+  {id:"d_bunnyears", type:"deco", name:"Bunny Ears", price:600, tag:"new", desc:"Tall soft bunny ears with a playful floppy bounce."},
+  {id:"d_foxears", type:"deco", name:"Kitsune Fox Ears", price:850, tag:"new", desc:"Fiery fox ears surrounded by floating spirit embers."},
+  {id:"d_devilhorns", type:"deco", name:"Devil Horns", price:750, tag:"new", desc:"Curved crimson horns with a smoldering ember glow."},
+  {id:"d_angelwings", type:"deco", name:"Seraph Wings", price:1200, tag:"exclusive", desc:"Feathered angel wings that gently flap beside your avatar."},
+  {id:"d_headphones", type:"deco", name:"Bass Headphones", price:700, tag:"new", desc:"RGB studio headphones bouncing to a live bass beat."},
+  {id:"d_froghat", type:"deco", name:"Froggy Hood", price:550, tag:"new", desc:"Cute frog eyes peeking over your avatar that blink at chat."},
+  {id:"d_bearhat", type:"deco", name:"Cozy Bear Ears", price:550, tag:"new", desc:"Round teddy-bear ears with warm caramel tufts that wiggle."},
+  {id:"d_dragonhorns", type:"deco", name:"Dragon Horns", price:1100, tag:"exclusive", desc:"Swept obsidian dragon horns with orbiting emerald sparks."},
+  {id:"d_phoenix", type:"deco", name:"Phoenix Crest", price:1350, tag:"exclusive", desc:"Blazing golden fire plumes rising around your avatar."},
+  {id:"d_arcade", type:"deco", name:"Pixel Hearts", price:650, tag:"new", desc:"Floating 8-bit retro hearts orbiting your avatar."},
+
+  {id:"e_sakura", type:"pfx", name:"Cherry Blossom Storm", price:750, tag:"new", desc:"Swirling pink sakura petals drift across your profile card."},
+  {id:"e_cyberglitch", type:"pfx", name:"Neon Scanline", price:950, tag:"new", desc:"A sweeping cyan & magenta laser scanner over your profile."},
+  {id:"e_stardust", type:"pfx", name:"Cosmic Stardust", price:1100, tag:"exclusive", desc:"Twinkling 4-point star sparkles rising across your card."},
+  {id:"e_embers", type:"pfx", name:"Rising Embers", price:850, tag:"new", desc:"Glowing orange-gold fire sparks floating up your profile."},
+  {id:"e_kittypaws", type:"pfx", name:"Kitty Paw Prints", price:700, tag:"new", desc:"Cute pastel pink paw prints and sparkles drift up your card."},
+  {id:"e_lasergrid", type:"pfx", name:"Synth Laser Grid", price:1250, tag:"exclusive", desc:"Animated prism beams and neon rays sweep your profile."},
+
+  {id:"n_kittycafe", type:"pban", name:"Kitty Café", price:750, tag:"new", desc:"Strawberry-cream banner with floating pastel paw prints & shimmer."},
+  {id:"n_meteor", type:"pban", name:"Meteor Shower", price:1100, tag:"exclusive", desc:"Midnight sky with twinkling stars and streaking shooting meteors."},
+  {id:"n_arcade", type:"pban", name:"Retro Arcade", price:850, tag:"new", desc:"Neon perspective grid floor with glowing arcade lights."},
+  {id:"n_cherrynight", type:"pban", name:"Tokyo Rain", price:950, tag:"new", desc:"Moody neon-violet rain falling past glowing city lights."},
+  {id:"n_solarflare", type:"pban", name:"Solar Eclipse", price:1300, tag:"exclusive", desc:"A glowing black-and-gold eclipse corona pulsing with solar flares."},
+
+  {id:"p_kitty", type:"plate", name:"Kitty Whiskers", price:450, tag:"new", desc:"Pastel pink & cream shimmer nameplate with floating sparkles."},
+  {id:"p_cyber", type:"plate", name:"Cyber Grid", price:550, tag:"new", desc:"Electric cyan and violet laser sweep with micro-grid lines."},
+  {id:"p_sakura", type:"plate", name:"Blossom Breeze", price:450, tag:"new", desc:"Delicate cherry-blossom pink and pearl glow."},
+  {id:"p_galaxy", type:"plate", name:"Starlight Nebula", price:650, tag:"exclusive", desc:"Deep cosmic indigo with twinkling stars and aurora shimmer."},
+  {id:"p_toxic", type:"plate", name:"Acid Glitch", price:600, tag:"new", desc:"Radioactive lime-green and electric-teal energy wave."}
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
@@ -207,7 +240,16 @@ async function giveSparks(uid, n){ const w = wal(uid);
 
 // ---- rendering helpers
 function sparkPill(n, cls){ return h("span",{class:"spk" + (cls ? " " + cls : "")}, ic("spark"), h("b",{text: (n || 0).toLocaleString()})); }
-function decoEl(id){ return h("span",{class:"deco deco-" + id.slice(2)}); }
+const DECO_PAIR_KEYS = new Set([
+  "kittyears","catearsneon","bunnyears","foxears","devilhorns",
+  "angelwings","headphones","froghat","bearhat","dragonhorns","phoenix","arcade"
+]);
+function decoEl(id){
+  const k = id.slice(2);
+  const el = h("span",{class:"deco deco-" + k});
+  if (DECO_PAIR_KEYS.has(k)) el.append(h("span",{class:"d-l"}), h("span",{class:"d-r"}));
+  return el;
+}
 function previewAvatar(id, size){ const a = avatar(S.uid, size || "xl"); a.querySelectorAll(".deco").forEach(x => x.remove()); a.classList.remove("ring"); if (id) a.appendChild(decoEl(id)); return a; }
 function itemArt(c){
   const art = h("div",{class:"art art-" + c.type + " tint-" + (c.items ? c.items[0] : c.id).slice(2)});
@@ -354,7 +396,9 @@ function renderShopPage(box){
       { name: "Nameplates", items: COSM.filter(c => c.type === "plate"), type: "plate" }
     ];
     categories.forEach(cat => {
-      const displayItems = cat.items.slice(0, 4);
+      const displayItems = [...cat.items]
+        .sort((a, b) => (b.tag === "new" ? 1 : 0) - (a.tag === "new" ? 1 : 0))
+        .slice(0, 8);
       if (displayItems.length) body.appendChild(shopSection(cat.name, displayItems, cat.type));
     });
     
