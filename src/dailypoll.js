@@ -3002,14 +3002,24 @@ function renderMario(wrap, p){
     }
   }
 
+  if (window._marioCleanup) window._marioCleanup();
+  function clearKeys(){
+    keys.left = false;
+    keys.right = false;
+    keys.jump = false;
+  }
   function onKeyDown(e){
     if (!document.body.contains(canvas)){
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
+      cleanup();
       return;
     }
     if (S.kind !== "games" || S.page !== "mario") return;
-    if (document.querySelector(".mbg, .modal")) return;
+    if (document.querySelector(".mbg, .modal")){
+      clearKeys();
+      return;
+    }
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return;
     if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = true;
     if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
     if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W"){
@@ -3025,8 +3035,16 @@ function renderMario(wrap, p){
       if (player.vy < -3.5) player.vy *= 0.58; // Variable jump height
     }
   }
+  function cleanup(){
+    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("keyup", onKeyUp);
+    window.removeEventListener("blur", clearKeys);
+    if (window._marioCleanup === cleanup) window._marioCleanup = null;
+  }
+  window._marioCleanup = cleanup;
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
+  window.addEventListener("blur", clearKeys);
 
   function isSolid(tile){
     return tile === "G" || tile === "B" || tile === "?" || tile === "M" || tile === "P" || tile === "T" || tile === "S";
@@ -3071,14 +3089,16 @@ function renderMario(wrap, p){
     }
   }
 
-  function moveAndCollide(ent, onHeadBump){
+  function moveAndCollide(ent, onHeadBump, dt){
+    const step = dt || 1;
     // Horizontal
-    ent.x += ent.vx;
+    ent.x += ent.vx * step;
     if (ent.x < 0){ ent.x = 0; ent.vx = 0; }
-    const leftC = Math.floor((ent.x + 2) / TILE);
-    const rightC = Math.floor((ent.x + ent.w - 2) / TILE);
-    const topR = Math.floor((ent.y + 3) / TILE);
-    const botR = Math.floor((ent.y + ent.h - 3) / TILE);
+    if (ent.x + ent.w > levelCols * TILE){ ent.x = levelCols * TILE - ent.w; ent.vx = 0; }
+    const leftC = Math.floor((ent.x + 1) / TILE);
+    const rightC = Math.floor((ent.x + ent.w - 1) / TILE);
+    const topR = Math.floor((ent.y + 4) / TILE);
+    const botR = Math.floor((ent.y + ent.h - 4) / TILE);
     for (let r = topR; r <= botR; r++){
       for (let c = leftC; c <= rightC; c++){
         if (isSolid(tileAt(c, r))){
@@ -3095,11 +3115,13 @@ function renderMario(wrap, p){
 
     // Vertical
     ent.onGround = false;
-    ent.y += ent.vy;
+    ent.y += ent.vy * step;
     const lC = Math.floor((ent.x + 3) / TILE);
     const rC = Math.floor((ent.x + ent.w - 3) / TILE);
     const tR = Math.floor(ent.y / TILE);
-    const bR = Math.floor((ent.y + ent.h) / TILE);
+    const bR = Math.floor((ent.y + ent.h - 0.01) / TILE);
+    let bumpedCol = -1, bumpedRow = -1, bestOverlap = -1;
+    const centerX = ent.x + ent.w / 2;
     for (let r = tR; r <= bR; r++){
       for (let c = lC; c <= rC; c++){
         if (isSolid(tileAt(c, r))){
@@ -3110,11 +3132,18 @@ function renderMario(wrap, p){
           } else if (ent.vy < 0){
             ent.y = (r + 1) * TILE;
             ent.vy = 0;
-            if (onHeadBump) onHeadBump(c, r);
+            const tileCenter = c * TILE + TILE / 2;
+            const dist = Math.abs(centerX - tileCenter);
+            if (bestOverlap < 0 || dist < bestOverlap){
+              bestOverlap = dist;
+              bumpedCol = c;
+              bumpedRow = r;
+            }
           }
         }
       }
     }
+    if (onHeadBump && bumpedCol >= 0) onHeadBump(bumpedCol, bumpedRow);
   }
 
   function hurtOrDie(){
@@ -3781,7 +3810,7 @@ function renderMario(wrap, p){
 
       player.wasOnGround = player.onGround;
       player.vy = Math.min(11, player.vy + 0.48 * dt);
-      moveAndCollide(player, hitBlock);
+      moveAndCollide(player, hitBlock, dt);
       if (!player.wasOnGround && player.onGround){
         player.squashX = 1.25;
         player.squashY = 0.78;
@@ -3832,8 +3861,9 @@ function renderMario(wrap, p){
         const m = mushrooms[i];
         const prevVx = m.vx;
         m.vy = Math.min(9, m.vy + 0.42 * dt);
-        moveAndCollide(m);
+        moveAndCollide(m, null, dt);
         if (m.vx === 0) m.vx = -prevVx;
+        if (m.y > H + 30){ mushrooms.splice(i, 1); continue; }
         if (player.x < m.x + m.w && player.x + player.w > m.x && player.y < m.y + m.h && player.y + player.h > m.y){
           mushrooms.splice(i, 1);
           sfx("powerup");
@@ -3855,7 +3885,7 @@ function renderMario(wrap, p){
         if (Math.abs(en.x - player.x) > W + 120) continue;
         const prevVx = en.vx;
         en.vy = Math.min(9, (en.vy || 0) + 0.42 * dt);
-        moveAndCollide(en);
+        moveAndCollide(en, null, dt);
         if (en.vx === 0) en.vx = -prevVx;
         if (en.y > H + 30){ en.dead = true; continue; }
 
@@ -3887,11 +3917,11 @@ function renderMario(wrap, p){
       }
 
       const targetCam = Math.max(0, Math.min(levelCols * TILE - W, player.x - W * 0.34));
-      camX += (targetCam - camX) * 0.14;
+      camX += (targetCam - camX) * (1 - Math.pow(0.86, dt));
     } else if (state === "stageclear"){
       flagSlideY = Math.min(5 * TILE - 12, flagSlideY + 3.5 * dt);
       player.vy = 2.5;
-      moveAndCollide(player);
+      moveAndCollide(player, null, dt);
       clearTimer += dt;
       if (clearTimer > 75){
         stage++;
