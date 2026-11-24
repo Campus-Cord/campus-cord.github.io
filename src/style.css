@@ -1828,3 +1828,4 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .mrow .nm{display:flex;align-items:center;gap:4px;min-width:0}
 .mrow .nm>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .nm>.tag{flex:none}
+.tag.tempdev{background:linear-gradient(90deg,#0ea5e9,#22d3ee);color:#03222b}
