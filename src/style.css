@@ -1784,3 +1784,21 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .dsd.big{width:auto;padding:0 9px;border-radius:14px;background:#facc1522;color:#facc15}
 .dsd.big.on{background:linear-gradient(135deg,#fde047,#f59e0b);color:#422006}
 .dailycard>.btn{width:auto!important;flex:none;padding:10px 18px;white-space:nowrap}
+/* Glitched Name Effect */
+.fx-glitched {
+  position: relative;
+  display: inline-block;
+  color: #fff;
+  animation: glitch-skew 2s infinite linear alternate-reverse;
+  text-shadow: -1px 0 red, 1px 0 cyan;
+}
+
+@keyframes glitch-skew {
+  0% { transform: skewX(0deg); text-shadow: -1px 0 red, 1px 0 cyan; }
+  10% { transform: skewX(-5deg); text-shadow: -2px 0 red, 2px 0 cyan; }
+  20% { transform: skewX(5deg); text-shadow: -1px 0 red, 1px 0 cyan; }
+  30% { transform: skewX(0deg); text-shadow: 2px 0 red, -2px 0 cyan; }
+  40% { transform: skewX(2deg); }
+  50% { transform: skewX(-2deg); }
+  100% { transform: skewX(0deg); text-shadow: -1px 0 red, 1px 0 cyan; }
+}

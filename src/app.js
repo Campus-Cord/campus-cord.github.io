@@ -28,7 +28,7 @@ const THEMES = [
   {id:"sakura", name:"Sakura", c:["#f7dce6","#fdeef3","#fff7fa"], premium:true},
 ];
 const ACCENTS = ["#7c5cff","#5865f2","#3fb8ff","#22d3c5","#3ecf7a","#f5b83d","#ff9447","#f0565c","#ff7ac6"];
-const NAME_FX = [{id:"yinyang",name:"Yin-Yang",own:true},{id:"rainbow",name:"Rainbow"},{id:"gold",name:"Gold"},{id:"fire",name:"Fire"},{id:"ocean",name:"Ocean"},{id:"neon",name:"Neon"},{id:"prism",name:"Prism",ex:true},{id:"aurora",name:"Aurora",ex:true}];
+const NAME_FX = [{id:"yinyang",name:"Yin-Yang",own:true},{id:"rainbow",name:"Rainbow"},{id:"gold",name:"Gold"},{id:"fire",name:"Fire"},{id:"ocean",name:"Ocean"},{id:"neon",name:"Neon"},{id:"prism",name:"Prism",ex:true},{id:"aurora",name:"Aurora",ex:true},{id:"glitched",name:"Glitched"}];
 const STATUSES = [{id:"online",name:"Online",d:""},{id:"idle",name:"Idle",d:"Shows a moon"},{id:"dnd",name:"Do Not Disturb",d:"Mutes your notifications"},{id:"invisible",name:"Invisible",d:"Look offline to others"}];
 
 // ---------------------------------------------------------------- icons (Lucide, MIT)
@@ -98,7 +98,7 @@ const CATALOG = [
    desc:"The essentials, all in one.", list:["PLUS rank badge next to your name","5 animated name effects","All 5 premium themes","Custom profile banner","Bigger uploads (GIFs up to 900 KB)"]},
   {id:"plusplus", icon:"zap", name:"Campus++", price:"$5.99 / month", months:1, tier:2,
    desc:"Everything in Campus+, turned all the way up.", list:["Everything in Campus+","Holographic PLUS+ rank badge","Exclusive Prism & Aurora name effects","Animated glowing avatar ring","Gradient profile banner","Listed in its own Campus++ section"]},
-  {id:"name_fx", icon:"wand", name:"Animated Name", price:"$1.99", desc:"Rainbow, Gold, Fire, Ocean or Neon — your name shimmers everywhere."},
+  {id:"name_fx", icon:"wand", name:"Animated Name", price:"$1.99", desc:"Rainbow, Gold, Fire, Ocean, Neon or Glitched — your name shimmers everywhere."},
   {id:"themes", icon:"palette", name:"Theme Pack", price:"$0.99", desc:"Unlock Midnight, Ocean, Sunset, Forest and Sakura."},
   {id:"banner", icon:"image", name:"Profile Banner", price:"$0.99", desc:"Pick a custom banner color for your profile card."},
   {id:"plus_year", icon:"sparkles", name:"Campus+ · 1 year", price:"$24.99", months:12, perk:"plus", desc:"Twelve months of Campus+ for the price of about eight."},
