@@ -190,7 +190,10 @@ function copy(t, msg){ (navigator.clipboard ? navigator.clipboard.writeText(t) :
 
 // identity
 const isOwnerUid = uid => !!(S.config && S.config.ownerUid === uid);
-const isOwner = () => isOwnerUid(S.uid);
+// Co-owners (config.coOwners): almost everything the owner can do, except Stripe/payments and managing co-owners.
+const isCoOwnerUid = uid => !!(S.config && (S.config.coOwners || []).includes(uid) && !isOwnerUid(uid));
+const isRealOwner = () => isOwnerUid(S.uid);
+const isOwner = () => isRealOwner() || isCoOwnerUid(S.uid);
 const devUntil = uid => ((S.config && S.config.devUntil) || {})[uid] || 0;
 const isDev = uid => !!(S.config && (S.config.admins||[]).includes(uid)) && (!devUntil(uid) || devUntil(uid) > Date.now());
 // Designers made CampusCord's look (logo, role tags). A title + badge + ring; no extra admin powers.
@@ -268,6 +271,7 @@ function miniTags(uid){ CHIP_MINI = true; try{ return roleTags(uid, true); } fin
 function roleTags(uid, compact){
   const out = [];
   if (isOwnerUid(uid)) out.push(chip("admin",null,"OWNER","Owner of CampusCord"));
+  else if (isCoOwnerUid(uid)) out.push(chip("admin coowner",null,"CO-OWNER","Co-owner of CampusCord"));
   else if (isHeadDev(uid)) out.push(chip("dev headdev","code","HEAD DEV","Head Developer"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   if (isDesigner(uid) && !isOwnerUid(uid)) out.push(chip("design","pen","DESIGN","Designer — made CampusCord's look"));
@@ -314,7 +318,7 @@ function boot(){
 
 function start(){
   onSnapshot(doc(db, "config/main"), snap => {
-    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true; if (S.routed === "app") setTimeout(maybeHeadDevPopup, 1500);
+    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true; if (S.routed === "app"){ setTimeout(maybeHeadDevPopup, 1500); setTimeout(maybeCoOwnerPopup, 1800); }
     if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
     route(); applyPrefs(); adoptLinkedProfile(); need("rail","side","header","msgs","rpanel","me","composer");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
@@ -501,7 +505,7 @@ function initApp(){
     S.allRooms = snap.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.rooms = S.allRooms.filter(canSeeRoom).sort((a,b) => (a.order||0) - (b.order||0) || (a.createdAt||0) - (b.createdAt||0));
     if (S.announceJoin && S.rooms.length){ S.announceJoin = false; announceJoin(); }
-    watchVouches(); watchMySig(); maybeVouchPopup(); setTimeout(maybePasswordNudge, 6000); setTimeout(maybeHeadDevPopup, 2500);
+    watchVouches(); watchMySig(); maybeVouchPopup(); setTimeout(maybePasswordNudge, 6000); setTimeout(maybeHeadDevPopup, 2500); setTimeout(maybeCoOwnerPopup, 3000);
     if (S.kind === "room" && S.cur && !S.rooms.find(r => r.id === S.cur)) S.cur = null;
     syncVoiceSubs(); if (V.room && !S.rooms.find(r => r.id === V.room)) leaveVoice();
     if (!S.cur && S.rooms.length){ const saved = store("chat"); if (saved && saved.kind === "dm") openChat("dm", saved.id); else if (saved && isPage(saved.kind)) openChat(saved.kind, saved.id); else openChat("room", S.rooms.find(r => saved && r.id === saved.id) ? saved.id : S.rooms[0].id); }
@@ -547,12 +551,12 @@ function initApp(){
     S.myOrders = s.docs.map(d => Object.assign({id:d.id}, d.data()));
     S.myOrders.forEach(o => { if (before[o.id] === "pending" && o.status === "approved"){ const c = CATALOG.find(x => x.id === o.item) || {name:"Your purchase"}; toast("✦ " + c.name + " is here! Thanks for supporting CampusCord 💜"); } });
     refreshOpenPane(); need("side", "msgs"); }, ()=>{}));
-  if (isOwner()) S.unsubApp.push(onSnapshot(collection(db, "orders"), s => { S.orders = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => b.ts - a.ts); need("rail"); refreshOpenPane(); }, ()=>{}));
+  if (isRealOwner()) S.unsubApp.push(onSnapshot(collection(db, "orders"), s => { S.orders = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a,b) => b.ts - a.ts); need("rail"); refreshOpenPane(); }, ()=>{}));
   S.unsubApp.push(onSnapshot(doc(db, "config/catalog"), s => { S.catalogV = s.exists() ? s.data().v : 0;
     if (isOwner() && !prefs.yy2){ prefs.yy2 = 1; savePrefs(); setMyProfile({deco:"d_yinyang", plate:"p_yinyang"}).catch(()=>{}); }
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
-    if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
+    if (isRealOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
   ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge(); watchSubs(); watchGameScores();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
@@ -1284,7 +1288,7 @@ function serverMenu(ev){
     !isInstalled() ? {label:"Install desktop app", icon:"arrowdown", run:() => installApp()} : null,
   ]);
 }
-function canModerate(uid){ return isAdmin() && uid !== S.uid && !isOwnerUid(uid) && (isOwner() || !isDev(uid) || (isHeadDev(S.uid) && !isHeadDev(uid))); }
+function canModerate(uid){ return isAdmin() && uid !== S.uid && !isOwnerUid(uid) && (isRealOwner() || !isCoOwnerUid(uid)) && (isOwner() || !isDev(uid) || (isHeadDev(S.uid) && !isHeadDev(uid))); }
 function memberMenu(ev, uid){
   const tu = timeoutUntil(uid);
   ctxMenu(ev, [
@@ -1293,6 +1297,7 @@ function memberMenu(ev, uid){
     uid !== S.uid && S.kind === "room" && canPost() ? {label:"Mention", icon:"message", run:() => insertAt("@" + nickOf(uid) + " ")} : null,
     isOwner() && uid !== S.uid ? "-" : null,
     isOwner() && uid !== S.uid ? (nameLocked(uid) ? {label:"Remove name flag", icon:"check", run:() => clearNameFlag(uid)} : {label:"Not their real name…", icon:"alert", danger:true, run:() => flagName(uid)}) : null,
+    isRealOwner() && uid !== S.uid ? {label: isCoOwnerUid(uid) ? "Remove Co-owner" : "Make Co-owner…", icon:"crown", run:() => isCoOwnerUid(uid) ? setCoOwner(uid, false) : coOwnerConfirm(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isHeadDev(uid) ? "Remove Head Dev" : "Make Head Dev", icon:"star", run:() => setHeadDev(uid, !isHeadDev(uid))} : null,
     !isOwner() && isHeadDev(S.uid) && uid !== S.uid && !isOwnerUid(uid) && !isHeadDev(uid) ? {label: isDev(uid) ? "Remove developer" : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
     isOwner() && uid !== S.uid ? {label: isDev(uid) ? "Remove developer" + (devUntil(uid) ? " (until " + devTimeLabel(devUntil(uid)) + ")" : "") : "Make developer…", icon:"code", run:() => devModal(uid)} : null,
@@ -1992,7 +1997,7 @@ function drawRanks(m, draw){
         h("div",{class:"shophero"},
           h("div",{class:"shg"}, ic("sparkles")),
           h("div",null, h("h2",{text:"Campus+ Shop"}), h("p",{text:"Ranks, animated names and themes. Every purchase supports the server."})),
-          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isOwner() ? chip("admin",null,"OWNER") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
+          h("div",{class:"myrank"}, h("span",{text:"Your rank"}), isRealOwner() ? chip("admin",null,"OWNER") : isCoOwnerUid(S.uid) ? chip("admin coowner",null,"CO-OWNER") : r ? roleTags(S.uid).slice(-1)[0] : h("span",{class:"tag none",text:"MEMBER"}))));
       const tiers = h("div",{class:"tiers"});
       CATALOG.filter(c => c.tier).forEach(c => {
         const it = shopItem(c.id); if (!it.enabled && !isOwner()) return;
@@ -2071,9 +2076,9 @@ function openAdmin(start){
     {id:"members", label:"Members & roles", icon:"users", render:adminMembers, hidden:!isOwner()},
     {id:"agreements", label:"Agreements", icon:"info", render:adminAgreements, hidden:!isOwner()},
     {header:"Monetization", hidden:!isOwner()},
-    {id:"shop", label:"Shop & Stripe", icon:"bag", render:adminShop, hidden:!isOwner()},
+    {id:"shop", label:"Shop & Stripe", icon:"bag", render:adminShop, hidden:!isRealOwner()},
     {id:"appeals", icon:"alert", label:"Ban appeals" + (openAppeals().length ? " (" + openAppeals().length + ")" : ""), render:adminAppeals, hidden:!isOwner()},
-    {id:"orders", icon:"receipt", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isOwner()},
+    {id:"orders", icon:"receipt", label:"Orders" + (S.orders.filter(o => o.status === "pending").length ? " (" + S.orders.filter(o => o.status === "pending").length + ")" : ""), render:adminOrders, hidden:!isRealOwner()},
   ], isOwner() ? (start || "overview") : "rooms");
 }
 async function downloadBackup(btn, st){
@@ -2125,7 +2130,7 @@ function adminOverview(p){
         h("button",{class:"btn small", onclick:async () => { const v = parseTurn(box.value);
           if (!v){ toast("Couldn't find the TURN address, username and password in that. Copy the whole thing from Metered."); return; }
           try{ await updateDoc(doc(db, "config/main"), {turn:v}); toast("Voice relay saved! Leave and rejoin voice to use it."); box.value = ""; refreshOpenPane(); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")))); }
-  if (isOwner()){ const last = prefs.lastBackup; const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
+  if (isRealOwner()){ const last = prefs.lastBackup; const days = last ? Math.floor((Date.now() - last) / 864e5) : null;
     const st = h("span",{class:"note",style:{margin:0},text: last ? "Last downloaded " + (days === 0 ? "today" : days === 1 ? "yesterday" : days + " days ago") + "." : "You haven't downloaded a backup yet."});
     p.append(h("div",{class:"preview-card bkcard"}, h("div",{style:{flex:"1"}}, h("b",{text:"Backups"}),
         h("div",{class:"note",style:{margin:"2px 0 0"},text:"Download every room's messages, reactions, pins, members, profiles, Sparks and purchases as one file. Other people's DMs aren't included — they're private."}), st),
@@ -2137,7 +2142,7 @@ function adminOverview(p){
       h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {serverName:nm.value.trim().slice(0,32) || "CampusCord", serverIcon:ic.value.trim().slice(0,4) || "CC"}); toast("Saved"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")),
       h("p",{class:"note",text:"The icon can be 1–4 letters or an emoji."}));
   }
-  if (isOwner()){
+  if (isRealOwner()){
     let gifsToo = false;
     const gsw = h("button",{class:"sw", onclick:() => { gifsToo = !gifsToo; gsw.classList.toggle("on", gifsToo); }});
     p.append(h("div",{class:"danger-zone"},
@@ -2289,6 +2294,35 @@ function adminOrders(p){
 async function setDesigner(uid, on){
   try{ await updateDoc(doc(db, "config/main"), {designers: on ? arrayUnion(uid) : arrayRemove(uid)}); toast(on ? nickOf(uid) + " is now a Designer ✏️" : nickOf(uid) + " is no longer a designer"); refreshOpenPane(); }
   catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+async function setCoOwner(uid, on){
+  try{ await updateDoc(doc(db, "config/main"), {coOwners: on ? arrayUnion(uid) : arrayRemove(uid)});
+    toast(on ? nickOf(uid) + " is now a Co-owner 👑" : nickOf(uid) + " is no longer a Co-owner"); refreshOpenPane(); need("members", "side", "msgs"); }
+  catch(e){ toast("Couldn't update: " + errMsg(e)); }
+}
+function coOwnerConfirm(uid){
+  modal((m, close) => m.append(h("h3",{text:"Make " + nickOf(uid) + " a Co-owner?"}),
+    h("p",{class:"note",text:"They'll be able to do almost everything you can: members, bans, strikes, rooms, giving Sparks and items, devs and Head Devs, agreements, the Dev panel and the invite code."}),
+    h("p",{class:"note",text:"Only you keep: Stripe and real-money orders, the Sparks price list, and choosing co-owners. They can't ban, kick, time out, warn or strike you."}),
+    h("div",{class:"row",style:{justifyContent:"flex-end"}}, h("button",{class:"btn ghost",onclick:close},"Cancel"),
+      h("button",{class:"btn",onclick:() => { close(); setCoOwner(uid, true); }},"Make Co-owner"))));
+}
+// Shown once to a new co-owner.
+function maybeCoOwnerPopup(){
+  if (!isCoOwnerUid(S.uid) || S.routed !== "app" || window.__ccNoPop) return;
+  const key = "coOwnerSeen_" + S.uid; try{ if (localStorage.getItem(key)) return; }catch(e){ return; }
+  if ($("layer").children.length){ setTimeout(maybeCoOwnerPopup, 5000); return; }
+  try{ localStorage.setItem(key, "1"); }catch(e){}
+  modal((m, close) => m.append(h("div",{class:"hdpop"},
+    h("div",{class:"hdcrown",text:"👑"}), h("h2",{text:"You are Co-owner!"}),
+    h("p",{class:"note",text:"You help run CampusCord. You can now:"}),
+    h("ul",{class:"hdlist"},
+      h("li",null, "🛡️ ", h("b",{text:"Moderate anyone"}), ": kick, ban, time out, warn, strikes and suspensions"),
+      h("li",null, "🏠 ", h("b",{text:"Run the server"}), ": rooms, private rooms, invite code, appeals"),
+      h("li",null, "✨ ", h("b",{text:"Give Sparks, items and badges"})),
+      h("li",null, "💻 ", h("b",{text:"Make devs and Head Devs"}), ", approve changes in the Dev panel"),
+      h("li",null, "📜 ", h("b",{text:"Agreements"}), ": see signatures and ask people to fix them")),
+    h("button",{class:"btn",onclick:close},"Let's go"))), "hdmodal");
 }
 async function setHeadDev(uid, on){
   try{ await updateDoc(doc(db, "config/main"), on ? {headDevs:arrayUnion(uid), admins:arrayUnion(uid), ["devUntil." + uid]:deleteField()} : {headDevs:arrayRemove(uid)});

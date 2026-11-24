@@ -357,6 +357,43 @@ await t("members can read the game leaderboard", assertSucceeds(getDocs(collecti
 await t("can't write someone else's game scores", assertFails(setDoc(doc(as("alice"), "gameScores/carol"), { ...gs, uid: "carol" })));
 await t("can't set negative or absurd game scores", assertFails(setDoc(doc(as("alice"), "gameScores/alice"), { ...gs, flappyBest: -5 })));
 
+console.log("Co-owners");
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, "config/main"), { coOwners: ["co"], banned: [], timeouts: {} }, { merge: true });
+  await setDoc(doc(db, "members/co"), { nick: "co", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST" });
+  await setDoc(doc(db, "orders/o1"), { uid: "bob", item: "plus", status: "pending", ts: now });
+});
+await t("co-owner bans a member", assertSucceeds(updateDoc(doc(as("co"), "config/main"), { banned: ["bob"] })));
+await t("co-owner unbans", assertSucceeds(updateDoc(doc(as("co"), "config/main"), { banned: [] })));
+await t("co-owner changes the invite settings and name", assertSucceeds(updateDoc(doc(as("co"), "config/main"), { serverName: "CC" })));
+await t("co-owner can't ban the owner", assertFails(updateDoc(doc(as("co"), "config/main"), { banned: ["owner"] })));
+await t("co-owner can't time out the owner", assertFails(updateDoc(doc(as("co"), "config/main"), { timeouts: { owner: Date.now() + 60000 } })));
+await t("co-owner can't make more co-owners", assertFails(updateDoc(doc(as("co"), "config/main"), { coOwners: ["co", "bob"] })));
+await t("co-owner can't remove themselves either", assertFails(updateDoc(doc(as("co"), "config/main"), { coOwners: [] })));
+await t("co-owner can't take ownership", assertFails(updateDoc(doc(as("co"), "config/main"), { ownerUid: "co" })));
+await t("co-owner makes someone head dev", assertSucceeds(updateDoc(doc(as("co"), "config/main"), { headDevs: ["head"] })));
+await t("co-owner can't edit Stripe/shop settings", assertFails(setDoc(doc(as("co"), "config/shop"), { items: {} })));
+await t("co-owner can't edit the Sparks catalog", assertFails(setDoc(doc(as("co"), "config/catalog"), { v: 99, daily: 99999 })));
+await t("co-owner can't see orders", assertFails(getDoc(doc(as("co"), "orders/o1"))));
+await t("co-owner can't approve orders", assertFails(updateDoc(doc(as("co"), "orders/o1"), { status: "done" })));
+await t("co-owner gives Sparks", assertSucceeds(updateDoc(doc(as("co"), "wallet/carol"), { earned: 5000 })));
+await t("co-owner can't touch the owner's wallet", assertFails(setDoc(doc(as("co"), "wallet/owner"), { earned: 0, spent: 0, items: [], quests: [], lastDaily: 0 })));
+await t("co-owner gives perks", assertSucceeds(setDoc(doc(as("co"), "perks/bob"), { items: { plus: true } })));
+await t("co-owner can't change the owner's perks", assertFails(setDoc(doc(as("co"), "perks/owner"), { items: {} })));
+await t("co-owner gives a strike", assertSucceeds(setDoc(doc(as("co"), "mod/bob/notices/c1"), { kind: "strike", reason: "x", at: Date.now(), ackAt: null })));
+await t("co-owner can't strike the owner", assertFails(setDoc(doc(as("co"), "mod/owner/notices/c2"), { kind: "strike", reason: "x", at: Date.now(), ackAt: null })));
+await t("co-owner can't kick the owner", assertFails(deleteDoc(doc(as("co"), "members/owner"))));
+await t("co-owner reads signatures", assertSucceeds(getDoc(doc(as("co"), "signatures/alice"))));
+await t("co-owner sees private rooms", assertSucceeds(getDoc(doc(as("co"), "rooms/secret"))));
+await t("a banned co-owner loses their powers", (async () => {
+  await env.withSecurityRulesDisabled(async ctx => { await updateDoc(doc(ctx.firestore(), "config/main"), { banned: ["co"] }); });
+  await assertFails(updateDoc(doc(as("co"), "config/main"), { serverName: "x" }));
+  await env.withSecurityRulesDisabled(async ctx => { await updateDoc(doc(ctx.firestore(), "config/main"), { banned: [] }); });
+})());
+await t("owner removes a co-owner", assertSucceeds(updateDoc(doc(as("owner"), "config/main"), { coOwners: [] })));
+await t("an ex co-owner has no powers", assertFails(updateDoc(doc(as("co"), "config/main"), { serverName: "x" })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

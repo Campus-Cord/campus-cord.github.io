@@ -1823,3 +1823,4 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .ch.dm.plate:hover::after,.friend.plate:hover::after,.mrow.plate:hover::after,.ch.dm.plate.on::after{animation-play-state:running;opacity:.85}
 .ch.dm.plate .nm,.ch.dm.plate .sub,.ch.dm.plate .nick,.friend.plate *,.mrow.plate .nm,.mrow.plate .sub,.mrow.plate .status,.ch.dm.plate .st{text-shadow:0 1px 2px #000c,0 0 6px #0008}
 @media (prefers-reduced-motion:reduce){.plate::after{animation:none!important}}
+.tag.coowner{background:linear-gradient(90deg,#a855f7,#ec4899);color:#fff}

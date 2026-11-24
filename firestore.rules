@@ -7,7 +7,14 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
     function cfgPath() { return /databases/$(database)/documents/config/main; }
     function cfg() { return get(cfgPath()).data; }
-    function isOwner() { return signedIn() && exists(cfgPath()) && cfg().ownerUid == request.auth.uid; }
+    function isRealOwner() { return signedIn() && exists(cfgPath()) && cfg().ownerUid == request.auth.uid; }
+    // Co-owners (config.coOwners, only the real owner sets them) can do almost everything the owner can,
+    // except payments (Stripe, orders, the Sparks catalog), managing co-owners, and acting against the owner.
+    function isCoOwner() { return signedIn() && exists(cfgPath()) && request.auth.uid in cfg().get('coOwners', [])
+      && notBanned() && exists(/databases/$(database)/documents/members/$(request.auth.uid)); }
+    function isOwner() { return isRealOwner() || isCoOwner(); }
+    // For owner powers that target one person: co-owners can't use them on the real owner.
+    function bossOver(uid) { return isRealOwner() || (isCoOwner() && uid != cfg().ownerUid); }
     function notBanned() { return !(request.auth.uid in cfg().get('banned', [])); }
     function isMember() {
       return signedIn() && exists(cfgPath()) && notBanned()
@@ -37,7 +44,12 @@ service cloud.firestore {
       allow create: if signedIn() && !exists(cfgPath())
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.get('banned', []) is list;
-      allow update: if isOwner() && request.resource.data.ownerUid == resource.data.ownerUid;
+      allow update: if isRealOwner() && request.resource.data.ownerUid == resource.data.ownerUid;
+      // Co-owners: anything here except the owner, who the co-owners are, and banning/timing out the owner or a co-owner.
+      allow update: if isCoOwner() && request.resource.data.ownerUid == resource.data.ownerUid
+        && !changed().hasAny(['coOwners'])
+        && !request.resource.data.get('banned', []).hasAny([resource.data.ownerUid].concat(resource.data.get('coOwners', [])))
+        && !request.resource.data.get('timeouts', {}).keys().hasAny([resource.data.ownerUid].concat(resource.data.get('coOwners', [])));
       // Developers can only kick/unban/time out, never the owner or another developer.
       allow update: if isAdmin() && !isOwner()
         && changed().hasOnly(['banned', 'bannedNames', 'timeouts', 'bannedDevices', 'bannedDevNames', 'banReasons'])
@@ -65,7 +77,7 @@ service cloud.firestore {
     // Shop prices + Stripe payment links: everyone reads, only the owner edits.
     match /config/shop {
       allow read: if signedIn();
-      allow write: if isOwner();
+      allow write: if isRealOwner();
     }
     // Public key for push notifications (written by the Notify GitHub Action).
     match /config/push {
@@ -81,7 +93,7 @@ service cloud.firestore {
     // Sparks prices + quest rewards (written by the owner's app) so purchases can be checked here.
     match /config/catalog {
       allow read: if signedIn();
-      allow write: if isOwner();
+      allow write: if isRealOwner();
     }
 
     // Feedback board: members post bugs/ideas and vouch (one vouch each, only their own). Owner/devs set status + reply.
@@ -125,10 +137,10 @@ service cloud.firestore {
     // and can only mark a notice as read ("I understand"), once.
     match /mod/{uid} {
       allow read: if signedIn() && (uid == request.auth.uid || isOwner());
-      allow write: if isOwner();
+      allow write: if bossOver(uid);
       match /notices/{nid} {
         allow read: if signedIn() && (uid == request.auth.uid || isOwner());
-        allow create, update, delete: if isOwner();
+        allow create, update, delete: if bossOver(uid);
         // Head developers can send warnings (not strikes) to anyone except the owner and other head developers.
         allow create: if isHeadDev() && uid != cfg().ownerUid && !(uid in cfg().get('headDevs', []))
           && request.resource.data.keys().hasOnly(['kind', 'reason', 'at', 'by', 'ackAt'])
@@ -221,7 +233,7 @@ service cloud.firestore {
             && request.resource.data.get('rulesSig', '') is string && request.resource.data.get('rulesSig', '').size() <= 200))
         && (!changed().hasAny(['nick']) || nameMine(request.resource.data.nick))
         && (!changed().hasAny(['nickAt']) || changed().hasAny(['nick']));
-      allow delete: if isOwner()
+      allow delete: if bossOver(uid)
         || (isAdmin() && uid != cfg().ownerUid && !(uid in cfg().get('admins', [])));
     }
     // Bio, status, name effect, banner, picture. Each person edits only their own.
@@ -233,12 +245,12 @@ service cloud.firestore {
         && request.resource.data.get('avatar', '').size() <= 120000
         && request.resource.data.get('bio', '').size() <= 190
         && request.resource.data.get('customStatus', '').size() <= 60;
-      allow delete: if isOwner();
+      allow delete: if bossOver(uid);
     }
     // Purchased perks. Only the owner can grant or remove them.
     match /perks/{uid} {
       allow read: if signedIn();
-      allow write: if isOwner();
+      allow write: if bossOver(uid);
     }
     // Sparks wallet. Each person can only: start empty, buy at the catalog price with Sparks they have,
     // claim each quest once for its listed reward, and claim the daily reward once every 20 hours.
@@ -249,7 +261,7 @@ service cloud.firestore {
       function ow() { return resource.data; }
       function mine() { return isMember() && uid == request.auth.uid; }
       allow read: if signedIn();
-      allow write: if isOwner();
+      allow write: if bossOver(uid);
       allow create: if mine()
         && nw().keys().hasOnly(['earned', 'spent', 'items', 'quests', 'lastDaily', 'lastItem', 'lastQuest'])
         && nw().earned == 0 && nw().spent == 0 && nw().items.size() == 0 && nw().quests.size() == 0 && nw().lastDaily == 0;
@@ -318,10 +330,10 @@ service cloud.firestore {
     }
     // Shop orders. Buyers create their own pending order; only the owner approves.
     match /orders/{orderId} {
-      allow read: if isOwner() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow read: if isRealOwner() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isMember() && ownsNew() && request.resource.data.status == 'pending';
-      allow update: if isOwner();
-      allow delete: if isOwner() || (signedIn() && ownsOld() && resource.data.status == 'pending');
+      allow update: if isRealOwner();
+      allow delete: if isRealOwner() || (signedIn() && ownsOld() && resource.data.status == 'pending');
     }
 
     // ---------------- rooms
