@@ -1411,11 +1411,13 @@ function renderRPanel(){
   if (S.kind === "dm"){ const o = dmOther({id:S.cur}); uids = [S.uid, o].filter(u => member(u)); }
   else { const r = curRoom(); if (r && r.private) uids = roomPeople(r); }
   const sortN = (a,b) => nickOf(a).localeCompare(nickOf(b));
-  const special = u => isOwnerUid(u) || ((isDev(u) || isDesigner(u)) && isOn(u)) || (rankOf(u) === "plusplus" && isOn(u));
-  const groups = [["Owner", uids.filter(isOwnerUid)], ["Developers", uids.filter(u => !isOwnerUid(u) && isDev(u) && isOn(u))],
-    ["Design", uids.filter(u => !isOwnerUid(u) && !isDev(u) && isDesigner(u) && isOn(u))],
-    ["Campus++", uids.filter(u => !isOwnerUid(u) && !isDev(u) && !isDesigner(u) && rankOf(u) === "plusplus" && isOn(u))],
-    ["Online", uids.filter(u => !special(u) && isOn(u))], ["Offline", uids.filter(u => !isOwnerUid(u) && !isOn(u))]];
+  // The owner and co-owners share the Owner section (the owner first).
+  const isTopUid = u => isOwnerUid(u) || isCoOwnerUid(u);
+  const special = u => isTopUid(u) || ((isDev(u) || isDesigner(u)) && isOn(u)) || (rankOf(u) === "plusplus" && isOn(u));
+  const groups = [["Owner", uids.filter(isTopUid).sort((a, b) => isOwnerUid(b) - isOwnerUid(a))], ["Developers", uids.filter(u => !isTopUid(u) && isDev(u) && isOn(u))],
+    ["Design", uids.filter(u => !isTopUid(u) && !isDev(u) && isDesigner(u) && isOn(u))],
+    ["Campus++", uids.filter(u => !isTopUid(u) && !isDev(u) && !isDesigner(u) && rankOf(u) === "plusplus" && isOn(u))],
+    ["Online", uids.filter(u => !special(u) && isOn(u))], ["Offline", uids.filter(u => !isTopUid(u) && !isOn(u))]];
   groups.forEach(([label, arr]) => {
     if (!arr.length) return;
     b.appendChild(h("div",{class:"cat",text: label + " — " + arr.length}));
