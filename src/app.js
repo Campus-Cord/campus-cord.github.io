@@ -275,7 +275,8 @@ function roleTags(uid, compact){
   else if (isHeadDev(uid)) out.push(chip("dev headdev","code","HEAD DEV","Head Developer"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   if (isDesigner(uid) && !isOwnerUid(uid)) out.push(chip("design","pen","DESIGN","Designer — made CampusCord's look"));
-  const r = rankOf(uid);
+  // Owner and co-owners just show their role, not a Campus+ rank.
+  const r = isOwnerUid(uid) || isCoOwnerUid(uid) ? null : rankOf(uid);
   if (r === "plusplus") out.push(chip("pp","zap","PLUS+","Campus++"));
   else if (r === "plus") out.push(chip("plus","sparkles","PLUS","Campus+"));
   else if (r === "supporter") out.push(chip("sup","gem", compact ? "" : "SUPPORTER","Supporter"));
