@@ -451,5 +451,23 @@ service cloud.firestore {
       allow create: if isMember() && ownsNew();
       allow delete: if isAdmin();
     }
+
+    // Mini-game leaderboard scores. Each member writes only their own stats.
+    match /gameScores/{uid} {
+      function okScore(v) { return v is int && v >= 0 && v <= 1000000; }
+      allow read: if isMember();
+      allow create, update: if isMember() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'totalWins', 'wordle', 'bee', 'sudoku', 'crossword', 'flappyWins', 'flappyBest', 'updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && okScore(request.resource.data.get('totalWins', 0))
+        && okScore(request.resource.data.get('wordle', 0))
+        && okScore(request.resource.data.get('bee', 0))
+        && okScore(request.resource.data.get('sudoku', 0))
+        && okScore(request.resource.data.get('crossword', 0))
+        && okScore(request.resource.data.get('flappyWins', 0))
+        && okScore(request.resource.data.get('flappyBest', 0))
+        && request.resource.data.get('updatedAt', 0) is int;
+      allow delete: if isOwner();
+    }
   }
 }

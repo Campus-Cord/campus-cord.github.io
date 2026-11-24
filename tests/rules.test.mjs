@@ -341,6 +341,13 @@ await putW("carol", { ...base, lastDaily: Date.now() - DAY, streak: 2 });
 await t("no bonus on other days", assertFails(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + DAILY + 150, lastDaily: Date.now(), streak: 3 })));
 await t("claiming a daily game quest pays 75", assertSucceeds(updateDoc(doc(as("carol"), "wallet/carol"), { earned: 1000 + 75, quests: [dqGame], lastQuest: dqGame })));
 
+console.log("Game leaderboard");
+const gs = { uid: "alice", totalWins: 4, wordle: 2, bee: 1, sudoku: 1, crossword: 0, flappyWins: 0, flappyBest: 18, updatedAt: Date.now() };
+await t("member saves their own game scores", assertSucceeds(setDoc(doc(as("alice"), "gameScores/alice"), gs)));
+await t("members can read the game leaderboard", assertSucceeds(getDocs(collection(as("carol"), "gameScores"))));
+await t("can't write someone else's game scores", assertFails(setDoc(doc(as("alice"), "gameScores/carol"), { ...gs, uid: "carol" })));
+await t("can't set negative or absurd game scores", assertFails(setDoc(doc(as("alice"), "gameScores/alice"), { ...gs, flappyBest: -5 })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
