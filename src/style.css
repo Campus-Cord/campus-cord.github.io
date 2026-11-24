@@ -1802,3 +1802,18 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
   50% { transform: skewX(-2deg); }
   100% { transform: skewX(0deg); text-shadow: -1px 0 red, 1px 0 cyan; }
 }
+/* Liquid Gold Nameplate */
+.plate-p_liquidgold {
+  background: linear-gradient(110deg, #d4af37 0%, #fff6a3 25%, #aa7700 50%, #fff6a3 75%, #d4af37 100%);
+  background-size: 200% auto;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0px 1px 3px rgba(0,0,0,0.6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: liquid-gold-flow 3s linear infinite;
+}
+
+@keyframes liquid-gold-flow {
+  to { background-position: 200% center; }
+}

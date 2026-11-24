@@ -105,7 +105,8 @@ const COSM = [
   {id:"p_cyber", type:"plate", name:"Cyber Grid", price:550, tag:"new", desc:"Electric cyan and violet laser sweep with micro-grid lines."},
   {id:"p_sakura", type:"plate", name:"Blossom Breeze", price:450, tag:"new", desc:"Delicate cherry-blossom pink and pearl glow."},
   {id:"p_galaxy", type:"plate", name:"Starlight Nebula", price:650, tag:"exclusive", desc:"Deep cosmic indigo with twinkling stars and aurora shimmer."},
-  {id:"p_toxic", type:"plate", name:"Acid Glitch", price:600, tag:"new", desc:"Radioactive lime-green and electric-teal energy wave."}
+  {id:"p_toxic", type:"plate", name:"Acid Glitch", price:600, tag:"new", desc:"Radioactive lime-green and electric-teal energy wave."},
+  {id:"p_liquidgold", type:"plate", name:"Liquid Gold", price:800, tag:"exclusive", desc:"A rich, flowing metallic gold gradient."}
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},

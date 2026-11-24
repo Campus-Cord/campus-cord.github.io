@@ -1817,6 +1817,21 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
   50% { transform: skewX(-2deg); }
   100% { transform: skewX(0deg); text-shadow: -1px 0 red, 1px 0 cyan; }
 }
+/* Liquid Gold Nameplate */
+.plate-p_liquidgold {
+  background: linear-gradient(110deg, #d4af37 0%, #fff6a3 25%, #aa7700 50%, #fff6a3 75%, #d4af37 100%);
+  background-size: 200% auto;
+  color: #fff;
+  font-weight: bold;
+  text-shadow: 0px 1px 3px rgba(0,0,0,0.6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: liquid-gold-flow 3s linear infinite;
+}
+
+@keyframes liquid-gold-flow {
+  to { background-position: 200% center; }
+}
 </style>
 </head>
 <body>
@@ -1940,7 +1955,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-24.0747";
+const APP_VERSION = "2026-11-24.0826";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -4466,7 +4481,8 @@ const COSM = [
   {id:"p_cyber", type:"plate", name:"Cyber Grid", price:550, tag:"new", desc:"Electric cyan and violet laser sweep with micro-grid lines."},
   {id:"p_sakura", type:"plate", name:"Blossom Breeze", price:450, tag:"new", desc:"Delicate cherry-blossom pink and pearl glow."},
   {id:"p_galaxy", type:"plate", name:"Starlight Nebula", price:650, tag:"exclusive", desc:"Deep cosmic indigo with twinkling stars and aurora shimmer."},
-  {id:"p_toxic", type:"plate", name:"Acid Glitch", price:600, tag:"new", desc:"Radioactive lime-green and electric-teal energy wave."}
+  {id:"p_toxic", type:"plate", name:"Acid Glitch", price:600, tag:"new", desc:"Radioactive lime-green and electric-teal energy wave."},
+  {id:"p_liquidgold", type:"plate", name:"Liquid Gold", price:800, tag:"exclusive", desc:"A rich, flowing metallic gold gradient."}
 ];
 const BUNDLES = [
   {id:"b_cosmic", type:"bundle", name:"Cosmic Bundle", items:["d_cosmic","e_starfall","p_nebula"], tag:"exclusive", desc:"Cosmic Swirl, Starfall and the Nebula nameplate."},
