@@ -120,6 +120,15 @@ await t("can't vouch for someone else", assertFails(updateDoc(doc(as("bob"), "fe
 await t("can't set feedback status as a member", assertFails(updateDoc(doc(as("bob"), "feedback/f1"), { status: "done" })));
 await t("can't edit someone else's profile", assertFails(setDoc(doc(as("bob"), "profiles/alice"), { bio: "hacked" }, { merge: true })));
 
+console.log("Logo");
+await env.withSecurityRulesDisabled(async ctx => { await updateDoc(doc(ctx.firestore(), "config/main"), { designers: ["alice"] }); });
+await t("designer can change the logo", assertSucceeds(updateDoc(doc(as("alice"), "config/main"), { serverIcon: "🎓" })));
+await t("designer can't change the server name", assertFails(updateDoc(doc(as("alice"), "config/main"), { serverName: "Hacked" })));
+await t("designer can't make themselves a developer", assertFails(updateDoc(doc(as("alice"), "config/main"), { admins: ["dev", "alice"] })));
+await t("designer can't use a huge logo", assertFails(updateDoc(doc(as("alice"), "config/main"), { serverIcon: "A".repeat(20) })));
+await t("regular members can't change the logo", assertFails(updateDoc(doc(as("bob"), "config/main"), { serverIcon: "XX" })));
+await env.withSecurityRulesDisabled(async ctx => { await updateDoc(doc(ctx.firestore(), "config/main"), { designers: [], serverIcon: "CC" }); });
+
 console.log("Shop");
 await t("members can't grant themselves perks", assertFails(setDoc(doc(as("alice"), "perks/alice"), { items: { plus: { since: now } } })));
 await t("members can't change the catalog", assertFails(setDoc(doc(as("alice"), "config/catalog"), { v: 1, prices: { d_cosmic: 0 } })));
