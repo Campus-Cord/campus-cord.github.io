@@ -152,7 +152,7 @@ const S = {
   kind:"room", cur:null, mode:"server", msgs:[], reacts:[], typing:[], gifs:[], meta:{}, dms:[],
   msgLimit:PAGE, olderLoading:false, hasMore:false, roomLoaded:false,
   unsubRoom:[], unsubApp:[], pending:null, replyTo:null, editing:null, joinColor:COLORS[0],
-  hiddenCount:0, loadedAt:Date.now(), lastRead:store("lastRead") || {}, mentions:store("mentions") || {}, notified:{},
+  hiddenCount:0, metaFixed:{}, loadedAt:Date.now(), lastRead:store("lastRead") || {}, mentions:store("mentions") || {}, notified:{},
   routed:null, rpanel:"members", searchQ:"", pins:null, ac:null
 };
 let db, auth;
@@ -978,6 +978,11 @@ function subscribeMsgs(first){
     });
     S.msgs = msgs; S.roomLoaded = true;
     if (kind === "room" && isPollRoom(curRoom())) ensureDailyPoll(curRoom());
+    // Self-repair: if the room's "new" marker points past the newest message (it was deleted), fix it for everyone.
+    if (kind === "room" && !(snap.metadata || {}).fromCache && !(snap.metadata || {}).hasPendingWrites){ const mt = S.meta[id], newest = msgs.filter(x => !x.join && x.ts).sort((a, c) => c.ts - a.ts)[0];
+      if (mt && mt.lastTs && (!newest || mt.lastTs > newest.ts + 5000) && !S.metaFixed[id]){ S.metaFixed[id] = true;
+        if (newest) setDoc(doc(db, "meta", id), {lastTs:newest.ts, lastUid:newest.uid, lastNick:nickOf(newest.uid), lastPreview:String(newest.text || "").slice(0, 120), lastMentions:newest.mentions || [], lastEveryone:!!newest.everyone}).catch(()=>{});
+        else deleteDoc(doc(db, "meta", id)).catch(()=>{}); } }
     if (!document.hidden) markRead();
     need("msgs");
   }, e => toast("Lost connection to this chat: " + errMsg(e)));
@@ -1357,6 +1362,12 @@ async function deleteMsg(m){
   const b = base();
   try{ await deleteDoc(doc(db, ...b, "msgs", m.id));
     for (const r of S.reacts.filter(x => x.mid === m.id)) await deleteDoc(doc(db, ...b, "reacts", r.id)).catch(()=>{});
+    // If that was the newest message in a room, point the room's "new" marker at the one before it
+    // (or remove it), so nobody gets an unread dot for a message that's gone.
+    if (S.kind === "room"){ const rid = S.cur, mt = S.meta[rid];
+      if (mt && mt.lastTs <= m.ts){ const prev = S.msgs.filter(x => x.id !== m.id && !x.join && x.ts).sort((a, c) => c.ts - a.ts)[0];
+        if (prev) setDoc(doc(db, "meta", rid), {lastTs:prev.ts, lastUid:prev.uid, lastNick:nickOf(prev.uid), lastPreview:String(prev.text || "").slice(0, 120), lastMentions:prev.mentions || [], lastEveryone:!!prev.everyone}).catch(()=>{});
+        else deleteDoc(doc(db, "meta", rid)).catch(()=>{}); } }
   }catch(e){ toast("Couldn't delete: " + errMsg(e)); }
 }
 async function togglePin(m){
@@ -2212,7 +2223,7 @@ async function clearRoom(roomId){
       if (snap.empty) return n;
       const b = writeBatch(db); snap.docs.forEach(d => b.delete(d.ref)); await b.commit(); n += snap.size;
       if (sub === "msgs") toast("Clearing… " + n + " messages deleted"); } };
-  try{ toast("Clearing…"); const n = await wipe("msgs"); await wipe("reacts");
+  try{ toast("Clearing…"); const n = await wipe("msgs"); await wipe("reacts"); await deleteDoc(doc(db, "meta", roomId)).catch(()=>{});
     toast("Room cleared (" + n + " messages deleted)"); }
   catch(e){ toast("Couldn't clear: " + errMsg(e)); }
 }
