@@ -1803,7 +1803,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-23.2050";
+const APP_VERSION = "2026-11-23.2051";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2348,7 +2348,7 @@ function initApp(){
     if (isOwner() && !prefs.yy){ prefs.yy = 1; savePrefs(); if (profile(S.uid).nameFx !== "yinyang") setMyProfile({nameFx:"yinyang"}).catch(()=>{}); }
     if (isOwner()){ setTimeout(ownerHousekeeping, 2500); clearInterval(S.hkI); S.hkI = setInterval(ownerHousekeeping, 10 * 60000); }
     if (isOwner() && S.catalogV !== CAT_V) setDoc(doc(db, "config/catalog"), catalogDoc()).catch(e => console.warn("catalog", e)); }, () => {}));
-  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge(); watchSubs();
+  ensureWallet(); watchFeedback(); watchPushPrefs(); openFromUrl(); watchAppeals(); watchMod(); watchVouchQuota(); checkChangesBadge(); watchSubs(); watchGameScores();
   heartbeat(); S.hb = setInterval(heartbeat, HEARTBEAT_MS); setTimeout(checkAway, 500);
   clearInterval(S.tick); S.tick = setInterval(() => { need("rpanel","typing","side","header","composer"); if (S.kind === "home" || S.kind === "quests") need("msgs"); }, 15000);
   buildEmojiGrid();
@@ -6619,6 +6619,23 @@ function ensureMgStyles(){
     .flp-hud { display: flex; gap: 18px; align-items: center; font-size: 14px; font-weight: 700; background: var(--b2); padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.08); }
     .flp-canvas { border-radius: 14px; border: 2px solid rgba(255,255,255,.16); background: #0c4a6e; cursor: pointer; max-width: 100%; height: auto; touch-action: manipulation; box-shadow: 0 10px 28px rgba(0,0,0,.35); }
     .flp-tip { font-size: 12.5px; color: var(--t2); }
+    .mg-lb { margin-top: 22px; background: var(--b2); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 18px 20px; }
+    .mg-lb-hdr { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .mg-lb-hdr h3 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+    .mg-lb-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mg-lb-tab { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: var(--t2); font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; cursor: pointer; transition: background .15s, color .15s; }
+    .mg-lb-tab:hover { background: rgba(255,255,255,.12); color: var(--t1); }
+    .mg-lb-tab.on { background: #5865f2; border-color: #5865f2; color: #fff; }
+    .mg-lb-list { display: flex; flex-direction: column; gap: 7px; }
+    .mg-lb-row { display: flex; align-items: center; gap: 11px; padding: 9px 12px; border-radius: 11px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.05); }
+    .mg-lb-row.me { background: rgba(88,101,242,.16); border-color: rgba(88,101,242,.4); }
+    .mg-lb-row.top1 { background: linear-gradient(90deg, rgba(234,179,8,.16), rgba(255,255,255,.035)); border-color: rgba(234,179,8,.35); }
+    .mg-lb-rank { width: 28px; text-align: center; font-weight: 900; font-size: 14px; color: var(--t2); flex-shrink: 0; }
+    .mg-lb-user { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 0; cursor: pointer; }
+    .mg-lb-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mg-lb-sub { font-size: 11.5px; color: var(--t2); }
+    .mg-lb-score { font-weight: 800; font-size: 13.5px; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,.08); white-space: nowrap; }
+    .mg-lb-empty { text-align: center; padding: 22px 12px; color: var(--t2); font-size: 13.5px; }
   `;
   document.head.appendChild(st);
 }
@@ -6783,6 +6800,7 @@ function mgCompletePuzzle(game, won){
   else st.plays[game] = Math.min(MG_DAILY_LIMIT, (st.plays[game] || 0) + 1);
   if (won){ st.wins[game] = (st.wins[game] || 0) + 1; bumpStat("gameWins"); }
   mgSave(st);
+  syncGameScore(game, p.score);
 }
 
 function mgBuildSudoku(day, playNum){
@@ -6909,6 +6927,7 @@ function renderGamesPage(box){
       ));
     });
     wrap.appendChild(grid);
+    wrap.appendChild(mgLeaderboardEl());
     box.appendChild(wrap);
     return;
   }
@@ -7920,6 +7939,7 @@ function renderFlappy(wrap, p){
       st.active.flappy.score = score;
       mgSave(st);
     }
+    p.score = score;
     mgCompletePuzzle("flappy", score >= 5);
     p.done = true;
     p.score = score;
@@ -8091,6 +8111,117 @@ function renderFlappy(wrap, p){
   }
 
   window._flappyRaf = requestAnimationFrame(loop);
+}
+let mgLbTab = "wins";
+let mgLbUnsub = null;
+
+function watchGameScores(){
+  if (mgLbUnsub || !S.uid) return;
+  mgLbUnsub = onSnapshot(collection(db, "gameScores"), snap => {
+    S.gameScores = snap.docs.map(d => Object.assign({ uid: d.id }, d.data()));
+    if (S.kind === "games" && (S.page || "hub") === "hub") need("msgs");
+  }, () => {});
+  S.unsubApp.push(() => { if (mgLbUnsub){ mgLbUnsub(); mgLbUnsub = null; } });
+  syncGameScore();
+}
+
+async function syncGameScore(lastGame, runScore){
+  if (!S.uid || !member(S.uid)) return;
+  try {
+    const st = mgState();
+    const w = st.wins || {};
+    const wordle = Math.max(0, Math.floor(Number(w.wordle || 0)));
+    const bee = Math.max(0, Math.floor(Number(w.bee || 0)));
+    const sudoku = Math.max(0, Math.floor(Number(w.sudoku || 0)));
+    const crossword = Math.max(0, Math.floor(Number(w.crossword || 0)));
+    const flappyWins = Math.max(0, Math.floor(Number(w.flappy || 0)));
+    const localBest = Math.max(0, Math.floor(Number(mgReadStore("cc_flappy_best") || 0)));
+    const existing = (S.gameScores || []).find(x => x.uid === S.uid) || {};
+    const flappyBest = Math.max(localBest, Number(existing.flappyBest || 0), lastGame === "flappy" ? Math.max(0, Math.floor(Number(runScore || 0))) : 0);
+    const totalWins = Math.max(wordle + bee + sudoku + crossword + flappyWins, Number(existing.totalWins || 0));
+    const payload = {
+      uid: S.uid,
+      totalWins,
+      wordle: Math.max(wordle, Number(existing.wordle || 0)),
+      bee: Math.max(bee, Number(existing.bee || 0)),
+      sudoku: Math.max(sudoku, Number(existing.sudoku || 0)),
+      crossword: Math.max(crossword, Number(existing.crossword || 0)),
+      flappyWins: Math.max(flappyWins, Number(existing.flappyWins || 0)),
+      flappyBest,
+      updatedAt: Date.now()
+    };
+    await setDoc(doc(db, "gameScores", S.uid), payload, { merge: true });
+  } catch (e) {}
+}
+
+function mgLeaderboardEl(){
+  watchGameScores();
+  const tabs = [
+    { id: "wins", label: "🏆 Overall Wins" },
+    { id: "flappy", label: "🐦 Flappy Best" },
+    { id: "wordle", label: "🟩 Wordle" },
+    { id: "bee", label: "🐝 Spelling Bee" },
+    { id: "sudoku", label: "🔢 Sudoku" },
+    { id: "crossword", label: "📰 Crossword" }
+  ];
+  const valFor = row => {
+    if (mgLbTab === "flappy") return Number(row.flappyBest || 0);
+    if (mgLbTab === "wordle") return Number(row.wordle || 0);
+    if (mgLbTab === "bee") return Number(row.bee || 0);
+    if (mgLbTab === "sudoku") return Number(row.sudoku || 0);
+    if (mgLbTab === "crossword") return Number(row.crossword || 0);
+    return Number(row.totalWins || 0);
+  };
+  const labelFor = v => mgLbTab === "flappy" ? (v + " pts") : (v + (v === 1 ? " win" : " wins"));
+  const rows = (S.gameScores || [])
+    .filter(r => member(r.uid) && !isBanned(r.uid) && valFor(r) > 0)
+    .sort((a, b) => valFor(b) - valFor(a) || (a.updatedAt || 0) - (b.updatedAt || 0))
+    .slice(0, 15);
+
+  const box = h("div", { class: "mg-lb" },
+    h("div", { class: "mg-lb-hdr" },
+      h("h3", {}, "🏆 Mini Games Leaderboard"),
+      h("div", { class: "mg-lb-tabs" }, ...tabs.map(tb =>
+        h("button", {
+          class: "mg-lb-tab" + (mgLbTab === tb.id ? " on" : ""),
+          onclick: () => { mgLbTab = tb.id; need("msgs"); }
+        }, tb.label)
+      ))
+    )
+  );
+
+  if (!rows.length){
+    box.appendChild(h("div", { class: "mg-lb-empty" }, "No scores on this board yet — play a game to claim #1!"));
+    return box;
+  }
+
+  const medals = ["🥇", "🥈", "🥉"];
+  const list = h("div", { class: "mg-lb-list" });
+  rows.forEach((r, idx) => {
+    const isMe = r.uid === S.uid;
+    const score = valFor(r);
+    const nameEl = h("span", { class: "mg-lb-name" }, nickOf(r.uid));
+    paintName(nameEl, r.uid);
+    const subParts = [];
+    if (r.flappyBest) subParts.push("Flappy Best: " + r.flappyBest);
+    if (r.totalWins) subParts.push("Total Wins: " + r.totalWins);
+    const rowEl = h("div", {
+      class: "mg-lb-row" + (isMe ? " me" : "") + (idx === 0 ? " top1" : "")
+    },
+      h("div", { class: "mg-lb-rank" }, medals[idx] || ("#" + (idx + 1))),
+      h("div", { class: "mg-lb-user", onclick: e => openProfile(r.uid, e.currentTarget) },
+        avatar(r.uid, "sm"),
+        h("div", { style: { minWidth: 0 } },
+          h("div", { style: { display: "flex", alignItems: "center", gap: "6px" } }, nameEl, roleTags(r.uid, true)),
+          subParts.length ? h("div", { class: "mg-lb-sub" }, subParts.join(" · ")) : null
+        )
+      ),
+      h("div", { class: "mg-lb-score" }, labelFor(score))
+    );
+    list.appendChild(rowEl);
+  });
+  box.appendChild(list);
+  return box;
 }
 
 // ---------------------------------------------------------------- Easy changes (no GitHub needed)
