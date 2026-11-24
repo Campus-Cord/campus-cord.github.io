@@ -56,6 +56,11 @@ service cloud.firestore {
         && request.resource.data.get('admins', []) is list
         && request.resource.data.get('admins', []).hasAll(resource.data.get('headDevs', []))
         && !request.resource.data.get('devUntil', {}).diff(resource.data.get('devUntil', {})).affectedKeys().hasAny(resource.data.get('headDevs', []));
+      // Designers can change only the logo (serverIcon), and only a short one.
+      allow update: if isMember() && request.auth.uid in cfg().get('designers', [])
+        && changed().hasOnly(['serverIcon'])
+        && request.resource.data.serverIcon is string
+        && request.resource.data.serverIcon.size() >= 1 && request.resource.data.serverIcon.size() <= 16;
     }
     // Shop prices + Stripe payment links: everyone reads, only the owner edits.
     match /config/shop {
