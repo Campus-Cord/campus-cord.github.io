@@ -1839,6 +1839,10 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .ch.dm.plate .nm,.ch.dm.plate .sub,.ch.dm.plate .nick,.friend.plate *,.mrow.plate .nm,.mrow.plate .sub,.mrow.plate .status,.ch.dm.plate .st{text-shadow:0 1px 2px #000c,0 0 6px #0008}
 @media (prefers-reduced-motion:reduce){.plate::after{animation:none!important}}
 .tag.coowner{background:linear-gradient(90deg,#a855f7,#ec4899);color:#fff}
+/* Member list: a long name gets cut with "…", but the role tag (OWNER, CO-OWNER, DEV…) always shows in full */
+.mrow .nm{display:flex;align-items:center;gap:4px;min-width:0}
+.mrow .nm>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .nm>.tag{flex:none}
 </style>
 </head>
 <body>
@@ -1962,7 +1966,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-24.1315";
+const APP_VERSION = "2026-11-24.1319";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
