@@ -2857,17 +2857,21 @@ function renderMario(wrap, p){
   let active = true;
   let lastTs = 0;
   let frame = 0;
+  let shake = 0;
 
   const player = {
     x: 64, y: 200, vx: 0, vy: 0,
     w: 22, h: 28,
     onGround: false,
+    wasOnGround: false,
     facing: 1,
     big: false,
     invuln: 0,
     coyote: 0,
     jumpBuf: 0,
-    walkFrame: 0
+    walkFrame: 0,
+    squashX: 1,
+    squashY: 1
   };
 
   function addPop(x, y, text, color){
@@ -3054,10 +3058,12 @@ function renderMario(wrap, p){
     } else if (t === "B"){
       if (player.big){
         grid[r][c] = ".";
+        shake = 6;
         sfx("stomp");
         addScore(50, c * TILE + 16, r * TILE, "+50");
         addBurst(c * TILE + 16, r * TILE + 16, ["#b45309", "#d97706", "#78350f"], 12);
       } else {
+        shake = 3;
         sfx("bump");
       }
     } else {
@@ -3124,6 +3130,7 @@ function renderMario(wrap, p){
     }
     state = "dead";
     active = false;
+    shake = 10;
     sfx("die");
     addBurst(player.x + 11, player.y + 14, ["#ef4444", "#fde047", "#fff"], 18);
     draw();
@@ -3159,22 +3166,54 @@ function renderMario(wrap, p){
         const y = r * TILE + bump;
 
         if (t === "G"){
-          ctx.fillStyle = r === 9 ? "#16a34a" : "#92400e";
+          const dirtGrad = ctx.createLinearGradient(0, y, 0, y + TILE);
+          dirtGrad.addColorStop(0, r === 9 ? "#b45309" : "#92400e");
+          dirtGrad.addColorStop(1, r === 9 ? "#78350f" : "#451a03");
+          ctx.fillStyle = dirtGrad;
           ctx.fillRect(x, y, TILE, TILE);
+
+          // Earth pebbles & texture
+          ctx.fillStyle = "rgba(69, 26, 3, 0.42)";
+          ctx.beginPath();
+          ctx.ellipse(x + 8, y + (r === 9 ? 17 : 10), 4, 2.5, 0.2, 0, Math.PI * 2);
+          ctx.ellipse(x + 23, y + (r === 9 ? 24 : 21), 5, 3, -0.15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "rgba(253, 224, 71, 0.14)";
+          ctx.fillRect(x + 6, y + (r === 9 ? 14 : 7), 3, 2);
+
           if (r === 9){
-            ctx.fillStyle = "#4ade80";
-            ctx.fillRect(x, y, TILE, 6);
-            ctx.fillStyle = "#b45309";
-            ctx.fillRect(x, y + 8, TILE, TILE - 8);
+            // Lush 3D grass cap with overhang tufts
+            const turfGrad = ctx.createLinearGradient(0, y, 0, y + 9);
+            turfGrad.addColorStop(0, "#4ade80");
+            turfGrad.addColorStop(0.6, "#16a34a");
+            turfGrad.addColorStop(1, "#14532d");
+            ctx.fillStyle = turfGrad;
+            ctx.fillRect(x, y, TILE, 8);
+            ctx.fillStyle = "#86efac";
+            ctx.fillRect(x, y, TILE, 2);
+            // Grass blade tufts hanging over soil
+            ctx.fillStyle = "#15803d";
+            ctx.beginPath();
+            ctx.moveTo(x + 2, y + 8); ctx.lineTo(x + 6, y + 12); ctx.lineTo(x + 10, y + 8);
+            ctx.moveTo(x + 15, y + 8); ctx.lineTo(x + 19, y + 11); ctx.lineTo(x + 23, y + 8);
+            ctx.fill();
           }
-          ctx.strokeStyle = "rgba(0,0,0,0.22)";
-          ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
         } else if (t === "B"){
-          ctx.fillStyle = "#c2410c";
+          // Beveled clay brick block
+          const bGrad = ctx.createLinearGradient(x, y, x, y + TILE);
+          bGrad.addColorStop(0, "#ea580c");
+          bGrad.addColorStop(0.5, "#c2410c");
+          bGrad.addColorStop(1, "#7c2d12");
+          ctx.fillStyle = bGrad;
           ctx.fillRect(x, y, TILE, TILE);
+          // Specular top/left bevels
+          ctx.fillStyle = "rgba(254, 215, 170, 0.35)";
+          ctx.fillRect(x + 1, y + 1, TILE - 2, 2);
+          ctx.fillRect(x + 1, y + 17, TILE - 2, 1.5);
+          // Mortar lines
           ctx.strokeStyle = "#431407";
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(x + 0.75, y + 0.75, TILE - 1.5, TILE - 1.5);
+          ctx.lineWidth = 1.6;
+          ctx.strokeRect(x + 0.8, y + 0.8, TILE - 1.6, TILE - 1.6);
           ctx.beginPath();
           ctx.moveTo(x, y + 16); ctx.lineTo(x + TILE, y + 16);
           ctx.moveTo(x + 16, y); ctx.lineTo(x + 16, y + 16);
@@ -3183,76 +3222,164 @@ function renderMario(wrap, p){
           ctx.stroke();
         } else if (t === "?" || t === "M"){
           const used = usedBlocks.has(key);
-          ctx.fillStyle = used ? "#78716c" : "#f59e0b";
-          ctx.fillRect(x, y, TILE, TILE);
+          if (used){
+            ctx.fillStyle = "#57534e";
+            ctx.fillRect(x, y, TILE, TILE);
+            ctx.fillStyle = "#78716c";
+            ctx.fillRect(x + 2, y + 2, TILE - 4, 3);
+          } else {
+            const pulse = 0.85 + Math.sin(frame * 0.12 + c) * 0.15;
+            const qGrad = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+            qGrad.addColorStop(0, "#fde047");
+            qGrad.addColorStop(0.5, "#f59e0b");
+            qGrad.addColorStop(1, "#b45309");
+            ctx.fillStyle = qGrad;
+            ctx.fillRect(x, y, TILE, TILE);
+            ctx.fillStyle = "rgba(255,255,255," + (0.38 * pulse) + ")";
+            ctx.fillRect(x + 2, y + 2, TILE - 4, 3);
+          }
           ctx.strokeStyle = "#451a03";
           ctx.lineWidth = 2;
           ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+          // Corner rivets
+          ctx.fillStyle = "#451a03";
+          ctx.fillRect(x + 3, y + 3, 2, 2);
+          ctx.fillRect(x + TILE - 5, y + 3, 2, 2);
+          ctx.fillRect(x + 3, y + TILE - 5, 2, 2);
+          ctx.fillRect(x + TILE - 5, y + TILE - 5, 2, 2);
           if (!used){
-            ctx.fillStyle = "#fef08a";
+            ctx.fillStyle = "#78350f";
             ctx.font = "900 20px system-ui, sans-serif";
             ctx.textAlign = "center";
+            ctx.fillText("?", x + 17, y + 24);
+            ctx.fillStyle = "#fef9c3";
             ctx.fillText("?", x + 16, y + 23);
           }
         } else if (t === "P" || t === "T"){
-          ctx.fillStyle = "#16a34a";
+          // Cylindrical 3D metallic warp pipe
+          const pGrad = ctx.createLinearGradient(x, 0, x + TILE, 0);
+          pGrad.addColorStop(0, "#14532d");
+          pGrad.addColorStop(0.25, "#4ade80");
+          pGrad.addColorStop(0.45, "#bbf7d0");
+          pGrad.addColorStop(0.8, "#16a34a");
+          pGrad.addColorStop(1, "#052e16");
+          ctx.fillStyle = pGrad;
           ctx.fillRect(x, y, TILE, TILE);
-          ctx.fillStyle = "#4ade80";
-          ctx.fillRect(x + 4, y, 7, TILE);
           ctx.strokeStyle = "#052e16";
           ctx.lineWidth = 2;
           ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
           if (t === "T"){
-            ctx.fillStyle = "#22c55e";
-            ctx.fillRect(x - 2, y, TILE + 4, 10);
-            ctx.strokeRect(x - 2, y, TILE + 4, 10);
+            const lipGrad = ctx.createLinearGradient(x - 3, 0, x + TILE + 3, 0);
+            lipGrad.addColorStop(0, "#14532d");
+            lipGrad.addColorStop(0.25, "#4ade80");
+            lipGrad.addColorStop(0.45, "#dcfce7");
+            lipGrad.addColorStop(0.8, "#15803d");
+            lipGrad.addColorStop(1, "#052e16");
+            ctx.fillStyle = lipGrad;
+            ctx.fillRect(x - 3, y, TILE + 6, 12);
+            ctx.fillStyle = "rgba(5, 46, 22, 0.38)";
+            ctx.fillRect(x, y + 12, TILE, 4);
+            ctx.strokeStyle = "#052e16";
+            ctx.strokeRect(x - 3, y, TILE + 6, 12);
           }
         } else if (t === "S"){
-          ctx.fillStyle = "#64748b";
+          const sGrad = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+          sGrad.addColorStop(0, "#94a3b8");
+          sGrad.addColorStop(0.5, "#64748b");
+          sGrad.addColorStop(1, "#334155");
+          ctx.fillStyle = sGrad;
           ctx.fillRect(x, y, TILE, TILE);
-          ctx.fillStyle = "#94a3b8";
-          ctx.fillRect(x + 2, y + 2, TILE - 6, 4);
+          ctx.fillStyle = "rgba(255,255,255,0.28)";
+          ctx.fillRect(x + 2, y + 2, TILE - 4, 3);
+          ctx.fillRect(x + 2, y + 2, 3, TILE - 4);
           ctx.strokeStyle = "#1e293b";
-          ctx.lineWidth = 1.6;
-          ctx.strokeRect(x + 0.8, y + 0.8, TILE - 1.6, TILE - 1.6);
+          ctx.lineWidth = 1.8;
+          ctx.strokeRect(x + 0.9, y + 0.9, TILE - 1.8, TILE - 1.8);
         } else if (t === "C"){
+          const bob = Math.sin(frame * 0.08 + c) * 2;
           const spin = Math.abs(Math.cos(frame * 0.09 + c));
-          ctx.fillStyle = "#facc15";
+          const rx = Math.max(3, 9.5 * spin);
+          const cy = y + 16 + bob;
+          // Soft golden glow
+          ctx.fillStyle = "rgba(250, 204, 21, 0.25)";
           ctx.beginPath();
-          ctx.ellipse(x + 16, y + 16, Math.max(3, 9 * spin), 11, 0, 0, Math.PI * 2);
+          ctx.arc(x + 16, cy, 13, 0, Math.PI * 2);
+          ctx.fill();
+
+          const cGrad = ctx.createLinearGradient(x + 16 - rx, cy - 11, x + 16 + rx, cy + 11);
+          cGrad.addColorStop(0, "#fef08a");
+          cGrad.addColorStop(0.5, "#facc15");
+          cGrad.addColorStop(1, "#ca8a04");
+          ctx.fillStyle = cGrad;
+          ctx.beginPath();
+          ctx.ellipse(x + 16, cy, rx, 11, 0, 0, Math.PI * 2);
           ctx.fill();
           ctx.strokeStyle = "#854d0e";
           ctx.lineWidth = 1.5;
           ctx.stroke();
+          if (rx > 4.5){
+            ctx.strokeStyle = "#fef9c3";
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(x + 16, cy - 6);
+            ctx.lineTo(x + 16, cy + 6);
+            ctx.stroke();
+          }
         }
       }
     }
 
-    // Flagpole & Castle
+    // Metallic Flagpole & Finial
     const poleX = flagCol * TILE + 14;
-    ctx.fillStyle = "#e2e8f0";
-    ctx.fillRect(poleX, 2 * TILE, 5, 6 * TILE);
-    ctx.fillStyle = "#facc15";
+    const poleGrad = ctx.createLinearGradient(poleX, 0, poleX + 6, 0);
+    poleGrad.addColorStop(0, "#94a3b8");
+    poleGrad.addColorStop(0.4, "#f8fafc");
+    poleGrad.addColorStop(1, "#475569");
+    ctx.fillStyle = poleGrad;
+    ctx.fillRect(poleX, 2 * TILE, 6, 6 * TILE);
+
+    const orbGrad = ctx.createRadialGradient(poleX + 1, 2 * TILE - 2, 1, poleX + 3, 2 * TILE, 8);
+    orbGrad.addColorStop(0, "#fef9c3");
+    orbGrad.addColorStop(0.5, "#facc15");
+    orbGrad.addColorStop(1, "#a16207");
+    ctx.fillStyle = orbGrad;
     ctx.beginPath();
-    ctx.arc(poleX + 2.5, 2 * TILE, 7, 0, Math.PI * 2);
+    ctx.arc(poleX + 3, 2 * TILE, 8, 0, Math.PI * 2);
     ctx.fill();
 
-    // Flag pennant
+    // Waving Flag Pennant
     const fy = 2 * TILE + 10 + flagSlideY;
+    const wave = Math.sin(frame * 0.14) * 2.5;
     ctx.fillStyle = "#ef4444";
+    ctx.strokeStyle = "#7f1d1d";
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(poleX + 5, fy);
-    ctx.lineTo(poleX + 38, fy + 11);
-    ctx.lineTo(poleX + 5, fy + 22);
+    ctx.moveTo(poleX + 6, fy);
+    ctx.quadraticCurveTo(poleX + 22, fy + 4 + wave, poleX + 40, fy + 11 - wave);
+    ctx.quadraticCurveTo(poleX + 22, fy + 18 + wave, poleX + 6, fy + 22);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
 
-    // Castle
+    // Detailed Stone Castle
     const cx = (flagCol + 2) * TILE;
-    ctx.fillStyle = "#94a3b8";
+    const castleGrad = ctx.createLinearGradient(cx, 5 * TILE, cx + 3 * TILE, 9 * TILE);
+    castleGrad.addColorStop(0, "#cbd5e1");
+    castleGrad.addColorStop(1, "#64748b");
+    ctx.fillStyle = castleGrad;
     ctx.fillRect(cx, 6 * TILE, 3 * TILE, 3 * TILE);
     ctx.fillRect(cx + 16, 4.7 * TILE, 2 * TILE, 1.3 * TILE);
+    // Battlements
+    ctx.fillStyle = "#94a3b8";
+    for (let b = 0; b < 4; b++){
+      ctx.fillRect(cx + b * 24 + 2, 5.75 * TILE, 14, 8);
+    }
+    for (let b = 0; b < 3; b++){
+      ctx.fillRect(cx + 18 + b * 22, 4.45 * TILE, 12, 8);
+    }
+    // Castle window & arched doorway
     ctx.fillStyle = "#0f172a";
+    ctx.fillRect(cx + 1.5 * TILE - 5, 5.1 * TILE, 10, 14);
     ctx.beginPath();
     ctx.arc(cx + 1.5 * TILE, 9 * TILE, 18, Math.PI, 0);
     ctx.fill();
@@ -3261,61 +3388,183 @@ function renderMario(wrap, p){
   function drawPlayer(){
     if (player.invuln > 0 && Math.floor(player.invuln / 4) % 2 === 0) return;
     ctx.save();
-    ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
-    ctx.scale(player.facing, 1);
-    const scaleY = player.big ? 1.38 : 1;
-    ctx.scale(1, scaleY);
+    const cx = player.x + player.w / 2;
+    const footY = player.y + player.h;
 
-    // Overalls body
-    ctx.fillStyle = "#2563eb";
-    ctx.fillRect(-8, -2, 16, 12);
-    // Red shirt
+    // Ground contact shadow
+    if (player.onGround){
+      ctx.fillStyle = "rgba(15, 23, 42, 0.28)";
+      ctx.beginPath();
+      ctx.ellipse(cx, footY, 11, 3.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.translate(cx, player.y + player.h / 2);
+    ctx.scale(player.facing * player.squashX, (player.big ? 1.38 : 1) * player.squashY);
+
+    const running = player.onGround && Math.abs(player.vx) > 0.35;
+    const stride = running ? Math.sin(player.walkFrame) * 3.5 : 0;
+    const armSwing = !player.onGround ? -5 : (running ? -Math.sin(player.walkFrame) * 4 : 0);
+
+    // Back arm & white glove
+    ctx.fillStyle = "#b91c1c";
+    ctx.fillRect(-3 - armSwing * 0.5, -3, 5, 7);
+    ctx.fillStyle = "#f8fafc";
+    ctx.beginPath();
+    ctx.arc(-1 - armSwing * 0.5, 4, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Boots
+    ctx.fillStyle = "#78350f";
+    ctx.beginPath();
+    ctx.roundRect(-8 + stride, 9.5, 7.5, 4.5, 2);
+    ctx.roundRect(1 - stride, 9.5, 7.5, 4.5, 2);
+    ctx.fill();
+
+    // Blue overalls + gold buttons
+    ctx.fillStyle = "#1d4ed8";
+    ctx.beginPath();
+    ctx.roundRect(-8, -2, 16, 12, 2);
+    ctx.fill();
     ctx.fillStyle = "#ef4444";
-    ctx.fillRect(-9, -4, 18, 6);
-    // Head
+    ctx.fillRect(-9, -4, 18, 5.5);
+    // Straps
+    ctx.fillStyle = "#2563eb";
+    ctx.fillRect(-5, -4, 3, 4);
+    ctx.fillRect(2, -4, 3, 4);
+    ctx.fillStyle = "#fde047";
+    ctx.fillRect(-4.5, -1, 2, 2);
+    ctx.fillRect(2.5, -1, 2, 2);
+
+    // Head, nose, ear & hair
     ctx.fillStyle = "#fed7aa";
-    ctx.fillRect(-7, -13, 14, 10);
-    // Red cap
+    ctx.beginPath();
+    ctx.roundRect(-7, -13, 14, 10, 3);
+    ctx.fill();
+    ctx.fillStyle = "#fdba74";
+    ctx.beginPath();
+    ctx.arc(7.5, -8.5, 2.6, 0, Math.PI * 2); // Nose
+    ctx.fill();
+    ctx.fillStyle = "#78350f";
+    ctx.fillRect(-7.5, -10.5, 3, 5); // Sideburn/hair
+
+    // Red cap & emblem
     ctx.fillStyle = "#dc2626";
-    ctx.fillRect(-8, -15, 16, 4);
-    ctx.fillRect(-2, -13, 12, 3);
+    ctx.beginPath();
+    ctx.roundRect(-8.5, -15.5, 17, 4.5, 2);
+    ctx.fill();
+    ctx.fillRect(-1, -13, 12, 2.8);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(3, -13.5, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
     // Eye & mustache
     ctx.fillStyle = "#0f172a";
-    ctx.fillRect(3, -10, 2.5, 3);
-    ctx.fillRect(2, -6, 6, 2);
-    // Boots
-    const stride = player.onGround && Math.abs(player.vx) > 0.3 ? Math.sin(player.walkFrame) * 3 : 0;
-    ctx.fillStyle = "#78350f";
-    ctx.fillRect(-8 + stride, 10, 7, 4);
-    ctx.fillRect(1 - stride, 10, 7, 4);
+    ctx.fillRect(3, -10.5, 2.4, 3.2);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(3.8, -10.2, 1, 1.1);
+    ctx.fillStyle = "#451a03";
+    ctx.fillRect(2, -6.2, 6.5, 2.2);
+
+    // Front arm & glove
+    ctx.fillStyle = "#ef4444";
+    ctx.fillRect(-2 + armSwing * 0.6, -3, 5, 7);
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(0.5 + armSwing * 0.6, 4, 2.7, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   }
 
   function draw(){
-    // Sky gradient
+    ctx.save();
+    if (shake > 0.2){
+      ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+    }
+
+    // Atmospheric sky gradient
     const sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, "#0284c7");
-    sky.addColorStop(0.65, "#38bdf8");
-    sky.addColorStop(1, "#bae6fd");
+    sky.addColorStop(0, "#0369a1");
+    sky.addColorStop(0.55, "#38bdf8");
+    sky.addColorStop(1, "#e0f2fe");
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
-    // Parallax clouds & hills
-    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    // Warm sun & radial glow
+    const sunX = 535, sunY = 58;
+    const sunGlow = ctx.createRadialGradient(sunX, sunY, 6, sunX, sunY, 85);
+    sunGlow.addColorStop(0, "rgba(254, 249, 195, 0.95)");
+    sunGlow.addColorStop(0.35, "rgba(253, 224, 71, 0.32)");
+    sunGlow.addColorStop(1, "rgba(253, 224, 71, 0)");
+    ctx.fillStyle = sunGlow;
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 85, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fef9c3";
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Distant snow-capped mountains (slowest parallax)
+    for (let i = 0; i < 5; i++){
+      const mx = ((i * 220 - camX * 0.14) % (W + 240) + (W + 240)) % (W + 240) - 120;
+      const mh = 95 + (i % 2) * 32;
+      const baseY = 9 * TILE;
+      ctx.fillStyle = i % 2 === 0 ? "#7dd3fc" : "#93c5fd";
+      ctx.beginPath();
+      ctx.moveTo(mx, baseY);
+      ctx.lineTo(mx + 85, baseY - mh);
+      ctx.lineTo(mx + 170, baseY);
+      ctx.closePath();
+      ctx.fill();
+      // Snow peak
+      ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
+      ctx.beginPath();
+      ctx.moveTo(mx + 85, baseY - mh);
+      ctx.lineTo(mx + 63, baseY - mh + 26);
+      ctx.lineTo(mx + 78, baseY - mh + 20);
+      ctx.lineTo(mx + 87, baseY - mh + 28);
+      ctx.lineTo(mx + 107, baseY - mh + 26);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Layered clouds with shaded undersides
     for (let i = 0; i < 6; i++){
       const cx = ((i * 190 - camX * 0.25) % (W + 160) + (W + 160)) % (W + 160) - 80;
-      const cy = 44 + (i % 3) * 28;
+      const cy = 42 + (i % 3) * 26;
+      ctx.fillStyle = "rgba(186, 230, 253, 0.7)";
+      ctx.beginPath();
+      ctx.arc(cx, cy + 5, 18, 0, Math.PI * 2);
+      ctx.arc(cx + 18, cy + 2, 22, 0, Math.PI * 2);
+      ctx.arc(cx + 38, cy + 5, 17, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
       ctx.beginPath();
       ctx.arc(cx, cy, 18, 0, Math.PI * 2);
       ctx.arc(cx + 18, cy - 5, 22, 0, Math.PI * 2);
       ctx.arc(cx + 38, cy, 17, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.fillStyle = "#22c55e";
+
+    // Midground shaded rolling hills + bushes
     for (let i = 0; i < 7; i++){
-      const hx = ((i * 170 - camX * 0.5) % (W + 180) + (W + 180)) % (W + 180) - 90;
+      const hx = ((i * 170 - camX * 0.48) % (W + 180) + (W + 180)) % (W + 180) - 90;
+      const hGrad = ctx.createLinearGradient(0, 9 * TILE - 54, 0, 9 * TILE + 8);
+      hGrad.addColorStop(0, "#4ade80");
+      hGrad.addColorStop(1, "#15803d");
+      ctx.fillStyle = hGrad;
       ctx.beginPath();
       ctx.arc(hx + 55, 9 * TILE + 8, 58, Math.PI, 0);
+      ctx.fill();
+      // Foreground bush tuft
+      ctx.fillStyle = "#16a34a";
+      ctx.beginPath();
+      ctx.arc(hx + 115, 9 * TILE, 14, Math.PI, 0);
+      ctx.arc(hx + 130, 9 * TILE, 18, Math.PI, 0);
+      ctx.arc(hx + 146, 9 * TILE, 13, Math.PI, 0);
       ctx.fill();
     }
 
@@ -3324,36 +3573,101 @@ function renderMario(wrap, p){
 
     drawTiles();
 
-    // Mushrooms
+    // Detailed Mushrooms with shadow & spots
     for (const m of mushrooms){
+      ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
+      ctx.beginPath();
+      ctx.ellipse(m.x + 12, m.y + 24, 10, 2.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.fillStyle = "#fef3c7";
-      ctx.fillRect(m.x + 5, m.y + 12, 14, 12);
-      ctx.fillStyle = "#ef4444";
+      ctx.beginPath();
+      ctx.roundRect(m.x + 5, m.y + 12, 14, 12, 3);
+      ctx.fill();
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(m.x + 9, m.y + 15, 1.8, 3.5);
+      ctx.fillRect(m.x + 13.5, m.y + 15, 1.8, 3.5);
+
+      const capGrad = ctx.createRadialGradient(m.x + 9, m.y + 6, 2, m.x + 12, m.y + 11, 13);
+      capGrad.addColorStop(0, "#f87171");
+      capGrad.addColorStop(1, "#b91c1c");
+      ctx.fillStyle = capGrad;
       ctx.beginPath();
       ctx.arc(m.x + 12, m.y + 13, 12, Math.PI, 0);
       ctx.fill();
       ctx.fillStyle = "#fff";
       ctx.beginPath();
-      ctx.arc(m.x + 8, m.y + 7, 3, 0, Math.PI * 2);
-      ctx.arc(m.x + 16, m.y + 7, 3, 0, Math.PI * 2);
+      ctx.arc(m.x + 7.5, m.y + 7.5, 3, 0, Math.PI * 2);
+      ctx.arc(m.x + 16.5, m.y + 7.5, 3, 0, Math.PI * 2);
+      ctx.arc(m.x + 12, m.y + 3.5, 2.2, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Enemies
+    // Detailed Enemies with walking feet, eyebrows & spikes
     for (const en of enemies){
       if (en.dead && en.squash <= 0) continue;
       ctx.save();
       ctx.translate(en.x + en.w / 2, en.y + en.h);
-      if (en.dead) ctx.scale(1.2, 0.35);
-      ctx.fillStyle = en.type === "spiky" ? "#7c3aed" : "#92400e";
+      if (!en.dead){
+        ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 12, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (en.dead) ctx.scale(1.25, 0.32);
+
+      const step = en.dead ? 0 : Math.sin(frame * 0.22 + en.x * 0.1) * 2.5;
+      // Walking feet
+      ctx.fillStyle = "#1e293b";
       ctx.beginPath();
-      ctx.arc(0, -12, 13, Math.PI, 0);
+      ctx.ellipse(-6 + step, -2, 5, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(6 - step, -2, 5, 3, 0, 0, Math.PI * 2);
       ctx.fill();
+
+      // Shaded dome cap
+      const eGrad = ctx.createRadialGradient(-3, -17, 2, 0, -12, 14);
+      if (en.type === "spiky"){
+        eGrad.addColorStop(0, "#a855f7");
+        eGrad.addColorStop(1, "#581c87");
+      } else {
+        eGrad.addColorStop(0, "#b45309");
+        eGrad.addColorStop(1, "#451a03");
+      }
+      ctx.fillStyle = eGrad;
+      ctx.beginPath();
+      ctx.arc(0, -11, 13, Math.PI, 0);
+      ctx.fill();
+
+      // Metallic spikes for spiky enemy
+      if (en.type === "spiky"){
+        ctx.fillStyle = "#e2e8f0";
+        for (const sx of [-7, 0, 7]){
+          ctx.beginPath();
+          ctx.moveTo(sx - 3, -22);
+          ctx.lineTo(sx, -29);
+          ctx.lineTo(sx + 3, -22);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // Face & angry eyebrows
       ctx.fillStyle = "#fed7aa";
-      ctx.fillRect(-8, -12, 16, 8);
+      ctx.beginPath();
+      ctx.roundRect(-8, -12, 16, 8, 2);
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(-5.5, -10.5, 3.5, 4.5);
+      ctx.fillRect(2, -10.5, 3.5, 4.5);
       ctx.fillStyle = "#0f172a";
-      ctx.fillRect(-5, -10, 3, 4);
-      ctx.fillRect(2, -10, 3, 4);
+      ctx.fillRect(-4.5, -9.5, 2, 3);
+      ctx.fillRect(3, -9.5, 2, 3);
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-6, -11.5); ctx.lineTo(-1.5, -9.5);
+      ctx.moveTo(6, -11.5); ctx.lineTo(1.5, -9.5);
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -3379,6 +3693,7 @@ function renderMario(wrap, p){
       ctx.fillText(pop.text, pop.x, pop.y);
     }
     ctx.globalAlpha = 1;
+    ctx.restore();
     ctx.restore();
 
     if (state === "ready"){
@@ -3407,6 +3722,9 @@ function renderMario(wrap, p){
     }
     const dt = Math.min(1.5, Math.max(0.25, rawDt));
     frame += dt;
+    if (shake > 0) shake *= Math.pow(0.82, dt);
+    player.squashX += (1 - player.squashX) * 0.22 * dt;
+    player.squashY += (1 - player.squashY) * 0.22 * dt;
 
     for (const k in bumpOffsets){
       bumpOffsets[k] += 0.9 * dt;
@@ -3455,12 +3773,34 @@ function renderMario(wrap, p){
         player.onGround = false;
         player.coyote = 0;
         player.jumpBuf = 0;
+        player.squashX = 0.78;
+        player.squashY = 1.24;
+        addBurst(player.x + player.w / 2, player.y + player.h, ["rgba(255,255,255,0.7)", "#e2e8f0"], 5);
         sfx("jump");
       }
 
+      player.wasOnGround = player.onGround;
       player.vy = Math.min(11, player.vy + 0.48 * dt);
       moveAndCollide(player, hitBlock);
-      if (player.onGround && Math.abs(player.vx) > 0.3) player.walkFrame += 0.32 * dt;
+      if (!player.wasOnGround && player.onGround){
+        player.squashX = 1.25;
+        player.squashY = 0.78;
+        addBurst(player.x + player.w / 2, player.y + player.h, ["rgba(255,255,255,0.65)", "#cbd5e1"], 4);
+      }
+      if (player.onGround && Math.abs(player.vx) > 0.3){
+        player.walkFrame += 0.32 * dt;
+        if (Math.random() < 0.22 * dt){
+          particles.push({
+            x: player.x + (player.facing > 0 ? 3 : player.w - 3),
+            y: player.y + player.h - 2,
+            vx: -player.facing * (0.4 + Math.random() * 0.6),
+            vy: -0.3 - Math.random() * 0.5,
+            r: 2 + Math.random() * 1.5,
+            color: "rgba(255, 255, 255, 0.55)",
+            life: 0.65
+          });
+        }
+      }
 
       // Pit fall
       if (player.y > H + 20){
