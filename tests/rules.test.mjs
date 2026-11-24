@@ -47,6 +47,8 @@ await t("uninvited member can't read private room", assertFails(getDoc(doc(as("b
 
 console.log("Groups");
 await t("create a group", assertSucceeds(setDoc(doc(as("alice"), "groups/g1"), { uid: "alice", users: ["alice", "bob"], ts: now })));
+await t("create a group with a custom name", assertSucceeds(setDoc(doc(as("alice"), "groups/g_named"), { uid: "alice", name: "Study Squad", users: ["alice", "bob"], ts: now })));
+await t("can't give a group a huge name", assertFails(setDoc(doc(as("alice"), "groups/g_long"), { uid: "alice", name: "x".repeat(50), users: ["alice", "bob"], ts: now })));
 await t("group member can read the group", assertSucceeds(getDoc(doc(as("bob"), "groups/g1"))));
 await t("non-member can't read group", assertFails(getDoc(doc(as("dev"), "groups/g1"))));
 await t("member lists their groups", assertSucceeds(getDocs(query(collection(as("bob"), "groups"), where("users", "array-contains", "bob")))));

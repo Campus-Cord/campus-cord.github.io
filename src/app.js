@@ -1761,7 +1761,8 @@ function newDMModal(){
 function newGroupModal(){
   let sel = [];
   modal((m, close) => {
-    m.append(h("h3",{text:"New Group Chat"}), h("p",{class:"note",text:"Select friends to add."}));
+    m.append(h("h3",{text:"New Group Chat"}), h("p",{class:"note",text:"Name your group and select friends to add."}));
+    const nameInp = h("input",{class:"inp", placeholder:"Group name (optional)", maxLength:40, style:{marginBottom:"10px"}}); m.appendChild(nameInp);
     const selDiv = h("div",{style:{marginBottom:"10px",fontSize:"13px",color:"var(--t2)"}}); m.appendChild(selDiv);
     const f = h("input",{class:"inp", placeholder:"Search friends", style:{marginBottom:"10px"}}); m.appendChild(f);
     const list = h("div",{class:"list"}); m.appendChild(list);
@@ -1784,8 +1785,11 @@ function newGroupModal(){
         if (!sel.length) return toast("Select at least one person.");
         close();
         const id = rid();
+        const name = nameInp.value.trim().slice(0, 40);
+        const data = {uid: S.uid, users: [S.uid, ...sel], createdAt: Date.now()};
+        if (name) data.name = name;
         try {
-          await setDoc(doc(db, "groups", id), {uid: S.uid, users: [S.uid, ...sel], createdAt: Date.now()});
+          await setDoc(doc(db, "groups", id), data);
           S.mode = "dms"; openChat("group", id);
         } catch(e) { toast("Couldn't start group: " + errMsg(e)); }
       }},"Create Group")
