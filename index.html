@@ -1966,7 +1966,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-24.1319";
+const APP_VERSION = "2026-11-24.1327";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2233,7 +2233,8 @@ function roleTags(uid, compact){
   else if (isHeadDev(uid)) out.push(chip("dev headdev","code","HEAD DEV","Head Developer"));
   else if (isDev(uid)) out.push(chip("dev","code","DEV","Developer"));
   if (isDesigner(uid) && !isOwnerUid(uid)) out.push(chip("design","pen","DESIGN","Designer — made CampusCord's look"));
-  const r = rankOf(uid);
+  // Owner and co-owners just show their role, not a Campus+ rank.
+  const r = isOwnerUid(uid) || isCoOwnerUid(uid) ? null : rankOf(uid);
   if (r === "plusplus") out.push(chip("pp","zap","PLUS+","Campus++"));
   else if (r === "plus") out.push(chip("plus","sparkles","PLUS","Campus+"));
   else if (r === "supporter") out.push(chip("sup","gem", compact ? "" : "SUPPORTER","Supporter"));
