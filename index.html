@@ -1676,7 +1676,7 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 
 /* Nameplates */
 .plate-neon{--plate:linear-gradient(90deg,transparent,rgba(255,61,154,.55) 40%,rgba(34,211,238,.55) 70%,transparent 110%)}
-.plate-neon::after{animation:plateShift 6s linear infinite,neonflick 3s linear infinite}
+.plate-neon::after{animation:plateShift 6s linear infinite}
 .plate-prism{--plate:linear-gradient(90deg,rgba(255,61,61,.45),rgba(255,176,46,.45),rgba(255,225,77,.45),rgba(62,207,122,.45),rgba(63,184,255,.45),rgba(124,92,255,.45),rgba(255,61,203,.45),rgba(255,61,61,.45))}
 .plate-molten{--plate:radial-gradient(circle at 20% 60%,rgba(255,200,60,.7),transparent 30%),radial-gradient(circle at 70% 40%,rgba(255,90,30,.7),transparent 35%),linear-gradient(90deg,transparent,rgba(185,28,28,.55) 40%,rgba(234,88,12,.65) 70%,rgba(185,28,28,.4))}
 
@@ -1832,6 +1832,12 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 @keyframes liquid-gold-flow {
   to { background-position: 200% center; }
 }
+
+/* Calm nameplates in lists: still until you hover, softer, and the text always readable */
+.ch.dm.plate::after,.friend.plate::after,.mrow.plate::after{animation-play-state:paused;opacity:.6;transition:opacity .2s}
+.ch.dm.plate:hover::after,.friend.plate:hover::after,.mrow.plate:hover::after,.ch.dm.plate.on::after{animation-play-state:running;opacity:.85}
+.ch.dm.plate .nm,.ch.dm.plate .sub,.ch.dm.plate .nick,.friend.plate *,.mrow.plate .nm,.mrow.plate .sub,.mrow.plate .status,.ch.dm.plate .st{text-shadow:0 1px 2px #000c,0 0 6px #0008}
+@media (prefers-reduced-motion:reduce){.plate::after{animation:none!important}}
 </style>
 </head>
 <body>
@@ -1955,7 +1961,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-24.0826";
+const APP_VERSION = "2026-11-24.0832";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
