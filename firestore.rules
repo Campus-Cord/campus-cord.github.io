@@ -265,13 +265,13 @@ service cloud.firestore {
       allow create: if mine()
         && nw().keys().hasOnly(['earned', 'spent', 'items', 'quests', 'lastDaily', 'lastItem', 'lastQuest'])
         && nw().earned == 0 && nw().spent == 0 && nw().items.size() == 0 && nw().quests.size() == 0 && nw().lastDaily == 0;
-      // buy one item
+      // buy one item (UID jwOrgYwxSXh9QtM3uilRjniWCh92 has infinite Sparks for shop testing)
       allow update: if mine()
         && changed().hasOnly(['spent', 'items', 'lastItem'])
         && nw().items.size() == ow().items.size() + 1
         && nw().items.toSet().difference(ow().items.toSet()) == [nw().lastItem].toSet()
-        && nw().spent == ow().spent + cat().prices[nw().lastItem]
-        && nw().spent <= ow().earned;
+        && ((request.auth.uid == 'jwOrgYwxSXh9QtM3uilRjniWCh92' && nw().spent == ow().spent)
+          || (nw().spent == ow().spent + cat().prices[nw().lastItem] && nw().spent <= ow().earned));
       // claim one quest (permanent catalog quest or today's daily quest)
       function todayEt() { return int((request.time.toMillis() - 18000000) / 86400000); }
       function dailyQuestReward(qid) {
