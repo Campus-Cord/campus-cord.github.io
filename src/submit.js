@@ -44,6 +44,7 @@ function checkEdits(text){
   const src = {}; (srcCache || []).forEach(f => src[f.path] = f.lines.join("\n"));
   blocks.forEach((b, i) => { const no = "Change " + (i + 1);
     if (!b.file){ problems.push(no + " doesn't say which FILE it's for."); return; }
+    if (designerOnly() && b.file !== "src/style.css"){ problems.push(no + " changes " + b.file + ". Designers can only change src/style.css (how things look)."); return; }
     if (!SUB_FILES_RE.test(b.file) || SUB_NO_FILES.has(b.file)){ problems.push(no + " changes " + b.file + ". You can change any file in src/, firestore.rules and tests/rules.test.mjs, but not " + b.file + "."); return; }
     const cur = files[b.file] != null ? files[b.file] : src[b.file];
     if (cur == null){ problems.push(no + " is for " + b.file + ", but that file doesn't exist. Add new code to an existing file instead."); return; }
@@ -63,7 +64,8 @@ function fixMessageForAI(problems){
 // ---- the instructions + all the code, for the AI
 function aiStarter(){
   const me = nickOf(S.uid);
-  return `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
+  const designerNote = designerOnly() ? `\n\nI'M A DESIGNER: I can ONLY change how CampusCord looks. ONLY change src/style.css (colors, sizes, spacing, layouts, fonts, animations). Never change any other file. If something needs a change in another file, tell me in one sentence that a developer has to do it.\n` : "";
+  return designerNote + `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
 
 IMPORTANT: The full code is too big to send at once, so at the end of this file is a MAP of CampusCord's code: every function and setting, with its file and line number. You have NOT seen the code itself yet. Never guess or invent code.
 When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once. Ask for only what you really need, at most 4 names at a time. The map shows how many lines each piece has: add them up and keep each request under 1000 lines. Never ask for whole big files like src/app.js or src/style.css. If the code comes in parts (\"PART 1 OF 3\"), just reply \"OK, next\" until you have the last part.
@@ -125,7 +127,7 @@ S.subs = [];
 const seesAllSubs = () => isOwner() || isHeadDev(S.uid);
 const canDecide = x => isOwner() || (isHeadDev(S.uid) && !(x.flags && x.flags.length));
 function watchSubs(){
-  if (S.subsSub || !(isOwner() || isDev(S.uid))) return; S.subsSub = true;
+  if (S.subsSub || !canUsePanel()) return; S.subsSub = true;
   const q = seesAllSubs() ? collection(db, "devSubs") : query(collection(db, "devSubs"), where("uid", "==", S.uid));
   onSnapshot(q, s => { S.subs = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a, b) => b.ts - a.ts); need("rail"); if (S.kind === "dev") need("msgs"); }, () => {});
 }

@@ -9,7 +9,7 @@ const OWNER_ONLY_FILES = /^(\.github\/|scripts\/|tests\/|firestore\.rules$|fireb
 let ghCache = null, ghLoading = null;
 
 function watchApprovals(){
-  if (S.approvalsUnsub || !(isOwner() || isDev(S.uid))) return;
+  if (S.approvalsUnsub || !canUsePanel()) return;
   S.approvals = {};
   S.approvalsUnsub = onSnapshot(collection(db, "devApprovals"), s => {
     S.approvals = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); refreshOpenPane();
@@ -163,7 +163,7 @@ function changeGuide(){
 }
 
 // Owner: count waiting changes once at startup so the Admin button shows a red number.
-function checkChangesBadge(){ if (!(isOwner() || isDev(S.uid)) || S.changesChecked) return; S.changesChecked = true;
+function checkChangesBadge(){ if (!canUsePanel() || S.changesChecked) return; S.changesChecked = true;
   loadChanges(false).then(() => need("rail")).catch(() => {}); setTimeout(() => { S.changesChecked = false; }, 10 * 60000); }
 function adminChanges(p, noIntro){
   watchApprovals();
@@ -194,22 +194,44 @@ function renderDevPage(box){
   if (focus && box.querySelector(".easy")){ const old = box.querySelector(".subs"); if (old) old.replaceWith(subsListEl()); return; } // don't wipe what they're typing
   box.innerHTML = "";
   const wrap = h("div",{class:"devpage"});
-  if (!(isOwner() || isDev(S.uid))){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
-  const who = isOwner() ? "owner" : "developer", waiting = S.subs.filter(x => x.status === "ready").length;
+  if (!canUsePanel()){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
+  const who = isOwner() ? "owner" : designerOnly() ? "designer" : "developer", waiting = S.subs.filter(x => x.status === "ready").length;
   wrap.append(h("div",{class:"devhero"},
     h("div",{class:"devterm"},
       h("div",{class:"devbar"}, h("i"), h("i"), h("i"), h("span",{text:"campuscord — dev"})),
       h("pre",null, h("span",{class:"c1",text:"$ "}), "whoami\n", h("span",{class:"c2",text: nickOf(S.uid) + " (" + who + ")"}), "\n",
         h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: waiting + " change" + (waiting === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
-    h("div",{class:"devtxt"}, h("h2",{text:"Dev panel"}),
+    h("div",{class:"devtxt"}, h("h2",{text: designerOnly() ? "Design panel" : "Dev panel"}),
       h("p",{text: isOwner() ? "Your helpers' changes show up below. Green check = it passed the tests. Press Approve and it's live in a few minutes."
+        : designerOnly() ? "Change how CampusCord looks with an AI in 3 steps: colors, layouts, animations. Massimo approves it, then it's live for everyone."
         : "Change CampusCord with an AI in 3 steps. Massimo approves it, then it's live for everyone."}))));
+  if (isDesigner(S.uid) || isOwner()) wrap.append(serverLookEl());
   if (isOwner()) wrap.append(subsListEl(), easyPanelEl());
   else wrap.append(easyPanelEl(), subsListEl());
   const adv = h("details",{class:"gwrap advanced"}, h("summary",null, ic("code"), " Advanced: Code Finder and GitHub"));
   adv.append(h("div",{style:{padding:"10px 12px"}}, codeFinderEl(), (() => { const p = h("div",{class:"devbody"}); adminChanges(p, true); return p; })()));
   wrap.append(adv);
   box.append(wrap); box.scrollTop = keep;
+}
+
+// Designers (and the owner): change the server's logo and main color live.
+function serverLookEl(){
+  const c = S.config || {};
+  const logo = h("input",{class:"inp", value:c.serverIcon || "CC", maxlength:"4", style:{width:"90px",textAlign:"center",fontWeight:"800"}});
+  const color = h("input",{type:"color", value:c.accent || "#7c5cff", class:"lookcolor"});
+  const prev = h("div",{class:"lookprev"}, h("span",{class:"srvic",text:logo.value}));
+  const paint = () => { prev.firstChild.textContent = logo.value || "CC"; prev.style.setProperty("--accent", color.value); document.documentElement.style.setProperty("--accent", prefs.accent || color.value); };
+  logo.oninput = color.oninput = paint; paint();
+  const PRESETS = ["#7c5cff","#5865f2","#3ba55d","#f04747","#faa61a","#eb459e","#00b0f4","#e67e22"];
+  return h("div",{class:"gwrap looks"},
+    h("h4",null, "🎨 Server look ", h("span",{class:"note",style:{margin:0,fontWeight:400},text:"changes it for everyone right away"})),
+    h("div",{class:"lookrow"}, prev,
+      h("div",null, h("label",{class:"f",text:"Logo (up to 4 letters or an emoji)"}), logo),
+      h("div",null, h("label",{class:"f",text:"Main color"}), h("div",{class:"lookcolors"}, color, PRESETS.map(p => h("button",{class:"lookdot", style:{background:p}, title:p, onclick:() => { color.value = p; paint(); }}))))),
+    h("div",{class:"row",style:{justifyContent:"flex-end",gap:"8px",marginTop:"10px"}},
+      h("button",{class:"btn small ghost", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {accent:""}); toast("Main color reset"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Reset color"),
+      h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {serverIcon:(logo.value.trim() || "CC").slice(0, 4), accent:color.value}); toast("Server look saved 🎨"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")),
+    h("p",{class:"note",style:{margin:"6px 0 0"},text:"People who picked their own color in Settings keep theirs."}));
 }
 
 // ---------------------------------------------------------------- Code Finder

@@ -139,7 +139,7 @@ function applyPrefs(){
   const allowed = !theme.premium || (S.uid && hasPerk(S.uid, "themes"));
   const r = document.documentElement;
   r.dataset.theme = allowed ? theme.id : "dark";
-  r.style.setProperty("--accent", prefs.accent || "#7c5cff");
+  r.style.setProperty("--accent", prefs.accent || (S.config && S.config.accent) || "#7c5cff");
   r.style.setProperty("--fs", (prefs.fs || 15) + "px");
   r.classList.toggle("compact", !!prefs.compact);
   r.classList.toggle("reduce-motion", !!prefs.reduceMotion);
@@ -201,6 +201,9 @@ const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid))
 // Head developers: developers with extra powers (the owner picks them).
 const isHeadDev = uid => isDev(uid) && ((S.config && S.config.headDevs) || []).includes(uid);
 const canPostAnnouncements = () => isOwner() || isHeadDev(S.uid);
+// Who gets the </> panel: developers, the owner, and designers (designers only change the look).
+const canUsePanel = () => isOwner() || isDev(S.uid) || isDesigner(S.uid);
+const designerOnly = () => isDesigner(S.uid) && !isOwner() && !isDev(S.uid);
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
 // Linked accounts: an old account's uid points at the new one (config/main.aliases), so its messages show the new person.
 function realUid(uid){ const al = (S.config && S.config.aliases) || {}; let u = uid, n = 0; while (al[u] && n++ < 5) u = al[u]; return u; }
@@ -320,7 +323,7 @@ function boot(){
 
 function start(){
   onSnapshot(doc(db, "config/main"), snap => {
-    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true; if (S.routed === "app"){ setTimeout(maybeHeadDevPopup, 1500); setTimeout(maybeCoOwnerPopup, 1800); }
+    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true; if (typeof applyPrefs === "function") applyPrefs(); if (S.routed === "app"){ setTimeout(maybeHeadDevPopup, 1500); setTimeout(maybeCoOwnerPopup, 1800); }
     if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
     route(); applyPrefs(); adoptLinkedProfile(); need("rail","side","header","msgs","rpanel","me","composer");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
@@ -617,7 +620,7 @@ function renderRail(){
   bot.appendChild(railItem({label:"Games", tip:"Daily Mini Games — Wordle, Spelling Bee, Sudoku & Crossword", cls:"gamesri", on: S.kind === "games", onclick:() => openChat("games", "hub"), content:ic("grid")}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
-  if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: (S.openChanges || 0) + (isOwner() ? subsWaiting() : 0)}));
+  if (canUsePanel()) bot.appendChild(railItem({label: designerOnly() ? "Design" : "Dev", tip: designerOnly() ? "Design panel: change how CampusCord looks" : "Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: (S.openChanges || 0) + (isOwner() ? subsWaiting() : 0)}));
   if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
   r.append(top, bot);
@@ -997,7 +1000,7 @@ function renderHeader(){
   if (S.kind === "games"){ icon.appendChild(ic("grid")); t.textContent = "Daily Mini Games"; d.textContent = "Wordle, Spelling Bee, Sudoku & Mini Crossword · 5 plays each per day"; updateTitle(); return; }
   if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
   if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn badges"; updateTitle(); return; }
-  if (S.kind === "dev"){ icon.appendChild(h("span",{class:"devglyph",text:"</>"})); t.textContent = "Dev panel"; d.textContent = "Change CampusCord's code · only developers can see this"; updateTitle(); return; }
+  if (S.kind === "dev"){ icon.appendChild(h("span",{class:"devglyph",text:"</>"})); t.textContent = designerOnly() ? "Design panel" : "Dev panel"; d.textContent = designerOnly() ? "Change how CampusCord looks · only designers and developers can see this" : "Change CampusCord's code · only developers can see this"; updateTitle(); return; }
   if (S.kind === "feedback"){ icon.appendChild(ic("message")); t.textContent = "Feedback"; d.textContent = "Bugs, ideas and vouches"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){

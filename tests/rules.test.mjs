@@ -397,6 +397,21 @@ await t("a banned co-owner loses their powers", (async () => {
 await t("owner removes a co-owner", assertSucceeds(updateDoc(doc(as("owner"), "config/main"), { coOwners: [] })));
 await t("an ex co-owner has no powers", assertFails(updateDoc(doc(as("co"), "config/main"), { serverName: "x" })));
 
+console.log("Designers");
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, "config/main"), { designers: ["des"] }, { merge: true });
+  await setDoc(doc(db, "members/des"), { nick: "des", color: "#fff", joinedAt: now, lastSeen: now, code: "TEST" });
+});
+await t("designer changes the logo and main color", assertSucceeds(updateDoc(doc(as("des"), "config/main"), { serverIcon: "CC", accent: "#ff3d9a" })));
+await t("designer resets the main color", assertSucceeds(updateDoc(doc(as("des"), "config/main"), { accent: "" })));
+await t("main color must be a real color", assertFails(updateDoc(doc(as("des"), "config/main"), { accent: "red; background:url(x)" })));
+await t("designer can't rename the server", assertFails(updateDoc(doc(as("des"), "config/main"), { serverName: "Hacked" })));
+await t("designer can't ban people", assertFails(updateDoc(doc(as("des"), "config/main"), { banned: ["bob"] })));
+await t("designer sends a design change", assertSucceeds(setDoc(doc(as("des"), "devSubs/ds1"), { uid: "des", nick: "des", title: "Blue buttons", answer: "x", ts: now, status: "new" })));
+await t("designer can't approve changes", assertFails(updateDoc(doc(as("des"), "devSubs/ds1"), { status: "approved", decidedAt: Date.now() })));
+await t("regular members can't send changes", assertFails(setDoc(doc(as("bob"), "devSubs/ds2"), { uid: "bob", nick: "bob", title: "x", answer: "x", ts: now, status: "new" })));
+
 await env.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

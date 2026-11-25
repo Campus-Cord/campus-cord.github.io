@@ -119,6 +119,11 @@ async function handle(d){
       // test on a throwaway copy
       const tmp = mkdtempSync(join(tmpdir(), "sub-")); cpSync(join(ROOT, "src"), join(tmp, "src"), {recursive:true}); cpSync(join(ROOT, "tests"), join(tmp, "tests"), {recursive:true}); cpSync(join(ROOT, "firestore.rules"), join(tmp, "firestore.rules"));
       const r = applyAll(tmp, x.answer);
+      // Designers (not developers/owner) may only change how things look: src/style.css.
+      const cfg = (await db.collection("config").doc("main").get()).data() || {};
+      const devLike = x.uid === cfg.ownerUid || (cfg.coOwners || []).includes(x.uid) || (cfg.admins || []).includes(x.uid);
+      if (!devLike && (cfg.designers || []).includes(x.uid)){ const bad = Object.keys(r.files).filter(f => f !== "src/style.css");
+        if (bad.length) throw new Error("Designers can only change src/style.css (how things look). This changes " + bad.join(", ") + "."); }
       for (const [f, t] of Object.entries(r.files)) writeFileSync(join(tmp, f), t);
       buildAndCheck(tmp, join(tmp, "out.html"));
       await set({status:"ready", files:Object.keys(r.files), flags:r.flags, diff:diffOf(ROOT, r.files), error:null});

@@ -1829,3 +1829,11 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .mrow .nm>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .nm>.tag{flex:none}
 .tag.tempdev{background:linear-gradient(90deg,#0ea5e9,#22d3ee);color:#03222b}
+
+/* Design panel: server look */
+.looks{padding:14px 16px;margin-bottom:16px}
+.lookrow{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.lookprev .srvic{display:grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--accent);color:#fff;font-weight:900;font-size:18px}
+.lookcolors{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.lookcolor{width:40px;height:32px;border:0;background:none;padding:0;cursor:pointer}
+.lookdot{width:22px;height:22px;border-radius:50%;border:2px solid #fff3;cursor:pointer;padding:0}

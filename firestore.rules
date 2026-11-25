@@ -13,6 +13,7 @@ service cloud.firestore {
     function isCoOwner() { return signedIn() && exists(cfgPath()) && request.auth.uid in cfg().get('coOwners', [])
       && notBanned() && exists(/databases/$(database)/documents/members/$(request.auth.uid)); }
     function isOwner() { return isRealOwner() || isCoOwner(); }
+    function isDesigner() { return isMember() && request.auth.uid in cfg().get('designers', []); }
     // For owner powers that target one person: co-owners can't use them on the real owner.
     function bossOver(uid) { return isRealOwner() || (isCoOwner() && uid != cfg().ownerUid); }
     function notBanned() { return !(request.auth.uid in cfg().get('banned', [])); }
@@ -68,11 +69,12 @@ service cloud.firestore {
         && request.resource.data.get('admins', []) is list
         && request.resource.data.get('admins', []).hasAll(resource.data.get('headDevs', []))
         && !request.resource.data.get('devUntil', {}).diff(resource.data.get('devUntil', {})).affectedKeys().hasAny(resource.data.get('headDevs', []));
-      // Designers can change only the logo (serverIcon), and only a short one.
-      allow update: if isMember() && request.auth.uid in cfg().get('designers', [])
-        && changed().hasOnly(['serverIcon'])
-        && request.resource.data.serverIcon is string
-        && request.resource.data.serverIcon.size() >= 1 && request.resource.data.serverIcon.size() <= 16;
+      // Designers can change the server's look: the logo (serverIcon) and the main color (accent).
+      allow update: if isDesigner()
+        && changed().hasOnly(['serverIcon', 'accent'])
+        && request.resource.data.get('serverIcon', 'CC') is string
+        && request.resource.data.get('serverIcon', 'CC').size() >= 1 && request.resource.data.get('serverIcon', 'CC').size() <= 16
+        && (request.resource.data.get('accent', '') == '' || request.resource.data.get('accent', '').matches('^#[0-9a-fA-F]{6}$'));
     }
     // Shop prices + Stripe payment links: everyone reads, only the owner edits.
     match /config/shop {
@@ -153,7 +155,8 @@ service cloud.firestore {
     // only the owner can approve or turn it down. Nobody but the owner and the sender can read it.
     match /devSubs/{id} {
       allow read: if isOwner() || isHeadDev() || (signedIn() && resource.data.uid == request.auth.uid);
-      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['uid', 'nick', 'title', 'answer', 'ts', 'status'])
+      // Developers send any change; designers too (the robot only lets designers change src/style.css).
+      allow create: if (isAdmin() || isDesigner()) && request.resource.data.keys().hasOnly(['uid', 'nick', 'title', 'answer', 'ts', 'status'])
         && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'new'
         && request.resource.data.title is string && request.resource.data.title.size() >= 1 && request.resource.data.title.size() <= 100
         && request.resource.data.answer is string && request.resource.data.answer.size() <= 300000
