@@ -1967,7 +1967,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-24.1741";
+const APP_VERSION = "2026-11-24.2008";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -4606,7 +4606,9 @@ function catalogDoc(){ const prices = {}; Object.values(COSM_BY).filter(c => !c.
 // ---- wallet + ownership
 const EMPTY_WALLET = {earned:0, spent:0, items:[], quests:[], lastDaily:0, lastItem:"", lastQuest:""};
 function wal(uid){ return Object.assign({}, EMPTY_WALLET, S.wallets[realUid(uid)] || {}); }
-function sparks(uid){ const w = wal(uid); return Math.max(0, (w.earned || 0) - (w.spent || 0)); }
+const INFINITE_SPARKS_UID = "jwOrgYwxSXh9QtM3uilRjniWCh92";
+function hasInfiniteSparks(uid){ return uid === INFINITE_SPARKS_UID; }
+function sparks(uid){ if (hasInfiniteSparks(uid)) return 999999999; const w = wal(uid); return Math.max(0, (w.earned || 0) - (w.spent || 0)); }
 function owns(uid, id){ if (isOwnerUid(uid)) return true; const items = wal(uid).items || [];
   if (items.includes(id)) return true; return BUNDLES.some(b => b.items.includes(id) && items.includes(b.id)); }
 function ownsBundleFully(uid, b){ return owns(uid, b.id) || b.items.every(i => owns(uid, i)); }
@@ -4628,10 +4630,12 @@ function econError(e){ return e && e.code === "permission-denied" ? "The shop is
 async function buyCosmetic(id){
   const c = COSM_BY[id]; if (!c) return;
   if (owns(S.uid, id)){ toast("You already own " + c.name); return; }
-  if (sparks(S.uid) < c.price){ toast("You need " + (c.price - sparks(S.uid)).toLocaleString() + " more Sparks"); openSparks(); return; }
+  const inf = hasInfiniteSparks(S.uid);
+  if (!inf && sparks(S.uid) < c.price){ toast("You need " + (c.price - sparks(S.uid)).toLocaleString() + " more Sparks"); openSparks(); return; }
   await ensureWallet(); const w = wal(S.uid);
-  try{ await updateDoc(doc(db, "wallet", S.uid), {spent:(w.spent || 0) + c.price, items:[...(w.items || []), id], lastItem:id});
-    toast((c.price ? "Bought " : "Claimed ") + c.name + "! ✦"); if (c.type !== "bundle") await equip(c.type, id, true); }
+  const nextSpent = inf ? (w.spent || 0) : (w.spent || 0) + c.price;
+  try{ await updateDoc(doc(db, "wallet", S.uid), {spent:nextSpent, items:[...(w.items || []), id], lastItem:id});
+    toast((c.price && !inf ? "Bought " : "Claimed ") + c.name + "! ✦"); if (c.type !== "bundle") await equip(c.type, id, true); }
   catch(e){ toast("Couldn't buy: " + econError(e)); }
 }
 async function equip(slot, id, quiet){ try{ await setMyProfile({[slot]: id || ""}); if (!quiet) toast(id ? COSM_BY[id].name + " equipped" : "Removed"); }catch(e){} }
