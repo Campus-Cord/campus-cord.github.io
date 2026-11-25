@@ -1844,6 +1844,14 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .mrow .nm>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .nm>.tag{flex:none}
 .tag.tempdev{background:linear-gradient(90deg,#0ea5e9,#22d3ee);color:#03222b}
+
+/* Design panel: server look */
+.looks{padding:14px 16px;margin-bottom:16px}
+.lookrow{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.lookprev .srvic{display:grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--accent);color:#fff;font-weight:900;font-size:18px}
+.lookcolors{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.lookcolor{width:40px;height:32px;border:0;background:none;padding:0;cursor:pointer}
+.lookdot{width:22px;height:22px;border-radius:50%;border:2px solid #fff3;cursor:pointer;padding:0}
 </style>
 </head>
 <body>
@@ -1967,7 +1975,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged, linkWithCredential, Ema
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, limit, writeBatch, arrayUnion, arrayRemove, deleteField, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Bump APP_VERSION (and version.json) on every release so open tabs offer a refresh.
-const APP_VERSION = "2026-11-24.2008";
+const APP_VERSION = "2026-11-24.2045";
 const LIVE_URL = "https://campus-cord.github.io/";
 
 // ---------------------------------------------------------------- constants
@@ -2098,7 +2106,7 @@ function applyPrefs(){
   const allowed = !theme.premium || (S.uid && hasPerk(S.uid, "themes"));
   const r = document.documentElement;
   r.dataset.theme = allowed ? theme.id : "dark";
-  r.style.setProperty("--accent", prefs.accent || "#7c5cff");
+  r.style.setProperty("--accent", prefs.accent || (S.config && S.config.accent) || "#7c5cff");
   r.style.setProperty("--fs", (prefs.fs || 15) + "px");
   r.classList.toggle("compact", !!prefs.compact);
   r.classList.toggle("reduce-motion", !!prefs.reduceMotion);
@@ -2160,6 +2168,9 @@ const isDesigner = uid => !!(S.config && (S.config.designers||[]).includes(uid))
 // Head developers: developers with extra powers (the owner picks them).
 const isHeadDev = uid => isDev(uid) && ((S.config && S.config.headDevs) || []).includes(uid);
 const canPostAnnouncements = () => isOwner() || isHeadDev(S.uid);
+// Who gets the </> panel: developers, the owner, and designers (designers only change the look).
+const canUsePanel = () => isOwner() || isDev(S.uid) || isDesigner(S.uid);
+const designerOnly = () => isDesigner(S.uid) && !isOwner() && !isDev(S.uid);
 const isAdmin = () => isOwner() || (isDev(S.uid) && !!member(S.uid));
 // Linked accounts: an old account's uid points at the new one (config/main.aliases), so its messages show the new person.
 function realUid(uid){ const al = (S.config && S.config.aliases) || {}; let u = uid, n = 0; while (al[u] && n++ < 5) u = al[u]; return u; }
@@ -2279,7 +2290,7 @@ function boot(){
 
 function start(){
   onSnapshot(doc(db, "config/main"), snap => {
-    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true; if (S.routed === "app"){ setTimeout(maybeHeadDevPopup, 1500); setTimeout(maybeCoOwnerPopup, 1800); }
+    S.config = snap.exists() ? snap.data() : null; S.configLoaded = true; if (typeof applyPrefs === "function") applyPrefs(); if (S.routed === "app"){ setTimeout(maybeHeadDevPopup, 1500); setTimeout(maybeCoOwnerPopup, 1800); }
     if (isAdmin() && !S.inviteSub){ S.inviteSub = onSnapshot(doc(db, "secret/invite"), s => { S.invite = s.exists() ? s.data().code : null; }, ()=>{}); }
     route(); applyPrefs(); adoptLinkedProfile(); need("rail","side","header","msgs","rpanel","me","composer");
   }, e => gateMsg("Couldn't load CampusCord", "Make sure the Firestore rules are published. (" + errMsg(e) + ")"));
@@ -2576,7 +2587,7 @@ function renderRail(){
   bot.appendChild(railItem({label:"Games", tip:"Daily Mini Games — Wordle, Spelling Bee, Sudoku & Crossword", cls:"gamesri", on: S.kind === "games", onclick:() => openChat("games", "hub"), content:ic("grid")}));
   bot.appendChild(railItem({label:"Shop", tip:"Shop — decorations, effects & ranks", cls:"shopri", on: S.kind === "shop", onclick:() => openShop(), content:ic("bag")}));
   if (!isInstalled() && location.protocol !== "file:") bot.appendChild(railItem({label:"Get app", tip:"Install CampusCord on this computer", cls: installEvt ? "installri" : "", onclick:() => installApp(), content:ic("arrowdown")}));
-  if (isOwner() || isDev(S.uid)) bot.appendChild(railItem({label:"Dev", tip:"Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: (S.openChanges || 0) + (isOwner() ? subsWaiting() : 0)}));
+  if (canUsePanel()) bot.appendChild(railItem({label: designerOnly() ? "Design" : "Dev", tip: designerOnly() ? "Design panel: change how CampusCord looks" : "Dev panel: change CampusCord's code", cls:"devri", on: S.kind === "dev", onclick:() => openChat("dev", "main"), content:h("span",{class:"devglyph",text:"</>"}), badge: (S.openChanges || 0) + (isOwner() ? subsWaiting() : 0)}));
   if (isAdmin()) bot.appendChild(railItem({label:"Admin", tip:"Server settings", onclick:() => openAdmin(), content:ic("shield"), badge: isOwner() ? S.orders.filter(o => o.status === "pending").length + openAppeals().length : 0}));
   bot.appendChild(railItem({label:"Help", tip:"How to use CampusCord", onclick:() => openHelp(), content:ic("info")}));
   r.append(top, bot);
@@ -2956,7 +2967,7 @@ function renderHeader(){
   if (S.kind === "games"){ icon.appendChild(ic("grid")); t.textContent = "Daily Mini Games"; d.textContent = "Wordle, Spelling Bee, Sudoku & Mini Crossword · 5 plays each per day"; updateTitle(); return; }
   if (S.kind === "shop"){ icon.appendChild(ic("bag")); t.textContent = "Shop"; d.textContent = "Decorations, effects, nameplates and ranks"; updateTitle(); return; }
   if (S.kind === "quests"){ icon.appendChild(ic("star")); t.textContent = "Quests"; d.textContent = "Earn badges"; updateTitle(); return; }
-  if (S.kind === "dev"){ icon.appendChild(h("span",{class:"devglyph",text:"</>"})); t.textContent = "Dev panel"; d.textContent = "Change CampusCord's code · only developers can see this"; updateTitle(); return; }
+  if (S.kind === "dev"){ icon.appendChild(h("span",{class:"devglyph",text:"</>"})); t.textContent = designerOnly() ? "Design panel" : "Dev panel"; d.textContent = designerOnly() ? "Change how CampusCord looks · only designers and developers can see this" : "Change CampusCord's code · only developers can see this"; updateTitle(); return; }
   if (S.kind === "feedback"){ icon.appendChild(ic("message")); t.textContent = "Feedback"; d.textContent = "Bugs, ideas and vouches"; updateTitle(); return; }
   if (S.kind === "home"){ icon.appendChild(ic("users")); t.textContent = "Friends"; d.textContent = "Everyone on " + ((S.config && S.config.serverName) || "CampusCord"); updateTitle(); return; }
   if (S.kind === "dm" && S.cur){
@@ -5317,7 +5328,7 @@ const OWNER_ONLY_FILES = /^(\.github\/|scripts\/|tests\/|firestore\.rules$|fireb
 let ghCache = null, ghLoading = null;
 
 function watchApprovals(){
-  if (S.approvalsUnsub || !(isOwner() || isDev(S.uid))) return;
+  if (S.approvalsUnsub || !canUsePanel()) return;
   S.approvals = {};
   S.approvalsUnsub = onSnapshot(collection(db, "devApprovals"), s => {
     S.approvals = Object.fromEntries(s.docs.map(d => [d.id, d.data()])); refreshOpenPane();
@@ -5471,7 +5482,7 @@ function changeGuide(){
 }
 
 // Owner: count waiting changes once at startup so the Admin button shows a red number.
-function checkChangesBadge(){ if (!(isOwner() || isDev(S.uid)) || S.changesChecked) return; S.changesChecked = true;
+function checkChangesBadge(){ if (!canUsePanel() || S.changesChecked) return; S.changesChecked = true;
   loadChanges(false).then(() => need("rail")).catch(() => {}); setTimeout(() => { S.changesChecked = false; }, 10 * 60000); }
 function adminChanges(p, noIntro){
   watchApprovals();
@@ -5502,22 +5513,44 @@ function renderDevPage(box){
   if (focus && box.querySelector(".easy")){ const old = box.querySelector(".subs"); if (old) old.replaceWith(subsListEl()); return; } // don't wipe what they're typing
   box.innerHTML = "";
   const wrap = h("div",{class:"devpage"});
-  if (!(isOwner() || isDev(S.uid))){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
-  const who = isOwner() ? "owner" : "developer", waiting = S.subs.filter(x => x.status === "ready").length;
+  if (!canUsePanel()){ wrap.append(h("p",{class:"note",text:"The Dev panel is only for developers."})); box.append(wrap); return; }
+  const who = isOwner() ? "owner" : designerOnly() ? "designer" : "developer", waiting = S.subs.filter(x => x.status === "ready").length;
   wrap.append(h("div",{class:"devhero"},
     h("div",{class:"devterm"},
       h("div",{class:"devbar"}, h("i"), h("i"), h("i"), h("span",{text:"campuscord — dev"})),
       h("pre",null, h("span",{class:"c1",text:"$ "}), "whoami\n", h("span",{class:"c2",text: nickOf(S.uid) + " (" + who + ")"}), "\n",
         h("span",{class:"c1",text:"$ "}), "status\n", h("span",{class:"c3",text: waiting + " change" + (waiting === 1 ? "" : "s") + " waiting for approval"}), h("span",{class:"cur",text:"▋"}))),
-    h("div",{class:"devtxt"}, h("h2",{text:"Dev panel"}),
+    h("div",{class:"devtxt"}, h("h2",{text: designerOnly() ? "Design panel" : "Dev panel"}),
       h("p",{text: isOwner() ? "Your helpers' changes show up below. Green check = it passed the tests. Press Approve and it's live in a few minutes."
+        : designerOnly() ? "Change how CampusCord looks with an AI in 3 steps: colors, layouts, animations. Massimo approves it, then it's live for everyone."
         : "Change CampusCord with an AI in 3 steps. Massimo approves it, then it's live for everyone."}))));
+  if (isDesigner(S.uid) || isOwner()) wrap.append(serverLookEl());
   if (isOwner()) wrap.append(subsListEl(), easyPanelEl());
   else wrap.append(easyPanelEl(), subsListEl());
   const adv = h("details",{class:"gwrap advanced"}, h("summary",null, ic("code"), " Advanced: Code Finder and GitHub"));
   adv.append(h("div",{style:{padding:"10px 12px"}}, codeFinderEl(), (() => { const p = h("div",{class:"devbody"}); adminChanges(p, true); return p; })()));
   wrap.append(adv);
   box.append(wrap); box.scrollTop = keep;
+}
+
+// Designers (and the owner): change the server's logo and main color live.
+function serverLookEl(){
+  const c = S.config || {};
+  const logo = h("input",{class:"inp", value:c.serverIcon || "CC", maxlength:"4", style:{width:"90px",textAlign:"center",fontWeight:"800"}});
+  const color = h("input",{type:"color", value:c.accent || "#7c5cff", class:"lookcolor"});
+  const prev = h("div",{class:"lookprev"}, h("span",{class:"srvic",text:logo.value}));
+  const paint = () => { prev.firstChild.textContent = logo.value || "CC"; prev.style.setProperty("--accent", color.value); document.documentElement.style.setProperty("--accent", prefs.accent || color.value); };
+  logo.oninput = color.oninput = paint; paint();
+  const PRESETS = ["#7c5cff","#5865f2","#3ba55d","#f04747","#faa61a","#eb459e","#00b0f4","#e67e22"];
+  return h("div",{class:"gwrap looks"},
+    h("h4",null, "🎨 Server look ", h("span",{class:"note",style:{margin:0,fontWeight:400},text:"changes it for everyone right away"})),
+    h("div",{class:"lookrow"}, prev,
+      h("div",null, h("label",{class:"f",text:"Logo (up to 4 letters or an emoji)"}), logo),
+      h("div",null, h("label",{class:"f",text:"Main color"}), h("div",{class:"lookcolors"}, color, PRESETS.map(p => h("button",{class:"lookdot", style:{background:p}, title:p, onclick:() => { color.value = p; paint(); }}))))),
+    h("div",{class:"row",style:{justifyContent:"flex-end",gap:"8px",marginTop:"10px"}},
+      h("button",{class:"btn small ghost", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {accent:""}); toast("Main color reset"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Reset color"),
+      h("button",{class:"btn small", onclick:async () => { try{ await updateDoc(doc(db, "config/main"), {serverIcon:(logo.value.trim() || "CC").slice(0, 4), accent:color.value}); toast("Server look saved 🎨"); }catch(e){ toast("Couldn't save: " + errMsg(e)); } }}, "Save")),
+    h("p",{class:"note",style:{margin:"6px 0 0"},text:"People who picked their own color in Settings keep theirs."}));
 }
 
 // ---------------------------------------------------------------- Code Finder
@@ -10011,6 +10044,7 @@ function checkEdits(text){
   const src = {}; (srcCache || []).forEach(f => src[f.path] = f.lines.join("\n"));
   blocks.forEach((b, i) => { const no = "Change " + (i + 1);
     if (!b.file){ problems.push(no + " doesn't say which FILE it's for."); return; }
+    if (designerOnly() && b.file !== "src/style.css"){ problems.push(no + " changes " + b.file + ". Designers can only change src/style.css (how things look)."); return; }
     if (!SUB_FILES_RE.test(b.file) || SUB_NO_FILES.has(b.file)){ problems.push(no + " changes " + b.file + ". You can change any file in src/, firestore.rules and tests/rules.test.mjs, but not " + b.file + "."); return; }
     const cur = files[b.file] != null ? files[b.file] : src[b.file];
     if (cur == null){ problems.push(no + " is for " + b.file + ", but that file doesn't exist. Add new code to an existing file instead."); return; }
@@ -10030,7 +10064,8 @@ function fixMessageForAI(problems){
 // ---- the instructions + all the code, for the AI
 function aiStarter(){
   const me = nickOf(S.uid);
-  return `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
+  const designerNote = designerOnly() ? `\n\nI'M A DESIGNER: I can ONLY change how CampusCord looks. ONLY change src/style.css (colors, sizes, spacing, layouts, fonts, animations). Never change any other file. If something needs a change in another file, tell me in one sentence that a developer has to do it.\n` : "";
+  return designerNote + `I'm ${me}, helping build CampusCord, a Discord-style chat app for our friend group (made by Massimo, the owner). I'm not a coder, so explain things simply and keep it short. You write all the code.
 
 IMPORTANT: The full code is too big to send at once, so at the end of this file is a MAP of CampusCord's code: every function and setting, with its file and line number. You have NOT seen the code itself yet. Never guess or invent code.
 When you need to see code, list the exact names from the map in backticks, like: Please send me \`messageEl\`, \`renderSide\` and \`.icard\`. I'll paste you their full, real code in one go. (CampusCord finds it for me.) Ask for everything you need at once. Ask for only what you really need, at most 4 names at a time. The map shows how many lines each piece has: add them up and keep each request under 1000 lines. Never ask for whole big files like src/app.js or src/style.css. If the code comes in parts (\"PART 1 OF 3\"), just reply \"OK, next\" until you have the last part.
@@ -10092,7 +10127,7 @@ S.subs = [];
 const seesAllSubs = () => isOwner() || isHeadDev(S.uid);
 const canDecide = x => isOwner() || (isHeadDev(S.uid) && !(x.flags && x.flags.length));
 function watchSubs(){
-  if (S.subsSub || !(isOwner() || isDev(S.uid))) return; S.subsSub = true;
+  if (S.subsSub || !canUsePanel()) return; S.subsSub = true;
   const q = seesAllSubs() ? collection(db, "devSubs") : query(collection(db, "devSubs"), where("uid", "==", S.uid));
   onSnapshot(q, s => { S.subs = s.docs.map(d => Object.assign({id:d.id}, d.data())).sort((a, b) => b.ts - a.ts); need("rail"); if (S.kind === "dev") need("msgs"); }, () => {});
 }
